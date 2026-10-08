@@ -1,5 +1,14 @@
 # Agent instructions
 
+## Course source library
+
+- Start with the [public source catalog and import metadata](https://drive.google.com/drive/folders/1Kquft1oLerZXM3_Y-u1yrKDYfqbTNWe7). The same inventory is checked in at `data/source-manifest.json`.
+- The [complete source PDF archives](https://drive.google.com/drive/folders/1L6wViXDyns_N5mSrKBG3GLscBHiPp-i_) are stored in the owner's personal COTR.group My Drive, not a shared drive. As of October 8, 2026, the archives are restricted while public redistribution permission is unresolved. Do not describe them as publicly downloadable or change their access without resolving that permission.
+- The collection contains 177 unique PDFs: 147 lectures, 21 notes, two reviews, First Aid 2024, Pathoma 2021, and five other supporting PDFs. Personal question-bank records, screenshots, Anki exports, notes entered in the app, and progress are excluded from this collection.
+- Use `manifest.public.json` to verify SHA-256 hashes and physical PDF page counts. Extract authorized archives together, preserving the `pdfs/` folders, beside `source-pack.private.json` under `local-private/SourceLibrary/`. Run `python3 build_local.py --pack local-private/SourceLibrary/source-pack.private.json` and follow the README's local search setup.
+- This source pack adds PDF catalog entries only. It does not contain answered learning objectives, personal questions, Anki cards, or the full personal guide. Preserve document IDs and exact aliases when adding these sources to another local build; duplicate basenames must never select a document silently.
+- Still missing from the available collection: the current 2026 NPS 98 psychiatric case-review packet and nine Neuroradiology 1 case scan panels. A prior-year review or generated drawing cannot establish the contents of those missing course assets.
+
 ## Scope and privacy
 
 - Treat this folder as a public GitHub candidate. Never copy private professor-review or lecture PDFs/screenshots, book excerpts or page layers, question-bank screenshots, verbatim learning objectives, licensed Anki exports/media, personal progress, absolute workstation paths, or private URLs into tracked files.

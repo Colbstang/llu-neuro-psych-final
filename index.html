@@ -1612,7 +1612,15 @@ function sourceAddress(value){
 }
 function sourceDocument(value){
  const address=sourceAddress(value);
- return (DATA.source_catalog?.documents||[]).find(d=>d.id===value||(d.aliases||[]).some(a=>sourceAddress(a)===address||sourceAddress(a).split('/').pop()===address.split('/').pop()));
+ const documents=DATA.source_catalog?.documents||[];
+ const byId=documents.find(d=>d.id===value);if(byId)return byId;
+ const exact=documents.filter(d=>(d.aliases||[]).some(a=>sourceAddress(a)===address));
+ if(exact.length===1)return exact[0];
+ if(exact.length>1)return {ambiguous:true};
+ const basename=address.split('/').filter(Boolean).pop()||'';
+ if(!basename)return null;
+ const fallback=documents.filter(d=>(d.aliases||[]).some(a=>(sourceAddress(a).split('/').filter(Boolean).pop()||'')===basename));
+ return fallback.length===1?fallback[0]:fallback.length>1?{ambiguous:true}:null;
 }
 async function fetchSourcePage(documentId,page,query=''){
  const key=JSON.stringify([documentId,page,query.slice(0,4000)]);
@@ -1691,7 +1699,9 @@ document.addEventListener('click',e=>{
  const sourceStep=e.target.closest('[data-source-step],[data-source-return]');if(sourceStep&&sourceViewerActive){e.preventDefault();e.stopImmediatePropagation();const v=sourceViewerActive,page=sourceStep.hasAttribute('data-source-return')?v.linkedPage:Number(v.result.page)+(sourceStep.dataset.sourceStep==='+'?1:-1);delete state.sourcePageView[v.topic];openExactSource(v.document,page,v.query,v.node,v.linkedPage);return}
  if(activeRef.startsWith('passage:')&&ankiContext?.bookMatches){const tab=e.target.closest('[data-book-page],[data-book-step]');if(tab){e.preventDefault();e.stopImmediatePropagation();const name=tab.dataset.bookName||referenceBook,ref=DATA.book_pages.keywords[activeRef][name],at=ref.pages.indexOf(getBookPageView(activeRef,name,ref.pages)),page=tab.dataset.bookPage?Number(tab.dataset.bookPage):ref.pages[Math.max(0,Math.min(ref.pages.length-1,at+(tab.dataset.bookStep==='+'?1:-1)))];openSearchedBook(name,null,page);return}}
  const link=e.target.closest('#guide a[href],#side-content a[href]');if(!link||!/\.pdf(?:#|$|\?)/i.test(link.getAttribute('href')||'')||/Open full PDF|Open original PDF|Download/i.test(link.textContent))return;
- const doc=sourceDocument(link.getAttribute('href'));if(!doc)return;
+ const doc=sourceDocument(link.getAttribute('href'));
+ if(doc?.ambiguous){e.preventDefault();e.stopImmediatePropagation();showSidePanel('Source link is ambiguous','<p>This filename matches more than one local PDF, so the guide cannot safely choose a source page.</p><p>Use a citation that includes the specific lecture or a cataloged source link.</p>',{anchor:link});return}
+ if(!doc)return;
  const page=Number((link.getAttribute('href').match(/#page=(\d+)/)||[])[1]||1);e.preventDefault();e.stopImmediatePropagation();openExactSource(doc,page,sourceQuery(link),link);
 },true);
 

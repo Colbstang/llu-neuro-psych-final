@@ -1,0 +1,1838 @@
+{
+  "schema": "llu-neuro-source-package-manifest-v1",
+  "description": "Metadata-only manifest for a local course-source PDF package. No PDF content or absolute source paths.",
+  "summary": {
+    "unique_pdfs": 177,
+    "total_pdf_bytes": 1893218262,
+    "categories": {
+      "book": 2,
+      "lecture": 147,
+      "notes": 21,
+      "other": 5,
+      "review": 2
+    }
+  },
+  "files": [
+    {
+      "id": "b23156713350.pdf",
+      "title": "Neuropathology of Neurodegenerative Disease Slides",
+      "category": "lecture",
+      "filename": "Neuropathology-of-Neurodegenerative-Disease-Slides--030609ca.pdf",
+      "package_path": "pdfs/lecture/Neuropathology-of-Neurodegenerative-Disease-Slides--030609ca.pdf",
+      "bytes": 3739419,
+      "sha256": "030609cafd98f764c242e1a92744b24313faa25e4aedaced6177567148a7061e",
+      "page_count": 32
+    },
+    {
+      "id": "e82a255f1ce4.pdf",
+      "title": "Anxiety and OCD: fear/anxiety and disorder definitions",
+      "category": "lecture",
+      "filename": "LLUSM-Anxiety-4-1--033c63b1.pdf",
+      "package_path": "pdfs/lecture/LLUSM-Anxiety-4-1--033c63b1.pdf",
+      "bytes": 30492253,
+      "sha256": "033c63b1ebe3f02b496efe60fd676265accb431f8860c61ce13db7eb5361495f",
+      "page_count": 97
+    },
+    {
+      "id": "84377b52630e.pdf",
+      "title": "NPS 94 Dementia lecture",
+      "category": "lecture",
+      "filename": "Dementia_lecture_Soriano--0501a7ac.pdf",
+      "package_path": "pdfs/lecture/Dementia_lecture_Soriano--0501a7ac.pdf",
+      "bytes": 3168499,
+      "sha256": "0501a7ac7061534e032b15c250d472b510111335a5a37dfddc41571530412c53",
+      "page_count": 44
+    },
+    {
+      "id": "480fa2f02ed3.pdf",
+      "title": "Epilepsy 2026 handout",
+      "category": "lecture",
+      "filename": "Epilepsy-2026-handout--079562a0.pdf",
+      "package_path": "pdfs/lecture/Epilepsy-2026-handout--079562a0.pdf",
+      "bytes": 4459494,
+      "sha256": "079562a04c7e8ca941f874587f8c8eeaccb24aaff536929235941f67c720401b",
+      "page_count": 12
+    },
+    {
+      "id": "69315711b604.pdf",
+      "title": "Neurotransmitters 1: synthesis, release, receptors, and termination",
+      "category": "lecture",
+      "filename": "Neurotransmitters_1_Slides--093c6907.pdf",
+      "package_path": "pdfs/lecture/Neurotransmitters_1_Slides--093c6907.pdf",
+      "bytes": 6260667,
+      "sha256": "093c6907005bb42adb12f4dffcb3e601416710be1285ebdaabba9b22b348c037",
+      "page_count": 43
+    },
+    {
+      "id": "d6d409f46924.pdf",
+      "title": "EMG 2026.pdf",
+      "category": "lecture",
+      "filename": "EMG-2026--0bf70751.pdf",
+      "package_path": "pdfs/lecture/EMG-2026--0bf70751.pdf",
+      "bytes": 2068903,
+      "sha256": "0bf70751b3c333e4e25ef1e3a60d59b847686d8d708cb60defa6540f37c648b3",
+      "page_count": 16
+    },
+    {
+      "id": "local-0d854c0f7056.pdf",
+      "title": "pdfMS2 Pharmacology Anesthesia Meds  -  Read-Only.pdf",
+      "category": "lecture",
+      "filename": "pdfMS2-Pharmacology-Anesthesia-Meds---Read-Only--0d854c0f.pdf",
+      "package_path": "pdfs/lecture/pdfMS2-Pharmacology-Anesthesia-Meds---Read-Only--0d854c0f.pdf",
+      "bytes": 799821,
+      "sha256": "0d854c0f7056afc635501a001d327348c3f670d98530a47356dc961bff0eeae1",
+      "page_count": 12
+    },
+    {
+      "id": "f5f61d35ec1c.pdf",
+      "title": "Developmental Neuropathology Lecture Handout",
+      "category": "lecture",
+      "filename": "Developmental-Neuropathology-Lecture-Handout--0de0aa57.pdf",
+      "package_path": "pdfs/lecture/Developmental-Neuropathology-Lecture-Handout--0de0aa57.pdf",
+      "bytes": 694578,
+      "sha256": "0de0aa57ec631fd04201e23c33385198e88e44e77875406cb99554bcf85ba141",
+      "page_count": 9
+    },
+    {
+      "id": "6906de0de3fe.pdf",
+      "title": "Cortical Neurology 2026 PDF",
+      "category": "lecture",
+      "filename": "Cortical-Neurology-2026-PDF--112f2fdc.pdf",
+      "package_path": "pdfs/lecture/Cortical-Neurology-2026-PDF--112f2fdc.pdf",
+      "bytes": 5325350,
+      "sha256": "112f2fdcf85fb0da28b8b72f400c8cbb46c0ca4b7376b7e3566ff5afda87c2d6",
+      "page_count": 72
+    },
+    {
+      "id": "1c1037c5eb85.pdf",
+      "title": "Depressive Symptoms before and after Treatment of Obstructive Sleep Apnea in Men and Women",
+      "category": "lecture",
+      "filename": "Depressive-Symptoms-before-and-after-Treatment-of-Obstructive-Sleep-Apnea-in-Men-and-Women--15d86d9e.pdf",
+      "package_path": "pdfs/lecture/Depressive-Symptoms-before-and-after-Treatment-of-Obstructive-Sleep-Apnea-in-Men-and-Women--15d86d9e.pdf",
+      "bytes": 385130,
+      "sha256": "15d86d9e16d1df432d244ff6448cbb295163d919baf534d09292c0910131faef",
+      "page_count": 10
+    },
+    {
+      "id": "ed3445b25582.pdf",
+      "title": "All Microbiology Summary August 2026",
+      "category": "lecture",
+      "filename": "All-Microbiology-Summary-August-2026--1834ea6d.pdf",
+      "package_path": "pdfs/lecture/All-Microbiology-Summary-August-2026--1834ea6d.pdf",
+      "bytes": 15827233,
+      "sha256": "1834ea6d21ab2064384d60f5c51e9b9366f86ea1e8b59077b251421c4ed14cc2",
+      "page_count": 56
+    },
+    {
+      "id": "8d67c6cd80bd.pdf",
+      "title": "Headache 2026.pdf",
+      "category": "lecture",
+      "filename": "Headache-2026--18c940dc.pdf",
+      "package_path": "pdfs/lecture/Headache-2026--18c940dc.pdf",
+      "bytes": 3460226,
+      "sha256": "18c940dc0f587e1b57a13d56f2bf40f5abe76ff95715ecf6463919ca56af7932",
+      "page_count": 51
+    },
+    {
+      "id": "First Aid",
+      "title": "First Aid USMLE Step 1 (2024)",
+      "category": "book",
+      "filename": "First-Aid-USMLE-Step-1-2024--1bc14e6c.pdf",
+      "package_path": "pdfs/book/First-Aid-USMLE-Step-1-2024--1bc14e6c.pdf",
+      "bytes": 281471602,
+      "sha256": "1bc14e6c05d444446cc48bad046c2b4d8759c1d4c2543543824c62b471e6a9ed",
+      "page_count": 866
+    },
+    {
+      "id": "320f584db533.pdf",
+      "title": "NPS 36 Coping Defense Mechanisms",
+      "category": "notes",
+      "filename": "Coping-notes--1bfec02a.pdf",
+      "package_path": "pdfs/notes/Coping-notes--1bfec02a.pdf",
+      "bytes": 532094,
+      "sha256": "1bfec02aea2b701a6fd189295cf5e4080e75592c39777d67fe7445919384e893",
+      "page_count": 8
+    },
+    {
+      "id": "a8ab12b7ef47.pdf",
+      "title": "NPS25_Substance_Use_Disorders_1_Notes",
+      "category": "notes",
+      "filename": "NPS25_Substance_Use_Disorders_1_Notes--1ce461a3.pdf",
+      "package_path": "pdfs/notes/NPS25_Substance_Use_Disorders_1_Notes--1ce461a3.pdf",
+      "bytes": 7152756,
+      "sha256": "1ce461a31cf33fb00f946d2701148dbd6fbad08da3a7601cb75457c471ea743a",
+      "page_count": 13
+    },
+    {
+      "id": "89e3d9fdd65a.pdf",
+      "title": "Multiple sclerosis 2026",
+      "category": "lecture",
+      "filename": "Multiple-sclerosis-2026--1d7d5606.pdf",
+      "package_path": "pdfs/lecture/Multiple-sclerosis-2026--1d7d5606.pdf",
+      "bytes": 2731180,
+      "sha256": "1d7d560668fde7f1f88fc6126e65df897ff2d80ce62677bb7d8bf50df923360e",
+      "page_count": 54
+    },
+    {
+      "id": "0108ad32ec1a.pdf",
+      "title": "Coma and Encephalopathy 2026 handout.pdf",
+      "category": "lecture",
+      "filename": "Coma-and-Encephalopathy-2026-handout--1e60ce83.pdf",
+      "package_path": "pdfs/lecture/Coma-and-Encephalopathy-2026-handout--1e60ce83.pdf",
+      "bytes": 5983162,
+      "sha256": "1e60ce835582f995f81e232b6f02e452a986a81669028645a0b674f618d02f52",
+      "page_count": 14
+    },
+    {
+      "id": "142f47488ce2.pdf",
+      "title": "71f2477c-c220-4c5a-bf44-1045e510af58 Substance Use Disorder 3",
+      "category": "lecture",
+      "filename": "71f2477c-c220-4c5a-bf44-1045e510af58_Substance_Use_Disorder_3--22447822.pdf",
+      "package_path": "pdfs/lecture/71f2477c-c220-4c5a-bf44-1045e510af58_Substance_Use_Disorder_3--22447822.pdf",
+      "bytes": 5053427,
+      "sha256": "22447822ee9485ae2167ac7bd73d3f95d0aa072bc284ac4ab0bd107f0b8ca9da",
+      "page_count": 28
+    },
+    {
+      "id": "14ed9caf2fe6.pdf",
+      "title": "Cortical neurology 2026 Handout",
+      "category": "lecture",
+      "filename": "Cortical-neurology-2026-Handout--232e3b3c.pdf",
+      "package_path": "pdfs/lecture/Cortical-neurology-2026-Handout--232e3b3c.pdf",
+      "bytes": 7574805,
+      "sha256": "232e3b3ccabb8b16bccdfa4ac1d3741b395161f402b5d95373eefdc3deefd81b",
+      "page_count": 16
+    },
+    {
+      "id": "2e2f2f251345.pdf",
+      "title": "Delirium/Medical Conditions: diagnostic criteria, differential, pathogenesis, and prevention",
+      "category": "lecture",
+      "filename": "2026-Delirium-and-Medical-20260924--23be3616.pdf",
+      "package_path": "pdfs/lecture/2026-Delirium-and-Medical-20260924--23be3616.pdf",
+      "bytes": 4465343,
+      "sha256": "23be36168fc4c61de124edb325eccf4412ad2006da4cd593d2fb87537b83ef17",
+      "page_count": 36
+    },
+    {
+      "id": "921e3218c85b.pdf",
+      "title": "Neurotransmitters 2: transmitter termination, dopamine pathways, GABA, ACh, and glutamate",
+      "category": "lecture",
+      "filename": "Neurotransmitters_2_Slides--249343ff.pdf",
+      "package_path": "pdfs/lecture/Neurotransmitters_2_Slides--249343ff.pdf",
+      "bytes": 8682889,
+      "sha256": "249343ff322d5a3a969d807e72fc1f6dda90a1043cb82f9f787dfdfaa88638f2",
+      "page_count": 66
+    },
+    {
+      "id": "d608f246dd81.pdf",
+      "title": "Brain Tumors 1 Lecture Handout",
+      "category": "lecture",
+      "filename": "Brain-Tumors-1-Lecture-Handout--2575b1f1.pdf",
+      "package_path": "pdfs/lecture/Brain-Tumors-1-Lecture-Handout--2575b1f1.pdf",
+      "bytes": 1558964,
+      "sha256": "2575b1f1e8f03d32f8dc782b270d2fc130770c738b2be33ace0f6d6163dfb260",
+      "page_count": 11
+    },
+    {
+      "id": "2ddde05a9db3.pdf",
+      "title": "NPS27 Brain Stem 1 Medulla Handout.pdf",
+      "category": "lecture",
+      "filename": "Medulla_Handout--263b54ec.pdf",
+      "package_path": "pdfs/lecture/Medulla_Handout--263b54ec.pdf",
+      "bytes": 22067609,
+      "sha256": "263b54ecfb1ab5964f18145d60ab47d192a03b5dcab8b8a54d8e83f69742c288",
+      "page_count": 18
+    },
+    {
+      "id": "62f7a1d99230.pdf",
+      "title": "Posterior eye slides 2026-1",
+      "category": "lecture",
+      "filename": "Posterior-eye-slides-2026-1--27c4b8c0.pdf",
+      "package_path": "pdfs/lecture/Posterior-eye-slides-2026-1--27c4b8c0.pdf",
+      "bytes": 11592301,
+      "sha256": "27c4b8c0ce5efc59ea23b9aee89cd740ffad9d58876300d83d8f3a1e28bf3673",
+      "page_count": 90
+    },
+    {
+      "id": "c39abe0798c6.pdf",
+      "title": "NPS 32 Stress and Suicide",
+      "category": "lecture",
+      "filename": "ae11881c-1273-4ee7-8f02-dfa0497e7646_Stress_and_Suicide--29266a85.pdf",
+      "package_path": "pdfs/lecture/ae11881c-1273-4ee7-8f02-dfa0497e7646_Stress_and_Suicide--29266a85.pdf",
+      "bytes": 6834819,
+      "sha256": "29266a85f0fc9ae61ebf0242b6f73ce61d5b6212e9cd4f70bffbc8eb126ff849",
+      "page_count": 38
+    },
+    {
+      "id": "dc568e155c0c.pdf",
+      "title": "Ear and Eye Infections Questions",
+      "category": "lecture",
+      "filename": "Ear-and-Eye-Infections-Questions--2a5b500b.pdf",
+      "package_path": "pdfs/lecture/Ear-and-Eye-Infections-Questions--2a5b500b.pdf",
+      "bytes": 303205,
+      "sha256": "2a5b500b941ce5cc5edc09ba4b1bc6a4733df9f13ede93342688ee0758f4bbc9",
+      "page_count": 3
+    },
+    {
+      "id": "02eb59a1bc0e.pdf",
+      "title": "Panopto_Histology_of_Eye_and_Ear_Parts_1-2_Slides",
+      "category": "lecture",
+      "filename": "Panopto_Histology_of_Eye_and_Ear_Parts_1-2_Slides--2aa3531c.pdf",
+      "package_path": "pdfs/lecture/Panopto_Histology_of_Eye_and_Ear_Parts_1-2_Slides--2aa3531c.pdf",
+      "bytes": 14396699,
+      "sha256": "2aa3531c799f7cf7f3efa139475348b8d94675bc885965defc41ea85f9ead158",
+      "page_count": 60
+    },
+    {
+      "id": "e950d16f2943.pdf",
+      "title": "NPS28 Brain Stem 2 Pons Handout.pdf",
+      "category": "lecture",
+      "filename": "Pons_Handout--2ab0ebfa.pdf",
+      "package_path": "pdfs/lecture/Pons_Handout--2ab0ebfa.pdf",
+      "bytes": 28433649,
+      "sha256": "2ab0ebfa04dd32b558925d41bf449cf652090f9dceb009676ee291e22bb04fea",
+      "page_count": 23
+    },
+    {
+      "id": "506d4b4766e1.pdf",
+      "title": "Coping and Defense Mechanisms: conscious coping and unconscious defenses",
+      "category": "lecture",
+      "filename": "LLUSM-Coping-Skills-Defense-Mechanisms-4--2ac4d038.pdf",
+      "package_path": "pdfs/lecture/LLUSM-Coping-Skills-Defense-Mechanisms-4--2ac4d038.pdf",
+      "bytes": 1176995,
+      "sha256": "2ac4d0389c84513fc95f9f78d0f8a75756220bf40e78528915a29fc826e9e8d2",
+      "page_count": 31
+    },
+    {
+      "id": "2a540bc39f18.pdf",
+      "title": "Neuro Board Review Sept 2026",
+      "category": "review",
+      "filename": "Neuro-Board-Review-Sept-2026--2f53def4.pdf",
+      "package_path": "pdfs/review/Neuro-Board-Review-Sept-2026--2f53def4.pdf",
+      "bytes": 44320761,
+      "sha256": "2f53def4fde36975ec30a6734220114c102ce45191d0dfed3b83909ad2b1ab90",
+      "page_count": 251
+    },
+    {
+      "id": "ba1e48d555bb.pdf",
+      "title": "Posterior Eye Handout 2026.pdf",
+      "category": "lecture",
+      "filename": "Posterior-Eye_Handout-2026-2--318a0788.pdf",
+      "package_path": "pdfs/lecture/Posterior-Eye_Handout-2026-2--318a0788.pdf",
+      "bytes": 10513839,
+      "sha256": "318a07883a31dff30547beca6f52b51a3ae48324ace4290631a847a561f45532",
+      "page_count": 16
+    },
+    {
+      "id": "bd4f14bdb8b9.pdf",
+      "title": "NPS 33 Developmental Life Cycle 1",
+      "category": "lecture",
+      "filename": "11c2a399-9c45-4055-96ed-7c32551ba966-2FLLUSM_-_CHILDHOOD_DEVELOPMENT_-_Dr._martinez_-1--334767b5.pdf",
+      "package_path": "pdfs/lecture/11c2a399-9c45-4055-96ed-7c32551ba966-2FLLUSM_-_CHILDHOOD_DEVELOPMENT_-_Dr._martinez_-1--334767b5.pdf",
+      "bytes": 5738750,
+      "sha256": "334767b5ccb5b931251e7ec8cfc1782fef11002cc34d4dc0914e1d85756b0c0c",
+      "page_count": 34
+    },
+    {
+      "id": "ed961e82c76b.pdf",
+      "title": "CNS Vasculature",
+      "category": "lecture",
+      "filename": "CNS_Vasculature_Slides--33a2efd0.pdf",
+      "package_path": "pdfs/lecture/CNS_Vasculature_Slides--33a2efd0.pdf",
+      "bytes": 4250845,
+      "sha256": "33a2efd0e46c8712f88e916c23089d4d3448a83bd9eaf36805dd9a8957fa0efd",
+      "page_count": 49
+    },
+    {
+      "id": "local-34d01fc350b9.pdf",
+      "title": "CNS Infections - Encephalitis Slides.pdf",
+      "category": "lecture",
+      "filename": "CNS-Infections---Encephalitis-Slides--34d01fc3.pdf",
+      "package_path": "pdfs/lecture/CNS-Infections---Encephalitis-Slides--34d01fc3.pdf",
+      "bytes": 39428332,
+      "sha256": "34d01fc350b93d36528999b70827899073dc3f14ac8a9f7c9e76e35003a7eeb0",
+      "page_count": 55
+    },
+    {
+      "id": "286b80af34a9.pdf",
+      "title": "Dizziness and Hearing Loss 2026 handout",
+      "category": "lecture",
+      "filename": "Dizziness-and-Hearing-Loss-2026-handout--34f6e4a3.pdf",
+      "package_path": "pdfs/lecture/Dizziness-and-Hearing-Loss-2026-handout--34f6e4a3.pdf",
+      "bytes": 5180332,
+      "sha256": "34f6e4a3803f9b3d9ab1a169ad0b32142726232cfc392db4f0f703928918d2e6",
+      "page_count": 16
+    },
+    {
+      "id": "1dabe3198464.pdf",
+      "title": "NPS20-24_Spinal_Cord_1_2_Shared_Handout",
+      "category": "lecture",
+      "filename": "Spinal_cord_Handout--3748c49b.pdf",
+      "package_path": "pdfs/lecture/Spinal_cord_Handout--3748c49b.pdf",
+      "bytes": 14531473,
+      "sha256": "3748c49b68eb0fd2a430a063919b97968223e4a94dcf546b2ec0d785e018108b",
+      "page_count": 22
+    },
+    {
+      "id": "c679bb7a793d.pdf",
+      "title": "NPS 66 Lifestyle Nutrition TBL",
+      "category": "lecture",
+      "filename": "a692b696-0ab5-4571-8293-c7787463698e_LifestyleNutrition_TBL_-2hrs--37d5a491.pdf",
+      "package_path": "pdfs/lecture/a692b696-0ab5-4571-8293-c7787463698e_LifestyleNutrition_TBL_-2hrs--37d5a491.pdf",
+      "bytes": 1505827,
+      "sha256": "37d5a491153de92b9b66160806897a4345a2c4bf6688e8d01fd2cae55ab02fd9",
+      "page_count": 7
+    },
+    {
+      "id": "e44e24757d9c.pdf",
+      "title": "Brain Stem Midbrain 2026 Handout",
+      "category": "lecture",
+      "filename": "Brain-Stem-Midbrain-2026-Handout--38d4effa.pdf",
+      "package_path": "pdfs/lecture/Brain-Stem-Midbrain-2026-Handout--38d4effa.pdf",
+      "bytes": 22184124,
+      "sha256": "38d4effa8d98802a32ba18cf7d1514f9c54c9f47434505a88a63c6af385efcee",
+      "page_count": 13
+    },
+    {
+      "id": "015e38ef693b.pdf",
+      "title": "Pathology of CSF and ICP - Handout",
+      "category": "lecture",
+      "filename": "Pathology-of-CSF-and-ICP---Handout--3908aefe.pdf",
+      "package_path": "pdfs/lecture/Pathology-of-CSF-and-ICP---Handout--3908aefe.pdf",
+      "bytes": 841143,
+      "sha256": "3908aefedd871e3195d3590721f48621975dd7d7c0faf997fe49d91171c31225",
+      "page_count": 9
+    },
+    {
+      "id": "69e3bb2b70cb.pdf",
+      "title": "Spinal Cord Disorders 2026.pdf",
+      "category": "lecture",
+      "filename": "Spinal-Cord-Disorders-2026--39219b05.pdf",
+      "package_path": "pdfs/lecture/Spinal-Cord-Disorders-2026--39219b05.pdf",
+      "bytes": 5266044,
+      "sha256": "39219b05cfd3b38941b7a6e9cc47c6019c6d3dac7046531054aad3452037fddd",
+      "page_count": 65
+    },
+    {
+      "id": "efb23b99ce55.pdf",
+      "title": "NPS17 Medications 2",
+      "category": "notes",
+      "filename": "NPS17_Medications_2_Notes--3987c8a3.pdf",
+      "package_path": "pdfs/notes/NPS17_Medications_2_Notes--3987c8a3.pdf",
+      "bytes": 7476085,
+      "sha256": "3987c8a37a955d052c50ebebc6d4d05587d8e0b35380dde38d56e181620a1fa9",
+      "page_count": 27
+    },
+    {
+      "id": "c096094e632f.pdf",
+      "title": "CNS Infections - Brain Abscesses and Myelitis Slides",
+      "category": "lecture",
+      "filename": "CNS-Infections---Brain-Abscesses-and-Myelitis-Slides--39b3f8c1.pdf",
+      "package_path": "pdfs/lecture/CNS-Infections---Brain-Abscesses-and-Myelitis-Slides--39b3f8c1.pdf",
+      "bytes": 39385606,
+      "sha256": "39b3f8c1fd3931aba3de58e449618af299cd340f246eba2fcbfce019776717ae",
+      "page_count": 61
+    },
+    {
+      "id": "2f0a006c3852.pdf",
+      "title": "Mood Disorders 2: treatments and neurobiology",
+      "category": "lecture",
+      "filename": "2026_Mood_2_20260911-2--3c34326c.pdf",
+      "package_path": "pdfs/lecture/2026_Mood_2_20260911-2--3c34326c.pdf",
+      "bytes": 5129462,
+      "sha256": "3c34326c90d0fc2fb699f465180c83f4a604eadf3142c988067c3dd1760296cb",
+      "page_count": 36
+    },
+    {
+      "id": "9ec918cc1081.pdf",
+      "title": "NPS27 Brain Stem 1 Medulla Slides.pdf",
+      "category": "lecture",
+      "filename": "NPS27_Brain_Stem_1_Medulla_Slides--3d94d2c8.pdf",
+      "package_path": "pdfs/lecture/NPS27_Brain_Stem_1_Medulla_Slides--3d94d2c8.pdf",
+      "bytes": 3344376,
+      "sha256": "3d94d2c8ec0c9c0fe2f952a823173a9cfea0ca78bad157859f51a89a071967e0",
+      "page_count": 31
+    },
+    {
+      "id": "46347d32d410.pdf",
+      "title": "Anticonvulsants 2026 handout.pdf",
+      "category": "lecture",
+      "filename": "Anticonvulsants-2026-handout--42b7dce5.pdf",
+      "package_path": "pdfs/lecture/Anticonvulsants-2026-handout--42b7dce5.pdf",
+      "bytes": 6639295,
+      "sha256": "42b7dce53c0e180417a729f3ac6453b08127423c62476e90325a3d6e7e9ece8c",
+      "page_count": 11
+    },
+    {
+      "id": "a1cecbbafddc.pdf",
+      "title": "Headache 2026 handout",
+      "category": "lecture",
+      "filename": "Headache-2026-handout--4544e61f.pdf",
+      "package_path": "pdfs/lecture/Headache-2026-handout--4544e61f.pdf",
+      "bytes": 4594773,
+      "sha256": "4544e61f2d6518eafa1b8cf758cbc5d829d0e5201aaec81eead0f4fcb8bee44e",
+      "page_count": 15
+    },
+    {
+      "id": "508a5766ba9d.pdf",
+      "title": "Practice Questions_Eye & Ear Diseases_CO2029",
+      "category": "lecture",
+      "filename": "Practice-Questions_Eye-Ear-Diseases_CO2029--46b99ae9.pdf",
+      "package_path": "pdfs/lecture/Practice-Questions_Eye-Ear-Diseases_CO2029--46b99ae9.pdf",
+      "bytes": 492993,
+      "sha256": "46b99ae9c0b33f5aa902715ac96f0b048229bc70551da8593b85c58b16fd7893",
+      "page_count": 13
+    },
+    {
+      "id": "local-46d8752d9254.pdf",
+      "title": "319df5a0-9969-412f-8ae3-469c2ec0b2ad_Psychotic_Disorders_2.pdf",
+      "category": "other",
+      "filename": "319df5a0-9969-412f-8ae3-469c2ec0b2ad_Psychotic_Disorders_2--46d8752d.pdf",
+      "package_path": "pdfs/other/319df5a0-9969-412f-8ae3-469c2ec0b2ad_Psychotic_Disorders_2--46d8752d.pdf",
+      "bytes": 21174183,
+      "sha256": "46d8752d92540755b1daf69e1e977726b91999c55ca1f8db31209c791b65ef3c",
+      "page_count": 29
+    },
+    {
+      "id": "1b87572a8aa9.pdf",
+      "title": "Charles Casassa, MD",
+      "category": "lecture",
+      "filename": "TBL_Vision_Anterior_Eye_Learning_Objectives--477a5d64.pdf",
+      "package_path": "pdfs/lecture/TBL_Vision_Anterior_Eye_Learning_Objectives--477a5d64.pdf",
+      "bytes": 43951,
+      "sha256": "477a5d64ebc230376cb778bde5cb55b847ae74b15d46946762097dcdcea3567d",
+      "page_count": 1
+    },
+    {
+      "id": "e685eeecb0f2.pdf",
+      "title": "General Anesthetics: objectives including stages, BGPC and MAC",
+      "category": "lecture",
+      "filename": "Fall-2026_General-Anesthetics-Lecture_FINAL_with-select-questions--49469211.pdf",
+      "package_path": "pdfs/lecture/Fall-2026_General-Anesthetics-Lecture_FINAL_with-select-questions--49469211.pdf",
+      "bytes": 2140165,
+      "sha256": "49469211fed04e6ef6b13ea419374c708c6aa5087717c836f1092dfc81ebc738",
+      "page_count": 44
+    },
+    {
+      "id": "6c322f0bf6d7.pdf",
+      "title": "NPS 97 Eating Disorders lecture",
+      "category": "lecture",
+      "filename": "Eating-Disorders.pptx-3--4ac554d1.pdf",
+      "package_path": "pdfs/lecture/Eating-Disorders.pptx-3--4ac554d1.pdf",
+      "bytes": 43781779,
+      "sha256": "4ac554d1a5bbf862e4cc3f43e77ffa8463d0e6ef69724fc4efaa0bd1be2d0f71",
+      "page_count": 66
+    },
+    {
+      "id": "91e262012783.pdf",
+      "title": "Neurology_Exam_and_Pathways_1-5_Slides",
+      "category": "lecture",
+      "filename": "Neurology_Exam_and_Pathways_1-5_Slides--4b0461f8.pdf",
+      "package_path": "pdfs/lecture/Neurology_Exam_and_Pathways_1-5_Slides--4b0461f8.pdf",
+      "bytes": 9508165,
+      "sha256": "4b0461f8d1fa91c68523e4ea6a38282de428afbbd18330f3981319a8811d26af",
+      "page_count": 144
+    },
+    {
+      "id": "70c58cbabe1a.pdf",
+      "title": "CNS Infections - Brain Abscesses and Myelitis Notes",
+      "category": "notes",
+      "filename": "CNS-Infections---Brain-Abscesses-and-Myelitis-Notes--4bd58989.pdf",
+      "package_path": "pdfs/notes/CNS-Infections---Brain-Abscesses-and-Myelitis-Notes--4bd58989.pdf",
+      "bytes": 9361461,
+      "sha256": "4bd58989d437ae421f842990dc67f5935e18792dd7216a6532e3fce3da1650aa",
+      "page_count": 11
+    },
+    {
+      "id": "ef0e420846d7.pdf",
+      "title": "Muscle Disease 2026.pdf",
+      "category": "lecture",
+      "filename": "Muscle-Disease-2026--4d171b19.pdf",
+      "package_path": "pdfs/lecture/Muscle-Disease-2026--4d171b19.pdf",
+      "bytes": 2101470,
+      "sha256": "4d171b19fd4728f43892cab922fb0ee7cc5701a3b4b87e2cb397a55d1eacb3c7",
+      "page_count": 44
+    },
+    {
+      "id": "a4dafebd4bb0.pdf",
+      "title": "NPS26 Substance Use Disorders 2 Notes",
+      "category": "notes",
+      "filename": "NPS26_Substance_Use_Disorders_2_Notes--4dd1d2e4.pdf",
+      "package_path": "pdfs/notes/NPS26_Substance_Use_Disorders_2_Notes--4dd1d2e4.pdf",
+      "bytes": 17501861,
+      "sha256": "4dd1d2e4f1a845c92d76b080bd766a284378a4b8ac870b908f0c7d15e524366c",
+      "page_count": 31
+    },
+    {
+      "id": "9f0a67527198.pdf",
+      "title": "Coma 2026.pdf",
+      "category": "lecture",
+      "filename": "Coma-2026--4ff88c05.pdf",
+      "package_path": "pdfs/lecture/Coma-2026--4ff88c05.pdf",
+      "bytes": 4009897,
+      "sha256": "4ff88c0535c131d9d1bf270ab732d7462ff323f2ad4335445d8e1ce26d46ade4",
+      "page_count": 56
+    },
+    {
+      "id": "8fb388ecc09b.pdf",
+      "title": "Neurotransmitters_1_Notes",
+      "category": "notes",
+      "filename": "Neurotransmitters_1_Notes--5016b455.pdf",
+      "package_path": "pdfs/notes/Neurotransmitters_1_Notes--5016b455.pdf",
+      "bytes": 13054955,
+      "sha256": "5016b4553a461f0245849633f1710f9c4f88d843bd4c00aa1c85f48e314f8999",
+      "page_count": 33
+    },
+    {
+      "id": "15d97c9d396f.pdf",
+      "title": "Notes Eye and Ear Diseases.pdf",
+      "category": "notes",
+      "filename": "Notes_Eye-Ear-Diseases_CO2029--53337784.pdf",
+      "package_path": "pdfs/notes/Notes_Eye-Ear-Diseases_CO2029--53337784.pdf",
+      "bytes": 1609917,
+      "sha256": "53337784898fa463866763d44282a4aca73acbcc8394860a0f2eb6b2ed83284c",
+      "page_count": 22
+    },
+    {
+      "id": "local-54ba605ca3fd.pdf",
+      "title": "PNS Infections and Meningitis Slides.pdf",
+      "category": "lecture",
+      "filename": "PNS-Infections-and-Meningitis-Slides--54ba605c.pdf",
+      "package_path": "pdfs/lecture/PNS-Infections-and-Meningitis-Slides--54ba605c.pdf",
+      "bytes": 47470767,
+      "sha256": "54ba605ca3fdf19133f13063989438516c3aa5f17bd0c8f4c827c248de6e655d",
+      "page_count": 70
+    },
+    {
+      "id": "6298839ed4cd.pdf",
+      "title": "Introduction to Psychiatry: diagnostic framework and phenomenology",
+      "category": "lecture",
+      "filename": "Introduction_to_Psychiatry_Slides--57626b62.pdf",
+      "package_path": "pdfs/lecture/Introduction_to_Psychiatry_Slides--57626b62.pdf",
+      "bytes": 21765837,
+      "sha256": "57626b62f34a6ebe29afbd31b290f5db68923e2c75df2c18d080f671759388f4",
+      "page_count": 44
+    },
+    {
+      "id": "068b3bbd91aa.pdf",
+      "title": "Brain Dissection Labs",
+      "category": "lecture",
+      "filename": "Brad_Cole_Week_1_Lecture_Learning_Objectives--579ab653.pdf",
+      "package_path": "pdfs/lecture/Brad_Cole_Week_1_Lecture_Learning_Objectives--579ab653.pdf",
+      "bytes": 106607,
+      "sha256": "579ab6536ebe717e6752198ea149580ceba463d8a5c205089312619a45d7044d",
+      "page_count": 3
+    },
+    {
+      "id": "443dbd0a76fd.pdf",
+      "title": "NPS20-24_Spinal_Cord_1_2_Shared_Slides",
+      "category": "lecture",
+      "filename": "NPS20-24_Spinal_Cord_1_2_Shared_Slides--5b650e7b.pdf",
+      "package_path": "pdfs/lecture/NPS20-24_Spinal_Cord_1_2_Shared_Slides--5b650e7b.pdf",
+      "bytes": 5405079,
+      "sha256": "5b650e7b8ce66c7292a66378c87e200aa7082f2a413ccdc9fa68a702b426b97a",
+      "page_count": 53
+    },
+    {
+      "id": "f2a980d344b6.pdf",
+      "title": "Brain Tumors 1 Lecture Slides",
+      "category": "lecture",
+      "filename": "Brain-Tumors-1-Lecture-Slides--5c02cb03.pdf",
+      "package_path": "pdfs/lecture/Brain-Tumors-1-Lecture-Slides--5c02cb03.pdf",
+      "bytes": 3841853,
+      "sha256": "5c02cb033df4d0126624097724989b903c1b5ba2115be4e627730569c5d0280f",
+      "page_count": 44
+    },
+    {
+      "id": "8283956dd112.pdf",
+      "title": "The Cerebellum 2026 Handout.pdf",
+      "category": "lecture",
+      "filename": "The-Cerebellum-2026-Handout--5fc4138b.pdf",
+      "package_path": "pdfs/lecture/The-Cerebellum-2026-Handout--5fc4138b.pdf",
+      "bytes": 5682632,
+      "sha256": "5fc4138b4ca45f98b2c77df253407b6b9d6fbc2ed968558f616f3f7a6c473374",
+      "page_count": 9
+    },
+    {
+      "id": "10bcedaf2203.pdf",
+      "title": "SUD 1, substance-induced syndromes",
+      "category": "lecture",
+      "filename": "NPS25_Substance_Use_Disorders_1_Slides--61b7722c.pdf",
+      "package_path": "pdfs/lecture/NPS25_Substance_Use_Disorders_1_Slides--61b7722c.pdf",
+      "bytes": 3097674,
+      "sha256": "61b7722ce7db68cd2c600aa48bf38f82bba62af573c8e5e8782eb2a6af1387d6",
+      "page_count": 40
+    },
+    {
+      "id": "7b304fe8fffa.pdf",
+      "title": "Peripheral Neuropathy — distribution patterns",
+      "category": "lecture",
+      "filename": "Peripheral-Neuropathy-2026-handout--61d9f240.pdf",
+      "package_path": "pdfs/lecture/Peripheral-Neuropathy-2026-handout--61d9f240.pdf",
+      "bytes": 3177508,
+      "sha256": "61d9f24085d5f82a042e9278fc4ef6318609a4da6055e91cd2f9dcfd6860b7ca",
+      "page_count": 19
+    },
+    {
+      "id": "b5ab9b069d90.pdf",
+      "title": "Gross_Brain_1-2_Slides",
+      "category": "lecture",
+      "filename": "Gross_Brain_1-2_Slides--62ce6e56.pdf",
+      "package_path": "pdfs/lecture/Gross_Brain_1-2_Slides--62ce6e56.pdf",
+      "bytes": 11662830,
+      "sha256": "62ce6e56c74f3abe3fc21b44c7dd73bb895bf4d599ba809d66da330a711833d8",
+      "page_count": 134
+    },
+    {
+      "id": "ea4956daa3a1.pdf",
+      "title": "Gross Brain 1–2 Handout.pdf",
+      "category": "lecture",
+      "filename": "Gross_Brain_1-2_Handout--6506b10a.pdf",
+      "package_path": "pdfs/lecture/Gross_Brain_1-2_Handout--6506b10a.pdf",
+      "bytes": 34450822,
+      "sha256": "6506b10a0317faad64546987067e145efcf95dc463b014fd590e35d27326b133",
+      "page_count": 33
+    },
+    {
+      "id": "ddbb6dfe50b4.pdf",
+      "title": "CNS Vasculature Handout.pdf",
+      "category": "lecture",
+      "filename": "CNS_Vasculature_Handout--6510e7a4.pdf",
+      "package_path": "pdfs/lecture/CNS_Vasculature_Handout--6510e7a4.pdf",
+      "bytes": 10630924,
+      "sha256": "6510e7a43ff088ec95e405d6dbc6dfc7e624825f4f27d0d2c7b1d3b7fb2bc7c5",
+      "page_count": 12
+    },
+    {
+      "id": "944296bd9c50.pdf",
+      "title": "NPS 64 Somatic Disorders",
+      "category": "lecture",
+      "filename": "ea72f123-a69f-47d6-8b87-e74ffa18db2d_Somatic_Disorders--65e1f5e1.pdf",
+      "package_path": "pdfs/lecture/ea72f123-a69f-47d6-8b87-e74ffa18db2d_Somatic_Disorders--65e1f5e1.pdf",
+      "bytes": 2068313,
+      "sha256": "65e1f5e142415c800f56be164551d0c7ae47d86f8af5e00bd93ee97bce1bf3f0",
+      "page_count": 19
+    },
+    {
+      "id": "f96a4dc1a7e0.pdf",
+      "title": "Childhood Disorders: autism spectrum disorder criteria",
+      "category": "lecture",
+      "filename": "Childhood-Disorders.pptx-5--65e7eb7a.pdf",
+      "package_path": "pdfs/lecture/Childhood-Disorders.pptx-5--65e7eb7a.pdf",
+      "bytes": 70401473,
+      "sha256": "65e7eb7aef31f27a56c7c027050fd63e47e83b1ab55ce8418a5e26c9656a7fb5",
+      "page_count": 170
+    },
+    {
+      "id": "fe16a4ca29bc.pdf",
+      "title": "CBTL4 - Nervous System Infections Cases",
+      "category": "review",
+      "filename": "CBTL4---Nervous-System-Infections-Cases--66e532c1.pdf",
+      "package_path": "pdfs/review/CBTL4---Nervous-System-Infections-Cases--66e532c1.pdf",
+      "bytes": 1560632,
+      "sha256": "66e532c1368844bed331c741b45434cba4a4b6566c243c4ae82ce2531eebee0d",
+      "page_count": 4
+    },
+    {
+      "id": "c9fd86a65ae7.pdf",
+      "title": "NPS 92 Sexual Disorders lecture",
+      "category": "lecture",
+      "filename": "2025-SOM-MS2-Sexual-Disorders-with-Dr.-Rolle--69499753.pdf",
+      "package_path": "pdfs/lecture/2025-SOM-MS2-Sexual-Disorders-with-Dr.-Rolle--69499753.pdf",
+      "bytes": 121639771,
+      "sha256": "69499753967885714d756926940f54300723c402fb16a7c2f9216ef85a9c24da",
+      "page_count": 58
+    },
+    {
+      "id": "02a5fe12af8d.pdf",
+      "title": "CEREBROVASCULAR DISEASE 2026.pdf",
+      "category": "lecture",
+      "filename": "CEREBROVASCULAR-DISEASE-2026--69eb5b8e.pdf",
+      "package_path": "pdfs/lecture/CEREBROVASCULAR-DISEASE-2026--69eb5b8e.pdf",
+      "bytes": 6979797,
+      "sha256": "69eb5b8ebd810e960e923ef4116bd972ae477c0e65b530d32579f187cd909f59",
+      "page_count": 106
+    },
+    {
+      "id": "1d74791daf2c.pdf",
+      "title": "Developmental Neuropathology Lecture Slides",
+      "category": "lecture",
+      "filename": "Developmental-Neuropathology-Lecture-Slides--6a0e21de.pdf",
+      "package_path": "pdfs/lecture/Developmental-Neuropathology-Lecture-Slides--6a0e21de.pdf",
+      "bytes": 3696448,
+      "sha256": "6a0e21deb8624d6dfde3754d9c32411de20bb79fa219f007b1995fe545902571",
+      "page_count": 51
+    },
+    {
+      "id": "8ffaf304f785.pdf",
+      "title": "Neurotransmitters_2_Notes",
+      "category": "notes",
+      "filename": "Neurotransmitters_2_Notes--6d851670.pdf",
+      "package_path": "pdfs/notes/Neurotransmitters_2_Notes--6d851670.pdf",
+      "bytes": 17113627,
+      "sha256": "6d8516709d0cab06f2b39e4f0a0cb70fd0ee3c413226627298fd0caa75fa626f",
+      "page_count": 48
+    },
+    {
+      "id": "33458501ac31.pdf",
+      "title": "NPS 86 Childhood Disorders 1-3 Shared Sources",
+      "category": "lecture",
+      "filename": "119340e5-0bc5-4e74-a299-02a4a2d78e8d-2FLLUSM_-_CHILDHOOD_DISORDERS_123_-_Dr._martinez-2--733c582d.pdf",
+      "package_path": "pdfs/lecture/119340e5-0bc5-4e74-a299-02a4a2d78e8d-2FLLUSM_-_CHILDHOOD_DISORDERS_123_-_Dr._martinez-2--733c582d.pdf",
+      "bytes": 19336043,
+      "sha256": "733c582d70a6edf5d376bc00d94ff070445c7bc47446aed81d8009fe94842efc",
+      "page_count": 64
+    },
+    {
+      "id": "17e28bffe248.pdf",
+      "title": "6a27563d-f667-44b7-9035-e37b80f4ee65_Delirium_and_Disorders_Due_to_Medical_Conditions",
+      "category": "lecture",
+      "filename": "6a27563d-f667-44b7-9035-e37b80f4ee65_Delirium_and_Disorders_Due_to_Medical_Conditions--73ba3e24.pdf",
+      "package_path": "pdfs/lecture/6a27563d-f667-44b7-9035-e37b80f4ee65_Delirium_and_Disorders_Due_to_Medical_Conditions--73ba3e24.pdf",
+      "bytes": 8875641,
+      "sha256": "73ba3e24b1fc55e2792cc2a32ff43c9cc4099586dd7617bca8caaf782249d0b2",
+      "page_count": 21
+    },
+    {
+      "id": "94ccbe0b92b5.pdf",
+      "title": "SUD 2: intoxication/withdrawal mechanisms and signs",
+      "category": "lecture",
+      "filename": "NPS26_Substance_Use_Disorders_2_Slides--74daf3c1.pdf",
+      "package_path": "pdfs/lecture/NPS26_Substance_Use_Disorders_2_Slides--74daf3c1.pdf",
+      "bytes": 4661336,
+      "sha256": "74daf3c1176a98b0b91626b8065ffe69915f3b7d0a3965699b1eb4871883b270",
+      "page_count": 50
+    },
+    {
+      "id": "3de7006255a5.pdf",
+      "title": "Mental Status Examination: domains and clinical use",
+      "category": "lecture",
+      "filename": "06a3eaa6-2101-483e-9940-58fc6c04d4c1_The_Mental_Status_Examination--75af7e74.pdf",
+      "package_path": "pdfs/lecture/06a3eaa6-2101-483e-9940-58fc6c04d4c1_The_Mental_Status_Examination--75af7e74.pdf",
+      "bytes": 1967732,
+      "sha256": "75af7e741990b3c26b921a0bd997d014b77c8f566e6d7a792ebad8767f8090c4",
+      "page_count": 21
+    },
+    {
+      "id": "0aee57d4fa08.pdf",
+      "title": "Neuroradiology case study session",
+      "category": "lecture",
+      "filename": "Cole-LO-week-6-1--7750271c.pdf",
+      "package_path": "pdfs/lecture/Cole-LO-week-6-1--7750271c.pdf",
+      "bytes": 144544,
+      "sha256": "7750271cb384ec72e6f18f93b59a4f1e5771c6e48cc85b78dc33a508e73b4742",
+      "page_count": 3
+    },
+    {
+      "id": "235261aa9da6.pdf",
+      "title": "Cerebrovascular Disease 2026 handout.pdf",
+      "category": "lecture",
+      "filename": "Cerebrovascular-Disease-2026-handout--78b35550.pdf",
+      "package_path": "pdfs/lecture/Cerebrovascular-Disease-2026-handout--78b35550.pdf",
+      "bytes": 20265436,
+      "sha256": "78b35550b4c89050cbeb6cfa7a3131c6def12c349b44e97e60469bce1f41180f",
+      "page_count": 31
+    },
+    {
+      "id": "4f558cb8e796.pdf",
+      "title": "NPS18_Medications_3_Notes",
+      "category": "notes",
+      "filename": "NPS18_Medications_3_Notes--7985b1f2.pdf",
+      "package_path": "pdfs/notes/NPS18_Medications_3_Notes--7985b1f2.pdf",
+      "bytes": 8422844,
+      "sha256": "7985b1f2edf9ead2582d0b9bd4d1bd8cbca498e37051bf1d8c7e66d1d8e2a744",
+      "page_count": 26
+    },
+    {
+      "id": "bb6ef433fc46.pdf",
+      "title": "Epilepsy and Anticonvulsants",
+      "category": "lecture",
+      "filename": "LO-week-8--79bfa098.pdf",
+      "package_path": "pdfs/lecture/LO-week-8--79bfa098.pdf",
+      "bytes": 120890,
+      "sha256": "79bfa0985448892d6cc29446b0cb919ce1fb86e4e0bfcbdf39a299a8b1d8ac83",
+      "page_count": 3
+    },
+    {
+      "id": "5a27689d7730.pdf",
+      "title": "NPS 93 Pathology of White Matter",
+      "category": "lecture",
+      "filename": "Pathology-of-White-Matter-Disease---Lecture-Handout--7af4b9c6.pdf",
+      "package_path": "pdfs/lecture/Pathology-of-White-Matter-Disease---Lecture-Handout--7af4b9c6.pdf",
+      "bytes": 475261,
+      "sha256": "7af4b9c62b529345806edbeecdf3ba8449813898875bc3f4dd26d20e08a57038",
+      "page_count": 7
+    },
+    {
+      "id": "60cb90b417a6.pdf",
+      "title": "TBL_Vision_Anterior_Eye_Slides.pdf · PDF 41",
+      "category": "lecture",
+      "filename": "TBL_Vision_Anterior_Eye_Slides--7e4e1b47.pdf",
+      "package_path": "pdfs/lecture/TBL_Vision_Anterior_Eye_Slides--7e4e1b47.pdf",
+      "bytes": 18379707,
+      "sha256": "7e4e1b47fe45f2a83efece3c52ab5db0522398ceefe49bb3ee5e8afc63398e3d",
+      "page_count": 84
+    },
+    {
+      "id": "37fe699e1642.pdf",
+      "title": "Panopto_Histology_of_Eye_and_Ear_Parts_1-2_Notes",
+      "category": "notes",
+      "filename": "Panopto_Histology_of_Eye_and_Ear_Parts_1-2_Notes--8127a278.pdf",
+      "package_path": "pdfs/notes/Panopto_Histology_of_Eye_and_Ear_Parts_1-2_Notes--8127a278.pdf",
+      "bytes": 214601,
+      "sha256": "8127a278d671c26c17d4c0ea7f649393067ae8d3429c75255422c0bd397a925c",
+      "page_count": 15
+    },
+    {
+      "id": "d7af191beb30.pdf",
+      "title": "03 Mood 1 and 2",
+      "category": "lecture",
+      "filename": "94242d68-6da0-4344-bdde-09ccfb7f71b9_Mood_Disorders_2-1--82b4a021.pdf",
+      "package_path": "pdfs/lecture/94242d68-6da0-4344-bdde-09ccfb7f71b9_Mood_Disorders_2-1--82b4a021.pdf",
+      "bytes": 7450239,
+      "sha256": "82b4a0217f448e45339978ef97b3eb5239d7b660776fcd2584ab2e02342073fc",
+      "page_count": 31
+    },
+    {
+      "id": "c7f63df7e8dc.pdf",
+      "title": "NPS 39 Posterior Eye",
+      "category": "lecture",
+      "filename": "Posterior-Eye-LOs--82d588ef.pdf",
+      "package_path": "pdfs/lecture/Posterior-Eye-LOs--82d588ef.pdf",
+      "bytes": 47579,
+      "sha256": "82d588ef8c0cec3dfa822a65564a52a62a48383f8a29aea21a42578df95563ce",
+      "page_count": 1
+    },
+    {
+      "id": "bb05a3924d61.pdf",
+      "title": "Neuro-ophthalmology 2026 handout.pdf",
+      "category": "lecture",
+      "filename": "Neuro-ophthalmology-2026-handout--847ce4d7.pdf",
+      "package_path": "pdfs/lecture/Neuro-ophthalmology-2026-handout--847ce4d7.pdf",
+      "bytes": 24403192,
+      "sha256": "847ce4d759e67abc19ff9f04fee4e7e8dbf1a5ffa8e8480adfd9517e075cab85",
+      "page_count": 16
+    },
+    {
+      "id": "8b38d26ddffc.pdf",
+      "title": "73d42933-365e-4993-8091-d72902ba261c_Mood_Disorders_1-1",
+      "category": "lecture",
+      "filename": "73d42933-365e-4993-8091-d72902ba261c_Mood_Disorders_1-1--850cf627.pdf",
+      "package_path": "pdfs/lecture/73d42933-365e-4993-8091-d72902ba261c_Mood_Disorders_1-1--850cf627.pdf",
+      "bytes": 7249993,
+      "sha256": "850cf62765958c0e8397fe5a97bcbd9422f8d67545feef7a19b2e8c12f72a915",
+      "page_count": 28
+    },
+    {
+      "id": "2de30c823faf.pdf",
+      "title": "Personality Disorders: clusters, differential diagnosis, and clinical management",
+      "category": "lecture",
+      "filename": "Personality-Disorders-Film-Festival.pdf-4--85356c29.pdf",
+      "package_path": "pdfs/lecture/Personality-Disorders-Film-Festival.pdf-4--85356c29.pdf",
+      "bytes": 24879052,
+      "sha256": "85356c2997cd6c565f268ef46178413bd1a37172ebf8766f310c7dc302495ae1",
+      "page_count": 96
+    },
+    {
+      "id": "5e57a22ecb43.pdf",
+      "title": "Brain Stem Midbrain 2026.pdf",
+      "category": "lecture",
+      "filename": "Brain-Stem-Midbrain-2026--85906505.pdf",
+      "package_path": "pdfs/lecture/Brain-Stem-Midbrain-2026--85906505.pdf",
+      "bytes": 2663826,
+      "sha256": "85906505e351c19606ed98d166f604038564d5866d5d6011fa7710d2c156ba95",
+      "page_count": 26
+    },
+    {
+      "id": "80855b8a6fa2.pdf",
+      "title": "LO week 4",
+      "category": "lecture",
+      "filename": "LO-week-4--8baca91e.pdf",
+      "package_path": "pdfs/lecture/LO-week-4--8baca91e.pdf",
+      "bytes": 90826,
+      "sha256": "8baca91e6b18d7b2b3942bfcaace3d5e324faf8911ca16aa758ac22b4ceadbbc",
+      "page_count": 1
+    },
+    {
+      "id": "daf83dde7868.pdf",
+      "title": "Brain Tumors 2 Lecture Handout",
+      "category": "lecture",
+      "filename": "Brain-Tumors-2-Lecture-Handout--9094c964.pdf",
+      "package_path": "pdfs/lecture/Brain-Tumors-2-Lecture-Handout--9094c964.pdf",
+      "bytes": 1477069,
+      "sha256": "9094c9649f055947736276a4e8edb8b27b8d9344736783a5825c5e95ace1b665",
+      "page_count": 8
+    },
+    {
+      "id": "local-91ec30cec162.pdf",
+      "title": "Multiple Sclerosis 2026 handout (1).pdf",
+      "category": "lecture",
+      "filename": "Multiple-Sclerosis-2026-handout-1--91ec30ce.pdf",
+      "package_path": "pdfs/lecture/Multiple-Sclerosis-2026-handout-1--91ec30ce.pdf",
+      "bytes": 20189551,
+      "sha256": "91ec30cec162c7d91bed3d7ad4e3471071abe5e4a83b81b98adfe3c11ca795a1",
+      "page_count": 14
+    },
+    {
+      "id": "30ecb8145a3f.pdf",
+      "title": "Neurology Exam and Pathways — localization",
+      "category": "lecture",
+      "filename": "Neurology_Exam_and_Pathways_1-5_Handout--9397a817.pdf",
+      "package_path": "pdfs/lecture/Neurology_Exam_and_Pathways_1-5_Handout--9397a817.pdf",
+      "bytes": 29201603,
+      "sha256": "9397a817b62bbfd0dbdbf459bc5b83404da408266a2195e4662da6559ca860d1",
+      "page_count": 39
+    },
+    {
+      "id": "7835a21f8de1.pdf",
+      "title": "Electromyography and NCS 2025",
+      "category": "lecture",
+      "filename": "Electromyography-and-NCS-2025--93d03097.pdf",
+      "package_path": "pdfs/lecture/Electromyography-and-NCS-2025--93d03097.pdf",
+      "bytes": 806540,
+      "sha256": "93d030978fc14cf670e8c28b257b7c8ddb298286c807b1ede656c552e013908c",
+      "page_count": 8
+    },
+    {
+      "id": "43d940ddb11b.pdf",
+      "title": "Medications 2, prefrontal catecholamine inverted-U",
+      "category": "lecture",
+      "filename": "NPS17_Medications_2_Slides--93fb042c.pdf",
+      "package_path": "pdfs/lecture/NPS17_Medications_2_Slides--93fb042c.pdf",
+      "bytes": 4908581,
+      "sha256": "93fb042cda4d09fe577bfa68c2060662611920dc0700e5d23e0ed01fe6c58a9e",
+      "page_count": 36
+    },
+    {
+      "id": "ceb8df2074de.pdf",
+      "title": "Preventive Medicine and Brain Health: lifestyle, vascular risk, sleep, nutrition, and activity",
+      "category": "other",
+      "filename": "LM-and-Brain-Health-2026-Student-Version--9669749f.pdf",
+      "package_path": "pdfs/other/LM-and-Brain-Health-2026-Student-Version--9669749f.pdf",
+      "bytes": 8960934,
+      "sha256": "9669749fd40dcaf84cd7adda28e8455967850caa7e729c3cdf177449e70a97df",
+      "page_count": 80
+    },
+    {
+      "id": "a5c654a0807f.pdf",
+      "title": "Midbrain",
+      "category": "lecture",
+      "filename": "LO-week-3--976a6ea7.pdf",
+      "package_path": "pdfs/lecture/LO-week-3--976a6ea7.pdf",
+      "bytes": 97884,
+      "sha256": "976a6ea78baeb19c7496d5e3431b29d589caef5ef8b22071217cce9eb236f39f",
+      "page_count": 2
+    },
+    {
+      "id": "58815a2b2236.pdf",
+      "title": "Neurocutaneous Syndromes 2026 handout",
+      "category": "lecture",
+      "filename": "Neurocutaneous-Syndromes-2026-handout--977d7f34.pdf",
+      "package_path": "pdfs/lecture/Neurocutaneous-Syndromes-2026-handout--977d7f34.pdf",
+      "bytes": 6624967,
+      "sha256": "977d7f345a812fb60f94628b34dc3e0d591ed6c8ed41cb3adac8a66f1b739299",
+      "page_count": 10
+    },
+    {
+      "id": "52ed2521e5d6.pdf",
+      "title": "A randomised controlled trial of dietary improvement for adults with major depression (the‘SMILES’ trial)",
+      "category": "lecture",
+      "filename": "A-randomised-controlled-trial-of-dietary-improvement-for-adults-with-major-depression-the-SMILES-tri--9852390b.pdf",
+      "package_path": "pdfs/lecture/A-randomised-controlled-trial-of-dietary-improvement-for-adults-with-major-depression-the-SMILES-tri--9852390b.pdf",
+      "bytes": 770764,
+      "sha256": "9852390b48fe144b47c3fcb5df3380519512492d53173ad0af95578c68048f79",
+      "page_count": 13
+    },
+    {
+      "id": "685fbfd1081f.pdf",
+      "title": "Psychotic Disorders 1, diagnosis and differential",
+      "category": "other",
+      "filename": "2026_Psychosis_1_20260914--98b2c349.pdf",
+      "package_path": "pdfs/other/2026_Psychosis_1_20260914--98b2c349.pdf",
+      "bytes": 3780161,
+      "sha256": "98b2c349b441c8877162a8704eea05ae935915d36795d228035dff47d494ab58",
+      "page_count": 41
+    },
+    {
+      "id": "local-99f4e75815de.pdf",
+      "title": "bb179174-1446-4085-9bf2-0b976b74712f_Psychotic_Disorders_1.pdf",
+      "category": "other",
+      "filename": "bb179174-1446-4085-9bf2-0b976b74712f_Psychotic_Disorders_1--99f4e758.pdf",
+      "package_path": "pdfs/other/bb179174-1446-4085-9bf2-0b976b74712f_Psychotic_Disorders_1--99f4e758.pdf",
+      "bytes": 4313334,
+      "sha256": "99f4e75815deb35ec54f706d70923b71f62a9742e36de64e3280bcdf9137b40c",
+      "page_count": 21
+    },
+    {
+      "id": "544f231abf3b.pdf",
+      "title": "Clinical guidelines for the use of lifestyle-based mental health care in major depressive disorder  World Federation of Societies for Biological Psych",
+      "category": "lecture",
+      "filename": "Clinical-guidelines-for-the-use-of-lifestyle-based-mental-health-care-in-major-depressive-disorder-W--9e1bb351.pdf",
+      "package_path": "pdfs/lecture/Clinical-guidelines-for-the-use-of-lifestyle-based-mental-health-care-in-major-depressive-disorder-W--9e1bb351.pdf",
+      "bytes": 6809900,
+      "sha256": "9e1bb35186af28bdfe59efb4c21e44e900f754eb7f91baa77da3dd6591d5aa38",
+      "page_count": 56
+    },
+    {
+      "id": "67b1e8777a04.pdf",
+      "title": "PitEyeEar 4Students",
+      "category": "lecture",
+      "filename": "NPS21b_Development_Pituitary_Eye_Ear_TBL_Slides--a025fd76.pdf",
+      "package_path": "pdfs/lecture/NPS21b_Development_Pituitary_Eye_Ear_TBL_Slides--a025fd76.pdf",
+      "bytes": 2826962,
+      "sha256": "a025fd76a44e314b230254808031d86225455ce9a1938a6abfaa84b5253f9a63",
+      "page_count": 19
+    },
+    {
+      "id": "cd28e6c685eb.pdf",
+      "title": "Posterior eye Practice Qs",
+      "category": "lecture",
+      "filename": "Posterior-eye-Practice-Qs--a05ec58c.pdf",
+      "package_path": "pdfs/lecture/Posterior-eye-Practice-Qs--a05ec58c.pdf",
+      "bytes": 2051921,
+      "sha256": "a05ec58c867767d3f6072cfaf02bf92fdc89da311a12b0593e36860589b1bb47",
+      "page_count": 4
+    },
+    {
+      "id": "3b40409a38fc.pdf",
+      "title": "Neuro ophthalmology 2026.pdf",
+      "category": "lecture",
+      "filename": "Neuro-ophthalmology-2026--a11a932d.pdf",
+      "package_path": "pdfs/lecture/Neuro-ophthalmology-2026--a11a932d.pdf",
+      "bytes": 3755918,
+      "sha256": "a11a932d332f37fb097a3fa09965a8a96a6742f57a7f60391a39d814320449b3",
+      "page_count": 36
+    },
+    {
+      "id": "3cfd4f285130.pdf",
+      "title": "Muscle diseases",
+      "category": "lecture",
+      "filename": "Muscle-Diseases-2026-handout--a2668733.pdf",
+      "package_path": "pdfs/lecture/Muscle-Diseases-2026-handout--a2668733.pdf",
+      "bytes": 7361894,
+      "sha256": "a26687337534a702b4a3644a475f41cafdde077d5b16bb9f59c468dff2649b5d",
+      "page_count": 14
+    },
+    {
+      "id": "2668eb9aa573.pdf",
+      "title": "Neuroradiology 2026",
+      "category": "lecture",
+      "filename": "Neuroradiology-2026--a3d7707b.pdf",
+      "package_path": "pdfs/lecture/Neuroradiology-2026--a3d7707b.pdf",
+      "bytes": 6815247,
+      "sha256": "a3d7707b8b67b3bbce578257379f6637aec0d2cc52a37019f351968368fbdad8",
+      "page_count": 56
+    },
+    {
+      "id": "49f0b1d6d730.pdf",
+      "title": "PitEyeEar Development",
+      "category": "notes",
+      "filename": "NPS21b_Development_Pituitary_Eye_Ear_TBL_Notes--a40c01a6.pdf",
+      "package_path": "pdfs/notes/NPS21b_Development_Pituitary_Eye_Ear_TBL_Notes--a40c01a6.pdf",
+      "bytes": 5759577,
+      "sha256": "a40c01a66aebb2428b0d6c094af72724fa01e3de31399d7aec60a32fba3e8c6f",
+      "page_count": 9
+    },
+    {
+      "id": "892309126df8.pdf",
+      "title": "Personality Disorders 1: traits, clusters and differential",
+      "category": "lecture",
+      "filename": "449bf0ec-bd56-4515-aed0-55a4d826aebe-2FLLUSM_-_PERSONALITY_DISORDERS_-_Dr._martinez--a4a1b49c.pdf",
+      "package_path": "pdfs/lecture/449bf0ec-bd56-4515-aed0-55a4d826aebe-2FLLUSM_-_PERSONALITY_DISORDERS_-_Dr._martinez--a4a1b49c.pdf",
+      "bytes": 3082536,
+      "sha256": "a4a1b49c964fdeafa1a384e5050824097e3eed66282d9d8b031176b2370e01e7",
+      "page_count": 50
+    },
+    {
+      "id": "029f59430d2c.pdf",
+      "title": "Movement Disorders 2026 handout",
+      "category": "lecture",
+      "filename": "Movement-Disorders-2026-handout--a95ce1a0.pdf",
+      "package_path": "pdfs/lecture/Movement-Disorders-2026-handout--a95ce1a0.pdf",
+      "bytes": 6577667,
+      "sha256": "a95ce1a0808a3de55e6b1af83cff741379faab01c97a69623c3e2f648953ef38",
+      "page_count": 21
+    },
+    {
+      "id": "11b0200f0cb3.pdf",
+      "title": "Sleep Disorders 2026.pdf",
+      "category": "lecture",
+      "filename": "Sleep-Disorders-2026--a98b4ff9.pdf",
+      "package_path": "pdfs/lecture/Sleep-Disorders-2026--a98b4ff9.pdf",
+      "bytes": 2420404,
+      "sha256": "a98b4ff976532d9d89fbfb61770b20d905a71e3f2b720a4da771ace061821805",
+      "page_count": 41
+    },
+    {
+      "id": "c1064b0b6b00.pdf",
+      "title": "NPS19 Psychotherapy",
+      "category": "notes",
+      "filename": "NPS19_Psychotherapy_Notes--aae38a78.pdf",
+      "package_path": "pdfs/notes/NPS19_Psychotherapy_Notes--aae38a78.pdf",
+      "bytes": 2756234,
+      "sha256": "aae38a7825b079097f8c979ea2e371078a3dd7357861d3d0a4ca38cf0f0a52f4",
+      "page_count": 15
+    },
+    {
+      "id": "1eb438fa7cb6.pdf",
+      "title": "Spinal Cord Diseases 2026 handout.pdf",
+      "category": "lecture",
+      "filename": "Spinal-Cord-Diseases-2026-handout--ab654a64.pdf",
+      "package_path": "pdfs/lecture/Spinal-Cord-Diseases-2026-handout--ab654a64.pdf",
+      "bytes": 17987324,
+      "sha256": "ab654a642003dd73db4484ca9edbba25fc5ee24e2072addb52e4717b35cb24dc",
+      "page_count": 18
+    },
+    {
+      "id": "9d06d66a769a.pdf",
+      "title": "CNS Devel 4students",
+      "category": "lecture",
+      "filename": "NPS21a_Development_CNS_TBL_Slides--ac84c956.pdf",
+      "package_path": "pdfs/lecture/NPS21a_Development_CNS_TBL_Slides--ac84c956.pdf",
+      "bytes": 5189212,
+      "sha256": "ac84c9565d8691998e259a7717c0741f5af30394528a205f1d10f720cd3c38c6",
+      "page_count": 22
+    },
+    {
+      "id": "69f31681b5bd.pdf",
+      "title": "2026 Truama 20250924",
+      "category": "lecture",
+      "filename": "2026-Truama-20250924--ad9dc794.pdf",
+      "package_path": "pdfs/lecture/2026-Truama-20250924--ad9dc794.pdf",
+      "bytes": 3346564,
+      "sha256": "ad9dc79453954c39cdec07330ced7561b0d7c6273c2909a3248b49b08ae99f03",
+      "page_count": 44
+    },
+    {
+      "id": "8d9928625792.pdf",
+      "title": "Psychotic Disorders 2: schizophrenia treatment and course",
+      "category": "other",
+      "filename": "2026_Psychosis_2_20260915--aeb9d0e5.pdf",
+      "package_path": "pdfs/other/2026_Psychosis_2_20260915--aeb9d0e5.pdf",
+      "bytes": 6773445,
+      "sha256": "aeb9d0e5849edc6658cc3e99581c9863c0479c1af76ac40a6257aa62e63ece16",
+      "page_count": 56
+    },
+    {
+      "id": "e479f672618a.pdf",
+      "title": "Dizziness and Hearing Loss 2026",
+      "category": "lecture",
+      "filename": "Dizziness-and-Hearing-Loss-2026--b16c87b1.pdf",
+      "package_path": "pdfs/lecture/Dizziness-and-Hearing-Loss-2026--b16c87b1.pdf",
+      "bytes": 3192752,
+      "sha256": "b16c87b12ec21288a22ce6d6164318e07c0b08a8e1403b9dfa6d8981181b7c09",
+      "page_count": 38
+    },
+    {
+      "id": "2db04deb30e5.pdf",
+      "title": "Pathology of Skeletal Muscle and Peripheral Nerve Lecture Slides.pdf",
+      "category": "lecture",
+      "filename": "Pathology-of-Skeletal-Muscle-and-Peripheral-Nerve-Lecture-Slides--b2a44bf2.pdf",
+      "package_path": "pdfs/lecture/Pathology-of-Skeletal-Muscle-and-Peripheral-Nerve-Lecture-Slides--b2a44bf2.pdf",
+      "bytes": 6895145,
+      "sha256": "b2a44bf2025288bc4e62a2f616e1f44abe0d392e1a85b554219310a5a1be8f4c",
+      "page_count": 55
+    },
+    {
+      "id": "f469d50cd73f.pdf",
+      "title": "Brain Tumors 2 Lecture Slides",
+      "category": "lecture",
+      "filename": "Brain-Tumors-2-Lecture-Slides--b4510d89.pdf",
+      "package_path": "pdfs/lecture/Brain-Tumors-2-Lecture-Slides--b4510d89.pdf",
+      "bytes": 3543542,
+      "sha256": "b4510d89ec54350dfd110c0151de2d081200767696ab1ef7164bf929b7a8228b",
+      "page_count": 39
+    },
+    {
+      "id": "92c0ea8375ab.pdf",
+      "title": "Trauma and Stress Disorders: learning objectives and Criterion A",
+      "category": "lecture",
+      "filename": "300f6683-7335-4798-a827-04e91998e0ab_Trauma_and_Stress_Disorders--b46ac2aa.pdf",
+      "package_path": "pdfs/lecture/300f6683-7335-4798-a827-04e91998e0ab_Trauma_and_Stress_Disorders--b46ac2aa.pdf",
+      "bytes": 5981971,
+      "sha256": "b46ac2aac071681214018da65d78d81c1996292dbf683a9dee8c9be39f8cf759",
+      "page_count": 28
+    },
+    {
+      "id": "aacbdd066a7f.pdf",
+      "title": "Panopto_Neural_Substrates_Notes",
+      "category": "notes",
+      "filename": "Panopto_Neural_Substrates_Notes--b5aa1d07.pdf",
+      "package_path": "pdfs/notes/Panopto_Neural_Substrates_Notes--b5aa1d07.pdf",
+      "bytes": 14284863,
+      "sha256": "b5aa1d079de46fd356c4ee6353453ec41b814082ab790575663fec04e1399b9e",
+      "page_count": 27
+    },
+    {
+      "id": "6fe0aaeb2299.pdf",
+      "title": "SUD 3: tobacco, change stages, motivational interviewing",
+      "category": "lecture",
+      "filename": "2026-SUD-3-20260825--b60bb45f.pdf",
+      "package_path": "pdfs/lecture/2026-SUD-3-20260825--b60bb45f.pdf",
+      "bytes": 3364290,
+      "sha256": "b60bb45f8bf6220155f017dbd3b8f738455b652835128a52372fa13a5e6698c3",
+      "page_count": 48
+    },
+    {
+      "id": "7cb4b51ca8b0.pdf",
+      "title": "Anxiety and OCD",
+      "category": "lecture",
+      "filename": "3d8a1371-c199-4847-b8ee-a285cce3b41a-2FLLUSM_-_ANXIETY__OCD_12_-_Dr._martinez--b6a68663.pdf",
+      "package_path": "pdfs/lecture/3d8a1371-c199-4847-b8ee-a285cce3b41a-2FLLUSM_-_ANXIETY__OCD_12_-_Dr._martinez--b6a68663.pdf",
+      "bytes": 11268851,
+      "sha256": "b6a68663067d6f4a09b1e63b50b4f445fd17152521a882188eb30a04c500f583",
+      "page_count": 56
+    },
+    {
+      "id": "7aeb44d96c4b.pdf",
+      "title": "CNS Development",
+      "category": "notes",
+      "filename": "NPS21a_Development_CNS_TBL_Notes--ba989529.pdf",
+      "package_path": "pdfs/notes/NPS21a_Development_CNS_TBL_Notes--ba989529.pdf",
+      "bytes": 2997939,
+      "sha256": "ba989529e4a124dfc491937439732441b7d3deaffc83cd1a60da3dab922d6b70",
+      "page_count": 6
+    },
+    {
+      "id": "5594cb537e9f.pdf",
+      "title": "Panopto CSF and Meninges Handout.pdf",
+      "category": "lecture",
+      "filename": "Panopto_CSF_and_Meninges_Handout--bb40f78b.pdf",
+      "package_path": "pdfs/lecture/Panopto_CSF_and_Meninges_Handout--bb40f78b.pdf",
+      "bytes": 13553884,
+      "sha256": "bb40f78bd06c9fb795332f200e60efcdd905d109efec82e109c22c018fc3b3d5",
+      "page_count": 17
+    },
+    {
+      "id": "53f186073b2b.pdf",
+      "title": "Neuromuscular Blockers: objectives and mechanism",
+      "category": "lecture",
+      "filename": "Neuromuscular-Blockers_Fall-2026_FINAL_with-select-questions--bccfda06.pdf",
+      "package_path": "pdfs/lecture/Neuromuscular-Blockers_Fall-2026_FINAL_with-select-questions--bccfda06.pdf",
+      "bytes": 1181674,
+      "sha256": "bccfda06a75b644009f956d015c3fb1ccadf1ffbb5128e9c27c24339ddf8a95b",
+      "page_count": 23
+    },
+    {
+      "id": "a8b5ce203cbb.pdf",
+      "title": "Pathology of CNS Trauma Handout",
+      "category": "lecture",
+      "filename": "Pathology-of-CNS-Trauma-Handout--bdb55e34.pdf",
+      "package_path": "pdfs/lecture/Pathology-of-CNS-Trauma-Handout--bdb55e34.pdf",
+      "bytes": 324513,
+      "sha256": "bdb55e345ddb6f36853ab7928a3b1de2a8fb36ab198c4c1e93faf778f34b8670",
+      "page_count": 10
+    },
+    {
+      "id": "588a36cb8590.pdf",
+      "title": "Somatic Disorders: learning objectives and DSM-5 framework",
+      "category": "lecture",
+      "filename": "2026-Somatic-Disorders-09182026--be7e5a7c.pdf",
+      "package_path": "pdfs/lecture/2026-Somatic-Disorders-09182026--be7e5a7c.pdf",
+      "bytes": 2656995,
+      "sha256": "be7e5a7c9b4594d31774896061c85fffb460e642a9500c87f5f6322384176719",
+      "page_count": 41
+    },
+    {
+      "id": "2700e2815ce9.pdf",
+      "title": "Gross CNS Structures Lab 2026.pdf",
+      "category": "lecture",
+      "filename": "Gross_CNS_Structures_Lab_2026--bef71d17.pdf",
+      "package_path": "pdfs/lecture/Gross_CNS_Structures_Lab_2026--bef71d17.pdf",
+      "bytes": 1393993,
+      "sha256": "bef71d172897e85bbc2cc32d875ba3c230fcc6244646ecb96b8c31dd9af9421f",
+      "page_count": 13
+    },
+    {
+      "id": "a57818a6356e.pdf",
+      "title": "Introduction to Psychiatry",
+      "category": "notes",
+      "filename": "Introduction_to_Psychiatry_Notes--bfb24c36.pdf",
+      "package_path": "pdfs/notes/Introduction_to_Psychiatry_Notes--bfb24c36.pdf",
+      "bytes": 5078338,
+      "sha256": "bfb24c3692ccc4a0d0089dff7ba2e1e0576e63525dd43ee5c17d6096b6f287a4",
+      "page_count": 15
+    },
+    {
+      "id": "cd8d1bbb2f86.pdf",
+      "title": "Panopto_CSF_and_Meninges_Slides",
+      "category": "lecture",
+      "filename": "Panopto_CSF_and_Meninges_Slides--c2be42ac.pdf",
+      "package_path": "pdfs/lecture/Panopto_CSF_and_Meninges_Slides--c2be42ac.pdf",
+      "bytes": 3624568,
+      "sha256": "c2be42ac018b339cf717789250616a0b7502b84d343dedfa52a14db1de12cbac",
+      "page_count": 44
+    },
+    {
+      "id": "92f2843cf6b6.pdf",
+      "title": "Ear and Eye Infections Notes",
+      "category": "notes",
+      "filename": "Ear-and-Eye-Infections-Notes--c873598e.pdf",
+      "package_path": "pdfs/notes/Ear-and-Eye-Infections-Notes--c873598e.pdf",
+      "bytes": 9986111,
+      "sha256": "c873598e992fd03df883aee00baaf53b3b0b0d7aa995c06fd0f0d3c00c5458d8",
+      "page_count": 14
+    },
+    {
+      "id": "Pathoma",
+      "title": "Pathoma - Fundamentals of Pathology (2021)",
+      "category": "book",
+      "filename": "Pathoma---Fundamentals-of-Pathology-2021--ca790733.pdf",
+      "package_path": "pdfs/book/Pathoma---Fundamentals-of-Pathology-2021--ca790733.pdf",
+      "bytes": 15553368,
+      "sha256": "ca7907336daed6812a5c48716bc5369fe8450f17764fcf618489908c1933ed7a",
+      "page_count": 234
+    },
+    {
+      "id": "bf101e0be222.pdf",
+      "title": "Neuroscience of Pain: nociceptors",
+      "category": "lecture",
+      "filename": "Sensation-and-Pain-2026--cb9ae44e.pdf",
+      "package_path": "pdfs/lecture/Sensation-and-Pain-2026--cb9ae44e.pdf",
+      "bytes": 2513294,
+      "sha256": "cb9ae44e7ee3595e53fb1458fd4082c6df246385ea8275862045b19b33419e9c",
+      "page_count": 28
+    },
+    {
+      "id": "f376842eb952.pdf",
+      "title": "Medications 1: TCA mechanisms and adverse effects",
+      "category": "lecture",
+      "filename": "NPS15_Medications_1_Slides--d02e4fbb.pdf",
+      "package_path": "pdfs/lecture/NPS15_Medications_1_Slides--d02e4fbb.pdf",
+      "bytes": 4133597,
+      "sha256": "d02e4fbb419c46580617d581a7238d75db5756fad2cc0149a556ffcf03812506",
+      "page_count": 50
+    },
+    {
+      "id": "ab72c84388db.pdf",
+      "title": "Neuropathology of Neurodegenerative Disease Handout",
+      "category": "lecture",
+      "filename": "Neuropathology-of-Neurodegenerative-Disease-Handout--d04df04f.pdf",
+      "package_path": "pdfs/lecture/Neuropathology-of-Neurodegenerative-Disease-Handout--d04df04f.pdf",
+      "bytes": 450320,
+      "sha256": "d04df04f0affd29da2e27a0d9d7fc2594237c70b75dd57acddb984ca59a5df50",
+      "page_count": 8
+    },
+    {
+      "id": "89782a714fc6.pdf",
+      "title": "Antiseizure Medications 2026.pdf",
+      "category": "lecture",
+      "filename": "Antiseizure-Medications-2026--d3650563.pdf",
+      "package_path": "pdfs/lecture/Antiseizure-Medications-2026--d3650563.pdf",
+      "bytes": 1455347,
+      "sha256": "d3650563ee3e4d8ce1ed7eff73b06d3d389a5a0e0cd135d4c3516a3846046421",
+      "page_count": 39
+    },
+    {
+      "id": "eb9a0aca43c0.pdf",
+      "title": "NMJ Disorders 2026 handout.pdf",
+      "category": "lecture",
+      "filename": "NMJ-Disorders-2026-handout--d6a19eb7.pdf",
+      "package_path": "pdfs/lecture/NMJ-Disorders-2026-handout--d6a19eb7.pdf",
+      "bytes": 13237080,
+      "sha256": "d6a19eb7e2f2c683d2aa1d9f32c4d245a05eb0c8f0b8252283c1915e63115cf9",
+      "page_count": 15
+    },
+    {
+      "id": "1207422be2a5.pdf",
+      "title": "Sensation and Pain 2026 handout",
+      "category": "lecture",
+      "filename": "Sensation-and-Pain-2026-handout--d765be23.pdf",
+      "package_path": "pdfs/lecture/Sensation-and-Pain-2026-handout--d765be23.pdf",
+      "bytes": 6691328,
+      "sha256": "d765be2375e029904550e8f2d60d729c8d2c9bbb5583c7ed55be0309e4632400",
+      "page_count": 11
+    },
+    {
+      "id": "1d09b3ea956e.pdf",
+      "title": "Mood Disorders 1, episode framework",
+      "category": "lecture",
+      "filename": "2026-Mood-1-20260911--d8cb9745.pdf",
+      "package_path": "pdfs/lecture/2026-Mood-1-20260911--d8cb9745.pdf",
+      "bytes": 4380100,
+      "sha256": "d8cb9745055cec5901e5affc85cbc38b7daf6bcfac30a9b5fbe69699ddb72cf6",
+      "page_count": 56
+    },
+    {
+      "id": "10975a3e5ced.pdf",
+      "title": "Epilepsy 2026.pdf (earlier course seizure lecture)",
+      "category": "lecture",
+      "filename": "Epilepsy-2026--db0d2fee.pdf",
+      "package_path": "pdfs/lecture/Epilepsy-2026--db0d2fee.pdf",
+      "bytes": 4350156,
+      "sha256": "db0d2fee30142c8308e8a662806d5329c735b7d3b94b1feb6aa85366cfe1072c",
+      "page_count": 85
+    },
+    {
+      "id": "ecdb56c1ca5e.pdf",
+      "title": "Neurologic Complications of Med Illness - Handout 2026",
+      "category": "lecture",
+      "filename": "Neurologic-Complications-of-Med-Illness---Handout-2026--db8cb87e.pdf",
+      "package_path": "pdfs/lecture/Neurologic-Complications-of-Med-Illness---Handout-2026--db8cb87e.pdf",
+      "bytes": 1560567,
+      "sha256": "db8cb87e3d20bafa35264e5b1eca6e73d6d2313b1fc5117d8b22e975b583f519",
+      "page_count": 11
+    },
+    {
+      "id": "08c88636e440.pdf",
+      "title": "Medications 3: dopamine pathways and treatment effects",
+      "category": "lecture",
+      "filename": "NPS18_Medications_3_Slides--dbb0c89a.pdf",
+      "package_path": "pdfs/lecture/NPS18_Medications_3_Slides--dbb0c89a.pdf",
+      "bytes": 21015476,
+      "sha256": "dbb0c89a6ccd5bd2630e335b50ed0236c0f42e2beb6d8490bbe9ef726122ba72",
+      "page_count": 70
+    },
+    {
+      "id": "47f5dbaadf83.pdf",
+      "title": "NPS15 Medications 1",
+      "category": "notes",
+      "filename": "NPS15_Medications_1_Notes--dc0d4e97.pdf",
+      "package_path": "pdfs/notes/NPS15_Medications_1_Notes--dc0d4e97.pdf",
+      "bytes": 6638971,
+      "sha256": "dc0d4e973c838fedaddefa8d5e9c511f4e085f9e5a27981f5f5341f27d31c0f0",
+      "page_count": 16
+    },
+    {
+      "id": "24c8943300ae.pdf",
+      "title": "CNS Infections - Encephalitis Notes",
+      "category": "notes",
+      "filename": "CNS-Infections---Encephalitis-Notes--dd218177.pdf",
+      "package_path": "pdfs/notes/CNS-Infections---Encephalitis-Notes--dd218177.pdf",
+      "bytes": 13188921,
+      "sha256": "dd21817756924cae27b054cf0a665765793a6123e8f91634a30e12453339fec5",
+      "page_count": 11
+    },
+    {
+      "id": "315da890cdd5.pdf",
+      "title": "Hypothalamus Handout 2026",
+      "category": "lecture",
+      "filename": "Hypothalamus-Handout-2026--ddeafe1c.pdf",
+      "package_path": "pdfs/lecture/Hypothalamus-Handout-2026--ddeafe1c.pdf",
+      "bytes": 14210300,
+      "sha256": "ddeafe1ce56750f00996c004d45024d4a70ddfe7fdbf9306ee34504cb5cc28ca",
+      "page_count": 11
+    },
+    {
+      "id": "70d785ca5733.pdf",
+      "title": "Neuroradiology 2026 handout.pdf",
+      "category": "lecture",
+      "filename": "Neuroradiology-2026-handout--deae33b6.pdf",
+      "package_path": "pdfs/lecture/Neuroradiology-2026-handout--deae33b6.pdf",
+      "bytes": 105145,
+      "sha256": "deae33b6d7d389ca3d7bbd601f166cb5dc814a7668c50a09539778b19c17c147",
+      "page_count": 13
+    },
+    {
+      "id": "88e668b85a30.pdf",
+      "title": "The Cerebellum 2026.pdf",
+      "category": "lecture",
+      "filename": "The-Cerebellum-2026--deb2f3b1.pdf",
+      "package_path": "pdfs/lecture/The-Cerebellum-2026--deb2f3b1.pdf",
+      "bytes": 2059884,
+      "sha256": "deb2f3b1e27a0f36d1658fa182412a6c2d4b4a602a6c45cbf42f44fe96860489",
+      "page_count": 34
+    },
+    {
+      "id": "f499eaa757bb.pdf",
+      "title": "The Neurologic Examination",
+      "category": "lecture",
+      "filename": "Quiz2_Learning_Objectives_Week2--debe1346.pdf",
+      "package_path": "pdfs/lecture/Quiz2_Learning_Objectives_Week2--debe1346.pdf",
+      "bytes": 108209,
+      "sha256": "debe13465e692def5bb40c163845f05d9bff3b8d57b90aa290b116ab50791260",
+      "page_count": 3
+    },
+    {
+      "id": "9ceeee0be529.pdf",
+      "title": "Sleep Disorders 2026 handout.pdf",
+      "category": "lecture",
+      "filename": "Sleep-Disorders-2026-handout--e0b44151.pdf",
+      "package_path": "pdfs/lecture/Sleep-Disorders-2026-handout--e0b44151.pdf",
+      "bytes": 4191566,
+      "sha256": "e0b441510882d41fd0b346df94610c8f44bbd85bc735b12aa993e28f592c1d7b",
+      "page_count": 15
+    },
+    {
+      "id": "4ef0470211c9.pdf",
+      "title": "Developmental Life Cycle 1: milestones, red flags, theories and illness concepts",
+      "category": "lecture",
+      "filename": "Development-2025.pptx-2--e0bd477c.pdf",
+      "package_path": "pdfs/lecture/Development-2025.pptx-2--e0bd477c.pdf",
+      "bytes": 38023267,
+      "sha256": "e0bd477c292cfaae48705d9194a80e44dcdc875e2386a4452c40a2766ffa5c10",
+      "page_count": 97
+    },
+    {
+      "id": "15145866b00a.pdf",
+      "title": "NPS 97 Eating Disorders",
+      "category": "lecture",
+      "filename": "d285e890-5adf-4ab4-87d1-17aeabfb6982-2FLLUSM_-_EATING__FEEDING_DO_-_Dr._martinez--e1af516a.pdf",
+      "package_path": "pdfs/lecture/d285e890-5adf-4ab4-87d1-17aeabfb6982-2FLLUSM_-_EATING__FEEDING_DO_-_Dr._martinez--e1af516a.pdf",
+      "bytes": 9171371,
+      "sha256": "e1af516a834b2b0da0ab23eae0273b300b8cb13a34ea1b2b942b5309944668b5",
+      "page_count": 15
+    },
+    {
+      "id": "f99f567c27c8.pdf",
+      "title": "Ear and Eye Infections Slides.pdf · PDF 9",
+      "category": "lecture",
+      "filename": "Ear-and-Eye-Infections-Slides--e22c66cd.pdf",
+      "package_path": "pdfs/lecture/Ear-and-Eye-Infections-Slides--e22c66cd.pdf",
+      "bytes": 43758069,
+      "sha256": "e22c66cdbb583e3b80107df7cc87ecaac89df46e47018686f837db4bb4c9cd78",
+      "page_count": 57
+    },
+    {
+      "id": "8aebedbf545b.pdf",
+      "title": "04 Anesthetics and Neuromuscular Blockers",
+      "category": "notes",
+      "filename": "Neuromuscular-Blockers_Additional-Lecture-Notes_September-2026_Behringer--e2bca89d.pdf",
+      "package_path": "pdfs/notes/Neuromuscular-Blockers_Additional-Lecture-Notes_September-2026_Behringer--e2bca89d.pdf",
+      "bytes": 1007086,
+      "sha256": "e2bca89db7c43a239641e8e25edf9e9d638366a5e590c3c811081c91580ed1bc",
+      "page_count": 12
+    },
+    {
+      "id": "6d60db80dded.pdf",
+      "title": "Neural Substrates: affect, HPA axis, reward, and large-scale networks",
+      "category": "lecture",
+      "filename": "Panopto_Neural_Substrates_Slides--e3131d12.pdf",
+      "package_path": "pdfs/lecture/Panopto_Neural_Substrates_Slides--e3131d12.pdf",
+      "bytes": 4538363,
+      "sha256": "e3131d12d236390627c6876512a2bbdc29b4f4d5cd1e99cfc86870496b431f8d",
+      "page_count": 49
+    },
+    {
+      "id": "fd60744dfb48.pdf",
+      "title": "TBL Vision Anterior Eye Handout.pdf",
+      "category": "lecture",
+      "filename": "TBL_Vision_Anterior_Eye_Handout--e608959d.pdf",
+      "package_path": "pdfs/lecture/TBL_Vision_Anterior_Eye_Handout--e608959d.pdf",
+      "bytes": 6328940,
+      "sha256": "e608959d36181a63873ce9c9bf6effd7eeab392cf11d0f998bb4b0a821766d99",
+      "page_count": 14
+    },
+    {
+      "id": "4e583882ba8e.pdf",
+      "title": "Ear and Eye Infections Questions with Answers",
+      "category": "lecture",
+      "filename": "Ear-and-Eye-Infections-Questions-with-Answers--e7f96a0e.pdf",
+      "package_path": "pdfs/lecture/Ear-and-Eye-Infections-Questions-with-Answers--e7f96a0e.pdf",
+      "bytes": 312408,
+      "sha256": "e7f96a0eb568b09d1b4f35446f8a036fbccdbc54e16afe2ea78432c880e9cac2",
+      "page_count": 3
+    },
+    {
+      "id": "646178eab8d1.pdf",
+      "title": "Movement Disorders 2026",
+      "category": "lecture",
+      "filename": "Movement-Disorders-2026--e8187446.pdf",
+      "package_path": "pdfs/lecture/Movement-Disorders-2026--e8187446.pdf",
+      "bytes": 5108122,
+      "sha256": "e8187446612f7c69defa7473c5bbdfad9122996510803f688afbd02ccee583db",
+      "page_count": 85
+    },
+    {
+      "id": "0b82e5fe0122.pdf",
+      "title": "Hypothalamus Lecture Slides_2026",
+      "category": "lecture",
+      "filename": "Hypothalamus-Lecture-Slides_2026--e93c7c3e.pdf",
+      "package_path": "pdfs/lecture/Hypothalamus-Lecture-Slides_2026--e93c7c3e.pdf",
+      "bytes": 2075627,
+      "sha256": "e93c7c3eb3abe73900f447d1e45d4cf13c64a3f1980df85dcdd46080b2d35322",
+      "page_count": 43
+    },
+    {
+      "id": "7f3d76279949.pdf",
+      "title": "PNS Infections and Meningitis Notes.pdf",
+      "category": "notes",
+      "filename": "PNS-Infections-and-Meningitis-Notes--eb1da2e4.pdf",
+      "package_path": "pdfs/notes/PNS-Infections-and-Meningitis-Notes--eb1da2e4.pdf",
+      "bytes": 13571437,
+      "sha256": "eb1da2e455a4d2bfcbf81a5b95f68a1bb3e367b4d5723d0270b232d292c52c14",
+      "page_count": 13
+    },
+    {
+      "id": "fec8dab4e609.pdf",
+      "title": "Psychotherapy, DBT skills",
+      "category": "lecture",
+      "filename": "NPS19_Psychotherapy_Slides--ebcc9046.pdf",
+      "package_path": "pdfs/lecture/NPS19_Psychotherapy_Slides--ebcc9046.pdf",
+      "bytes": 1251118,
+      "sha256": "ebcc904629205d0d189e92d3f768e699af5a5ffd6ea1d808fbda39fa3f5e0a6a",
+      "page_count": 23
+    },
+    {
+      "id": "bc7082e1a281.pdf",
+      "title": "NMJ diseases 2026.pdf",
+      "category": "lecture",
+      "filename": "NMJ-diseases-2026--f2e0653e.pdf",
+      "package_path": "pdfs/lecture/NMJ-diseases-2026--f2e0653e.pdf",
+      "bytes": 1959508,
+      "sha256": "f2e0653e7fb8756e054f3b3ed7d995a7fb57376ceb550df73160778b66283cd7",
+      "page_count": 41
+    },
+    {
+      "id": "e6a676bea327.pdf",
+      "title": "Stress, HPA axis and suicide risk",
+      "category": "lecture",
+      "filename": "2026-Stress-and-Suicide-08272026--f62d112e.pdf",
+      "package_path": "pdfs/lecture/2026-Stress-and-Suicide-08272026--f62d112e.pdf",
+      "bytes": 6621107,
+      "sha256": "f62d112ed993b19aa0a9231f7a1fca336e2710aadb8086adfc1a792e5cce4ab8",
+      "page_count": 58
+    },
+    {
+      "id": "55cbfbf0cfef.pdf",
+      "title": "Pathology of CSF and ICP - Slides",
+      "category": "lecture",
+      "filename": "Pathology-of-CSF-and-ICP---Slides--f648c747.pdf",
+      "package_path": "pdfs/lecture/Pathology-of-CSF-and-ICP---Slides--f648c747.pdf",
+      "bytes": 2323723,
+      "sha256": "f648c74708fe56387929cd4e6003918e635ff85c52b454432cb16dd62d196a39",
+      "page_count": 32
+    },
+    {
+      "id": "0aa6d65b9e82.pdf",
+      "title": "Pathology of White Matter Diseases - Slides",
+      "category": "lecture",
+      "filename": "Pathology-of-White-Matter-Diseases---Slides--f669424f.pdf",
+      "package_path": "pdfs/lecture/Pathology-of-White-Matter-Diseases---Slides--f669424f.pdf",
+      "bytes": 8060660,
+      "sha256": "f669424fee09cc81fc77170fe5a993aed42bff64150aa2882956e619b27b8112",
+      "page_count": 49
+    },
+    {
+      "id": "a83357cb902e.pdf",
+      "title": "Muscle pathology",
+      "category": "lecture",
+      "filename": "Pathology-of-Skeletal-Muscle-and-Peripheral-Nerve-Lecture-Handout--f805f9ad.pdf",
+      "package_path": "pdfs/lecture/Pathology-of-Skeletal-Muscle-and-Peripheral-Nerve-Lecture-Handout--f805f9ad.pdf",
+      "bytes": 5398644,
+      "sha256": "f805f9ad08c8851f7061d9e5679f013dbfa0298acbf342b923b01689b22abd7a",
+      "page_count": 12
+    },
+    {
+      "id": "local-f8b498915d10.pdf",
+      "title": "Neurocutaneous syndromes 2026.pdf",
+      "category": "lecture",
+      "filename": "Neurocutaneous-syndromes-2026--f8b49891.pdf",
+      "package_path": "pdfs/lecture/Neurocutaneous-syndromes-2026--f8b49891.pdf",
+      "bytes": 3103988,
+      "sha256": "f8b498915d106ef86376522708225af76c67a78bd62e33cd7ace70127aeae535",
+      "page_count": 37
+    },
+    {
+      "id": "b02a1888d5bd.pdf",
+      "title": "Slides_Eye & Ear Diseases_CO2029",
+      "category": "lecture",
+      "filename": "Slides_Eye-Ear-Diseases_CO2029--f909a0de.pdf",
+      "package_path": "pdfs/lecture/Slides_Eye-Ear-Diseases_CO2029--f909a0de.pdf",
+      "bytes": 2641714,
+      "sha256": "f909a0def6ccb8a7e4d214be733d14bea565f5970fea6213f9a538bb1e5878c8",
+      "page_count": 72
+    },
+    {
+      "id": "f41ece1c8e9f.pdf",
+      "title": "Pathology of CNS Trauma Slides",
+      "category": "lecture",
+      "filename": "Pathology-of-CNS-Trauma-Slides--fac89599.pdf",
+      "package_path": "pdfs/lecture/Pathology-of-CNS-Trauma-Slides--fac89599.pdf",
+      "bytes": 4913622,
+      "sha256": "fac89599fa4384bf490eb3ddb73d315bcdfee712a97216a4fda0de82b1242595",
+      "page_count": 44
+    },
+    {
+      "id": "7204dc48990e.pdf",
+      "title": "NPS28 Brain Stem 2 Pons Slides.pdf",
+      "category": "lecture",
+      "filename": "NPS28_Brain_Stem_2_Pons_Slides--fb387b3c.pdf",
+      "package_path": "pdfs/lecture/NPS28_Brain_Stem_2_Pons_Slides--fb387b3c.pdf",
+      "bytes": 3350046,
+      "sha256": "fb387b3c46da2d2ebc05252674885447d7ca87829378a1e490de9314709addf0",
+      "page_count": 29
+    },
+    {
+      "id": "fec5fb5aea1a.pdf",
+      "title": "PN 2026 PPT.pdf",
+      "category": "lecture",
+      "filename": "PN-2026-PPT--fc57cfa6.pdf",
+      "package_path": "pdfs/lecture/PN-2026-PPT--fc57cfa6.pdf",
+      "bytes": 2064411,
+      "sha256": "fc57cfa60615deaad49f51aa0a20146953cd99d75b9eecc65427713d1d05adfe",
+      "page_count": 75
+    },
+    {
+      "id": "89e9a0c153f1.pdf",
+      "title": "NPS 34 Developmental Life Cycle 2: later-life development and safety",
+      "category": "lecture",
+      "filename": "b78abd78-6f18-4675-ac60-f54b7a9144cd_Development_2--fc95cea8.pdf",
+      "package_path": "pdfs/lecture/b78abd78-6f18-4675-ac60-f54b7a9144cd_Development_2--fc95cea8.pdf",
+      "bytes": 3107899,
+      "sha256": "fc95cea8c9bbaa67b5a9a9cffddcf3949b079c1c23a82147ae2889a4a19e7de1",
+      "page_count": 15
+    },
+    {
+      "id": "4dbca36b587f.pdf",
+      "title": "04 Anesthetics and Neuromuscular Blockers",
+      "category": "notes",
+      "filename": "General-Anesthetics_Additional-Lecture-Notes_September-2026_Behringer--fd1bddde.pdf",
+      "package_path": "pdfs/notes/General-Anesthetics_Additional-Lecture-Notes_September-2026_Behringer--fd1bddde.pdf",
+      "bytes": 2501609,
+      "sha256": "fd1bddde6e618ce4e55dc9dd5a89c9bf7232fabbb65832365d1619bb257d3e37",
+      "page_count": 31
+    }
+  ],
+  "archives": [
+    {
+      "filename": "Books-01.zip",
+      "class": "book",
+      "pdf_count": 2,
+      "archive_bytes": 282775864,
+      "sha256": "bb0596cd919b132fcd9ba712d78d61f0645faa91e10415e624693bba3dc677f6"
+    },
+    {
+      "filename": "Lectures-01.zip",
+      "class": "lecture",
+      "pdf_count": 42,
+      "archive_bytes": 474563433,
+      "sha256": "92691d12488dd398b06c32256779acc1eef9b75a3dacdb9a52a5b1f3d74d39c5"
+    },
+    {
+      "filename": "Lectures-02.zip",
+      "class": "lecture",
+      "pdf_count": 58,
+      "archive_bytes": 478448349,
+      "sha256": "40310caf60cf29027ccc6b1cf8490143572fa0b99757dd63a3a607c87c1ac5c0"
+    },
+    {
+      "filename": "Lectures-03.zip",
+      "class": "lecture",
+      "pdf_count": 47,
+      "archive_bytes": 325284920,
+      "sha256": "bf928e6bad11612216004759726878e84034a7288ad3a6d3d8fff247081ba7af"
+    },
+    {
+      "filename": "Notes-01.zip",
+      "class": "notes",
+      "pdf_count": 21,
+      "archive_bytes": 152800365,
+      "sha256": "8aa15a2b7611853fbe7a278713e566c49f556eda84c837173f00f80aae2247cc"
+    },
+    {
+      "filename": "Other-01.zip",
+      "class": "other",
+      "pdf_count": 5,
+      "archive_bytes": 41362379,
+      "sha256": "3c79176d697367687d70ef2bda925e9c85ff83341f8d7cb25f078727ad1f39f8"
+    },
+    {
+      "filename": "Reviews-01.zip",
+      "class": "review",
+      "pdf_count": 2,
+      "archive_bytes": 42884427,
+      "sha256": "04e95bbe565be5be730dd586557212ab7c44d9ca35427e529b8001d603b125ba"
+    }
+  ]
+}

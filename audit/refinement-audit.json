@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-08",
+  "scope": "Source inventory, exact-PDF routing, full locator integrity, and a bounded content review prioritizing Quiz 7 / Week 8. Locator checks do not establish medical completeness.",
+  "source_collection": {
+    "unique_pdfs": 177,
+    "total_pdf_bytes": 1893218262,
+    "categories": {
+      "book": 2,
+      "lecture": 147,
+      "notes": 21,
+      "other": 5,
+      "review": 2
+    }
+  },
+  "deduplication": {
+    "distinct_original_paths": 202,
+    "duplicate_copies_omitted": 25
+  },
+  "personal_questions_in_shared_collection": 0,
+  "drive": {
+    "location": "Personal COTR.group My Drive",
+    "catalog_access": "Anyone with the link: Viewer",
+    "pdf_archive_access": "Restricted pending redistribution permission",
+    "catalog_url": "https://drive.google.com/drive/folders/1Kquft1oLerZXM3_Y-u1yrKDYfqbTNWe7",
+    "pdf_archives_url": "https://drive.google.com/drive/folders/1L6wViXDyns_N5mSrKBG3GLscBHiPp-i_"
+  },
+  "verified": {
+    "chapters": 52,
+    "blocks": 156,
+    "personal_learning_objectives": 681,
+    "personal_learning_objective_answers": 681,
+    "quiz_7_tagged_objectives": 97,
+    "week_8_core_objectives": 113,
+    "lo_pdf_citations_checked": 1089,
+    "block_pdf_citations_checked": 1457,
+    "professor_review_page_citations_checked": 298,
+    "source_viewer_citations_checked": 2017,
+    "source_viewer_citation_issues_after_fix": 0
+  },
+  "fixes": [
+    "Resolve exact source aliases before basename fallback; report ambiguous basenames instead of opening the wrong lecture.",
+    "Preserve same-file book aliases when merging catalogs, restoring two First Aid source-viewer links.",
+    "Label supplementary functional-seizure details separately from the course slide and link verified AAN 2025 guidance and AES original research."
+  ],
+  "pending_sources": [
+    "Current 2026 NPS 98 psychiatric case-review PDF has not been posted.",
+    "Nine Neuroradiology 1 case scan panels are absent from supplied source files.",
+    "NPS 95 case 8 gives no specific serology result; retain the source-bounded agent description."
+  ],
+  "content_review": "Bounded Week 8 review plus prior complex-objective samples; no claim of exhaustive clinical fact verification.",
+  "supplementary_references": [
+    {
+      "title": "AAN Management of Functional Seizures clinician summary (2025), physical pages 1–5",
+      "url": "https://aanfiles.blob.core.windows.net/guidelines/2cceae40-edcf-484d-9054-bbdf76206bca/25_FunctionalSeizure-ClinGL_v03b.pdf"
+    },
+    {
+      "title": "AES Cluster Analysis of Seizure Semiology original research abstract (2022)",
+      "url": "https://aesnet.org/abstractslisting/cluster-analysis-of-seizure-semiology-to-differentiate-epileptic-seizures-from-psychogenic-nonepileptic-seizures"
+    }
+  ]
+}

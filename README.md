@@ -4,6 +4,22 @@ This is a portable edition of the local-first study guide. It keeps the original
 
 The public dataset contains original explanatory text and seven generated conceptual diagrams, including four pathology illustrations. It excludes private learning-objective wording, question-bank records and screenshots, licensed Anki exports/media, book excerpts and PDF layers, course/lecture screenshots, personal URLs and paths, and saved progress. The optional objectives, questions, source references, book pages, and Anki data fields remain available to a private local build.
 
+## Course PDF collection
+
+The [public Drive catalog](https://drive.google.com/drive/folders/1Kquft1oLerZXM3_Y-u1yrKDYfqbTNWe7) contains the source inventory, file hashes, portable catalog, and JSON import pack. It is viewable by anyone with the link. The inventory is also available at [data/source-manifest.json](data/source-manifest.json).
+
+The [complete PDF collection](https://drive.google.com/drive/folders/1L6wViXDyns_N5mSrKBG3GLscBHiPp-i_) is in the owner's personal COTR.group My Drive. Its seven archives contain 177 unique PDFs, approximately 1.9 GB before compression: 147 lectures, 21 notes, two reviews, First Aid USMLE Step 1 (2024), Pathoma (2021), and five other supporting PDFs. Twenty-five duplicate copies were omitted. Personal questions and question screenshots are excluded. The PDF archives are currently restricted pending confirmation of redistribution permission; the public catalog does not include PDF contents.
+
+If you have access to the source archives, extract them together into `local-private/SourceLibrary/`, retaining their `pdfs/` paths. Put the catalog and source pack from the public folder beside that directory, verify files against `manifest.public.json`, and run:
+
+```sh
+python3 build_local.py --pack local-private/SourceLibrary/source-pack.private.json
+```
+
+Then follow the local search setup below to enable exact slide viewing and First Aid/Pathoma passage search. This metadata-only pack adds sources to the public guide; it does not include the personal guide's answered objectives, Anki cards, or questions. The catalog preserves existing source IDs and physical PDF page numbering (First Aid: 866 pages; Pathoma: 234 pages).
+
+The current 2026 NPS 98 review packet and nine Neuroradiology 1 case scan panels were not available in the supplied materials or current Canvas page at the October 8 review. See [audit/refinement-audit.json](audit/refinement-audit.json) for the verification scope and remaining source gaps.
+
 ## Run the public edition
 
 Python 3.10 or newer is sufficient for the static public guide. From this folder:
