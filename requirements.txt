@@ -1,0 +1,5 @@
+# Pinned versions from the current optional local semantic-search runtime.
+# The public HTML/CSS/JS guide does not require Python packages.
+numpy==2.5.3
+onnxruntime==1.30.0
+tokenizers==0.23.2

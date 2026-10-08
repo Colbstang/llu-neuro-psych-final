@@ -1,0 +1,22 @@
+# Personal source material stays outside the public project.
+/local-private/*
+!/local-private/README.md
+*.private.json
+*.personal.json
+personal-bundle.html
+anki_context_data.js
+!/anki_context_data.js
+
+# Optional private semantic index and downloaded models.
+/semantic_index/
+/reference_index/
+/source_page_cache/
+/assets/models/
+semantic_service.log
+/source_catalog.json
+/source_viewer_catalog.json
+/anki_topic_media.json
+/week8_references.json
+__pycache__/
+*.py[cod]
+.DS_Store

@@ -1,0 +1,1 @@
+Put private source packs, personal compiled HTML bundles, matching Anki context files, and optional Anki media in this folder. The contents are ignored by Git. Run `python3 build_local.py` or `python3 build_local.py --pack local-private/private-pack.json` to build a private copy of the full app under `local-private/runtime/`.

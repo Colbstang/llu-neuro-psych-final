@@ -1,0 +1,189 @@
+/* Compact presentation for the dedicated learning-objective library only. */
+.objective-page .objective-page-toolbar {
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+  box-shadow: none;
+}
+.objective-page .objective-filters { gap: 4px; }
+.objective-page .objective-filters button {
+  padding: 4px 9px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+.objective-page .objective-quiz-filter {
+  color: var(--muted);
+  font-size: 10px;
+}
+.objective-page .objective-quiz-filter select {
+  max-width: 190px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+}
+
+.objective-page .objective-card {
+  padding: 12px 0 14px;
+}
+.objective-page .objective-card-heading { margin: 0; }
+.objective-page .objective-card-heading .objective-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.objective-page .objective-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 5px;
+}
+.objective-page .objective-rating {
+  gap: 4px;
+  margin: 0;
+}
+.objective-page .objective-rating button {
+  border: 0;
+  border-radius: 3px;
+  padding: 3px 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+}
+.objective-page .objective-rating button:hover,
+.objective-page .objective-rating button:focus-visible {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+.objective-page .objective-rating button[data-value="good"][aria-pressed="true"] {
+  background: #e6f1e8;
+  color: #1c6840;
+}
+.objective-page .objective-rating button[data-value="bad"][aria-pressed="true"] {
+  background: #fae9e8;
+  color: #a42c29;
+}
+.objective-page .objective-status-label {
+  color: var(--muted);
+  font-size: 9px;
+}
+.objective-page .objective-quiz-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+  margin: 0;
+}
+.objective-page .objective-quiz-tags button {
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+/* These disclosures opt out of the guide's large, boxed details treatment. */
+.objective-page details.objective-sources,
+.objective-page details.objective-answer,
+.objective-page details.objective-notes {
+  margin: 4px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 11px;
+}
+.objective-page details.objective-sources > summary,
+.objective-page details.objective-answer > summary,
+.objective-page details.objective-notes > summary {
+  display: inline-block;
+  padding: 2px 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.objective-page details.objective-sources > summary:hover,
+.objective-page details.objective-answer > summary:hover,
+.objective-page details.objective-notes > summary:hover {
+  color: var(--ink);
+}
+.objective-page details.objective-sources > summary::before,
+.objective-page details.objective-answer > summary::before,
+.objective-page details.objective-notes > summary::before {
+  content: '▸';
+  margin-right: 5px;
+}
+.objective-page details.objective-sources[open] > summary::before,
+.objective-page details.objective-answer[open] > summary::before,
+.objective-page details.objective-notes[open] > summary::before {
+  content: '▾';
+}
+.objective-page details.objective-sources[open] { flex-basis: 100%; }
+.objective-page .objective-source-detail {
+  padding: 2px 0 3px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+.objective-page .objective-source-detail p {
+  margin: 2px 0;
+}
+.objective-page .objective-source-detail a {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.objective-page details.objective-answer { margin-top: 5px; }
+.objective-page details.objective-answer > summary { color: var(--green); }
+.objective-page .objective-answer-content {
+  margin: 3px 0 0;
+  padding: 3px 0 0;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.objective-page .objective-answer-text p:first-child { margin-top: 0; }
+.objective-page .objective-answer-text p:last-child { margin-bottom: 0; }
+.objective-page .objective-answer-content .source-links {
+  margin: 5px 0 0;
+  font-size: 9px;
+}
+.objective-page .objective-image { margin: 8px 0 0; }
+.objective-page .objective-image button {
+  width: auto;
+  max-width: 100%;
+  margin: 0 auto;
+}
+.objective-page .objective-image img {
+  max-height: 320px;
+}
+.objective-page .objective-image figcaption {
+  margin-top: 3px;
+  font-size: 9px;
+}
+
+.objective-page details.objective-notes { margin-top: 4px; }
+.objective-page .objective-note-label {
+  margin: 4px 0 3px;
+  font-size: 10px;
+}
+.objective-page .objective-note {
+  min-height: 38px;
+  padding: 6px 8px;
+  font-size: 11px;
+}
+
+@media (max-width: 650px) {
+  .objective-page .objective-page-toolbar {
+    gap: 6px;
+    padding: 6px 0;
+  }
+  .objective-page .objective-controls { gap: 4px 8px; }
+  .objective-page .objective-image img { max-height: 280px; }
+}

@@ -1,0 +1,56 @@
+{
+  "edition": "portable sanitized study-guide candidate",
+  "chapter_count": 52,
+  "explanatory_block_count": 156,
+  "stable_chapter_id_count": 52,
+  "stable_block_id_count": 156,
+  "blocks_with_existing_skim": 141,
+  "comparison_sheet_count": 3,
+  "comparison_rows_by_sheet": {
+    "drugs": 53,
+    "bugs": 28,
+    "pathology": 133
+  },
+  "comparison_row_count": 214,
+  "public_course_scope_labels_retained": [
+    "Quiz 7",
+    "Week 8",
+    "Friday priority"
+  ],
+  "private_optional_slots_empty": {
+    "learning_objectives": true,
+    "questions": true,
+    "book_pages": true,
+    "source_catalog": true,
+    "question_annotations": true
+  },
+  "generated_concept_assets": [
+    "assets/generated/antiseizure-targets.png",
+    "assets/generated/intracranial-compartments.png",
+    "assets/generated/path-completion/apnea-mechanics.png",
+    "assets/generated/path-completion/cpt2-periodic-v2.png",
+    "assets/generated/path-completion/feeding-patterns.png",
+    "assets/generated/path-completion/imnm.png",
+    "assets/generated/white-matter-cell-targets.png"
+  ],
+  "generated_pathology_image_placements": 7,
+  "pathology_rows_with_generated_diagrams": 7,
+  "pathology_comparison_rows": 133,
+  "question_specific_passages_removed": 24,
+  "non_generated_source_figures_removed": true,
+  "data_payload_privacy_scan_match_counts": {
+    "absolute_user_paths": 0,
+    "file_urls": 0,
+    "private_course_domains": 0,
+    "bank_specific_question_references": 0,
+    "licensed_anki_export_or_media_references": 0,
+    "private_source_paths": 0
+  },
+  "provenance_note": "Chapter and comparison explanations were extracted from compiled study-guide DATA and retained as supplied, apart from HTML sanitization, generalized personal/course-source naming, and removal of question-bank-specific passages. Source citations, private assets, personal data, and licensed exports were excluded. Claims have not been independently verified against exact course pages in this public-build pass; use actual course notes and source pages to verify future changes.",
+  "main_text_generated_diagram_count": 7,
+  "public_game_cases": {
+    "bugs": 28,
+    "drugs": 53
+  },
+  "generated_asset_validation": "Embedded asset bytes matched against reviewed original files; no licensed embedded media retained."
+}

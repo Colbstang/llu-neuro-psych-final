@@ -1,0 +1,18 @@
+.study-scope-label{display:block;margin:0 3px 12px;font-size:8px;color:var(--muted)}
+.study-scope-label select{display:block;box-sizing:border-box;width:100%;margin-top:4px;padding:5px 2px;background:#fffdf7;border:1px solid #c9d3c6;border-radius:3px;font-size:9px;color:var(--ink)}
+.week8-overview{padding:0 0 24px;margin-bottom:18px;border-bottom:2px solid #456452}
+.week8-overview h1{margin:7px 0 12px;font-size:32px;color:#254533}
+.week8-overview>p{max-width:760px;margin:8px 0;font-size:14px;line-height:1.6}
+.week8-overview .week8-counts{font-size:12px;color:#56705e}
+.week8-source-note{border:0;background:transparent;margin:12px 0 0;font-size:11px}
+.week8-source-note>summary{padding:0;color:#56705e;cursor:pointer}
+.week8-source-note p{margin:8px 0;line-height:1.55}
+.chapter-sources,.block-sources{border:0;background:transparent;margin:9px 0;font-size:10px}
+.chapter-sources>summary,.block-sources>summary{padding:0;color:var(--muted);cursor:pointer}
+.chapter-sources .source-links,.block-sources .block-source-links{margin-top:8px;line-height:1.7}
+.guide-chapter[data-week="8"] .chapter-intro h1{font-size:29px}
+.guide-chapter[data-week="8"] .inline-figure{max-width:760px;margin:18px auto}
+.guide-chapter[data-week="8"] .inline-figure img{max-height:480px;object-fit:contain}
+.guide-chapter[data-week="8"] .editable table{font-size:13px;line-height:1.55}
+.with-panel .guide-chapter[data-week="8"] .inline-figure img{max-height:400px}
+@media(max-width:700px){.week8-overview h1{font-size:25px}.guide-chapter[data-week="8"] .chapter-intro h1{font-size:23px}.study-scope-label{font-size:7px}.study-scope-label select{font-size:8px}}

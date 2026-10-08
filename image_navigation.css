@@ -1,0 +1,5 @@
+.section-image-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0;color:var(--muted);font:11px system-ui,sans-serif}
+.section-image-nav button{padding:4px 12px;font-size:16px;border:1px solid var(--line);background:transparent}
+.section-images .inline-figure{margin-top:5px}
+.gallery-key-hint{color:var(--muted);font-size:10px}
+.gallery-caption{font-size:12px;line-height:1.6}
