@@ -1,18 +1,22 @@
-"""Local semantic search and page viewing for cataloged First Aid and Pathoma PDFs."""
+"""Local book and course PDF search with exact source-page viewing."""
 from __future__ import annotations
 
 import base64
-import html
+import bisect
 import json
+import math
 import re
 import subprocess
 import threading
+import unicodedata
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 BOOKS = ("First Aid", "Pathoma")
+REFERENCE_FAMILIES = ("first_aid", "pathoma", "mehlman", "in_house")
+MEHLMAN_DOCUMENTS = {"mehlman-neuro", "mehlman-neuroanatomy", "mehlman-psych"}
 MIN_RERANK_SCORE = -4.5
 _STOP = set("a an and are as at be by for from has have in is it of on or the to with what where when how does do define explain this that these those objective objectives learning lecture slide slides page pages pdf describe discuss list identify compare include including based give given use used using following which who their them its into about after before during between each other also may can should must will would could from all any most more less very such than then there here why".split())
 _GENERIC_HEADING_TERMS = {"management", "treatment", "diagnosis", "clinical", "care"}
@@ -38,7 +42,83 @@ def normalize_alias(value: str) -> str:
 
 
 def _tokens(text: str) -> set[str]:
-    return {t for t in re.findall(r"[a-z0-9]+", str(text).casefold()) if len(t) > 1 and t not in _STOP}
+    normalized = _normalize_biomedical(text)
+    return {t for t in re.findall(r"[a-z0-9]+", normalized) if len(t) > 1 and t not in _STOP}
+
+
+def _normalize_biomedical(text: str) -> str:
+    """Fold common Greek-letter and interferon spellings to one form."""
+    value = str(text or "").casefold().replace("β", " beta ").replace("ϐ", " beta ")
+    value = value.replace("α", " alpha ").replace("γ", " gamma ").replace("δ", " delta ")
+    value = re.sub(r"\bifn\s*[-‐‑–—]?\s*beta\b", "interferon beta", value)
+    value = re.sub(r"\binterferon\s*[-‐‑–—]?\s*beta\b", "interferon beta", value)
+    value = "".join(char for char in unicodedata.normalize("NFKD", value)
+                    if not unicodedata.combining(char))
+    return re.sub(r"\s+", " ", value)
+
+
+def _token_list(text: str) -> list[str]:
+    return [t for t in re.findall(r"[a-z0-9]+", _normalize_biomedical(text))
+            if len(t) > 1 and t not in _STOP]
+
+
+def _has_near_phrase(query_tokens: list[str], text: str, max_gap: int = 3) -> bool:
+    """Require short named concepts to occur together, not as scattered words."""
+    if len(query_tokens) < 2:
+        return True
+    tokens = _token_list(text)
+    locations = [[i for i, token in enumerate(tokens) if token == term] for term in query_tokens]
+    if any(not positions for positions in locations):
+        return False
+    # Match one ordered occurrence of each term within a compact window. Do
+    # not require every repeated occurrence of a query word to be nearby: a
+    # pathology page can contain both "multiple sclerosis" and a later
+    # "subacute sclerosing panencephalitis" section.
+    for start in locations[0]:
+        previous = start
+        for offset, positions in enumerate(locations[1:], 1):
+            next_index = bisect.bisect_right(positions, previous)
+            if next_index >= len(positions):
+                break
+            following = positions[next_index]
+            if following > start + max_gap + offset:
+                break
+            previous = following
+        else:
+            return True
+    return False
+
+
+def _phrase_near_start(query_tokens: list[str], text: str, max_chars: int = 180) -> bool:
+    normalized = _normalize_biomedical(text[:max_chars])
+    return _has_near_phrase(query_tokens, normalized)
+
+
+def _looks_like_image_acknowledgment(text: str) -> bool:
+    return bool(re.search(r"\bimage\s+(?:acknowledg(?:e)?ments?|credits?)\b|imageack(?:nowledg)?", text, re.I))
+
+
+def _looks_like_locator_only(text: str) -> bool:
+    value = str(text or "")
+    if _looks_like_image_acknowledgment(value):
+        return True
+    lines = [re.sub(r"\s+", " ", line).strip() for line in value.splitlines() if line.strip()]
+    if len(lines) < 3:
+        return False
+    locator_lines = sum(bool(re.search(r"\b\d{2,4}\s*$", line)) for line in lines)
+    return locator_lines >= 3 and locator_lines / len(lines) >= .60
+
+
+def _page_context_adjustment(query_tokens: list[str], excerpts: list[str]) -> float:
+    page_text = " ".join(excerpts)
+    normalized = _normalize_biomedical(page_text)
+    adjustment = .12 if _phrase_near_start(query_tokens, page_text) else 0.0
+    if {"brown", "sequard"}.issubset(set(query_tokens)):
+        if re.search(r"\bbrown[\s-]+sequard\b.{0,80}\bhemisection\b", normalized[:350]):
+            adjustment += .24
+        if "rapid review" in normalized[:100]:
+            adjustment -= .14
+    return adjustment
 
 
 def _xml_local(tag: str) -> str:
@@ -76,7 +156,7 @@ def _parse_bbox_layout(source: str) -> dict[str, Any]:
 
 
 class ReferenceSearch:
-    """Search the two explicitly cataloged books with shared local models.
+    """Search cataloged standards and course PDFs with shared local models.
 
     ``encoder`` must expose ``encode([text, ...])`` and ``reranker`` must
     expose ``score(query, [passage, ...])``. The caller supplies these shared
@@ -95,6 +175,8 @@ class ReferenceSearch:
         self.documents: dict[str, dict[str, Any]] = {}
         self.aliases: dict[str, str] = {}
         self.records: list[dict[str, Any]] = []
+        self.source_index: dict[str, Any] = {}
+        self.ocr_layers: dict[tuple[str, int], Path] = {}
         self.vectors: np.ndarray | None = None
         self.status = "Reference index is not ready. Run prepare_reference_catalog.py --index."
         self._load()
@@ -120,6 +202,15 @@ class ReferenceSearch:
                 document["pageCount"] = document["page_count"]
         self.aliases = {str(k): v for k, v in catalog.get("aliases", {}).items() if v in self.documents}
         try:
+            self.source_index = json.loads((self.index_root / "source-text-index.json").read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            self.source_index = {}
+        self.ocr_layers = {}
+        for record in self.source_index.get("records", []):
+            if record.get("ocrLayer"):
+                key = (str(record.get("documentId", "")), int(record.get("physicalPage", 0)))
+                self.ocr_layers[key] = self.index_root / str(record["ocrLayer"])
+        try:
             metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
             vectors = np.load(vectors_path, allow_pickle=False)["vectors"]
         except (OSError, KeyError, json.JSONDecodeError, ValueError):
@@ -129,8 +220,96 @@ class ReferenceSearch:
             self.status = "Reference index metadata does not match its vectors. Rebuild with prepare_reference_catalog.py --index."
             return
         self.records = metadata["records"]
+        for record in self.records:
+            if record.get("ocrLayer"):
+                key = (str(record.get("documentId", "")), int(record.get("physicalPage", 0)))
+                self.ocr_layers[key] = self.index_root / str(record["ocrLayer"])
         self.vectors = vectors.astype(np.float32, copy=False)
         self.status = "ready"
+
+    @staticmethod
+    def _source_family(document_id: str) -> str:
+        if document_id == "First Aid":
+            return "first_aid"
+        if document_id == "Pathoma":
+            return "pathoma"
+        if document_id in MEHLMAN_DOCUMENTS:
+            return "mehlman"
+        return "in_house"
+
+    def search_sources(self, query: str, limit: int = 8,
+                       families: list[str] | tuple[str, ...] | set[str] | None = None) -> list[dict[str, Any]]:
+        """Lexically search cataloged course PDFs, returning exact page locators."""
+        q = _normalize_biomedical(str(query or "").strip()[:4000])
+        terms = _tokens(q)
+        records = self.source_index.get("records", [])
+        if not terms or not records:
+            return []
+        families = set(REFERENCE_FAMILIES if families is None else families)
+        if not families or not families <= set(REFERENCE_FAMILIES):
+            return []
+        limit = max(1, min(20, int(limit)))
+        n_docs = max(1, int(self.source_index.get("documentCount", 1)))
+        df = self.source_index.get("documentFrequency", {})
+        ranked: list[tuple[float, dict[str, Any]]] = []
+        for record in records:
+            doc_id = str(record.get("documentId", ""))
+            if doc_id in BOOKS:
+                continue
+            if self._source_family(doc_id) not in families:
+                continue
+            excerpt = str(record.get("excerpt", ""))
+            body = _normalize_biomedical(excerpt)
+            record_terms = _tokens(body)
+            overlap = terms & record_terms
+            if not overlap:
+                continue
+            # BM25-style IDF with title and exact phrase boosts. No semantic
+            # expansion means unrelated topics correctly produce no hit.
+            score = 0.0
+            for term in overlap:
+                idf = math.log(1 + (n_docs - int(df.get(term, 0)) + .5) / (int(df.get(term, 0)) + .5))
+                tf = len(re.findall(rf"\b{re.escape(term)}\b", body))
+                score += idf * (tf * 2.2 / (tf + 1.2))
+            title = str(self.documents.get(doc_id, {}).get("title", ""))
+            title_terms = _tokens(title)
+            score += 1.7 * len(terms & title_terms)
+            normalized_query = re.sub(r"[^a-z0-9]+", " ", q).strip()
+            if len(normalized_query) >= 7 and normalized_query in re.sub(r"[^a-z0-9]+", " ", body):
+                score += 2.5
+            coverage = len(overlap) / max(1, len(terms))
+            if coverage < (0.5 if len(terms) > 2 else 1.0):
+                continue
+            score *= .55 + .45 * coverage
+            ranked.append((score, record))
+
+        ranked.sort(key=lambda item: (item[0], -int(item[1].get("physicalPage", 0))), reverse=True)
+        results: list[dict[str, Any]] = []
+        seen: set[tuple[str, int]] = set()
+        for score, record in ranked:
+            doc_id = str(record.get("documentId", ""))
+            page = int(record.get("physicalPage", 0))
+            key = (doc_id, page)
+            if key in seen:
+                continue
+            seen.add(key)
+            document = self.documents.get(doc_id, {})
+            try:
+                layer = self._get_page_layer(doc_id, page)
+                span_indices = self._focus_indices(layer, query)
+            except (OSError, RuntimeError, subprocess.SubprocessError):
+                span_indices = []
+            results.append({
+                "documentId": doc_id, "title": document.get("title", doc_id),
+                "kind": document.get("kind", "course"),
+                "physicalPage": page, "page_count": document.get("pageCount", document.get("page_count")),
+                "url": self._page_url(doc_id, page), "excerpt": record["excerpt"],
+                "span_indices": span_indices, "textSource": record.get("textSource", "native-pdftotext"),
+                "score": round(float(score), 4),
+            })
+            if len(results) >= limit:
+                break
+        return results
 
     def _canonical(self, document_id: str) -> str | None:
         key = normalize_alias(document_id)
@@ -140,15 +319,22 @@ class ReferenceSearch:
         # Only IDs explicitly present in the catalog are accepted.
         return str(document_id) if str(document_id) in self.documents else None
 
-    def search_books(self, query: str, limit: int = 3) -> dict[str, list[dict[str, Any]]]:
+    def search_books(self, query: str, limit: int = 3,
+                     families: list[str] | tuple[str, ...] | set[str] | None = None) -> dict[str, list[dict[str, Any]]]:
         results: dict[str, list[dict[str, Any]]] = {book: [] for book in BOOKS}
+        families = set(REFERENCE_FAMILIES if families is None else families)
+        if not families or not families <= set(REFERENCE_FAMILIES):
+            return results
         if self.vectors is None or not self.records or not str(query).strip():
             return results
-        query = str(query).strip()[:4000]
+        query = _normalize_biomedical(str(query).strip()[:4000])
         limit = max(1, min(10, int(limit)))
         query_vector = np.asarray(self.encoder.encode([query])[0], dtype=np.float32)
         cosine = self.vectors @ query_vector
         for book in BOOKS:
+            family = "first_aid" if book == "First Aid" else "pathoma"
+            if family not in families:
+                continue
             entry = self.entries[book]
             # The catalog's verified printed-page offset is the physical
             # front-matter boundary (printed page 1 begins immediately after).
@@ -158,19 +344,71 @@ class ReferenceSearch:
                        and int(record.get("physicalPage", 0)) > front_matter_pages]
             if not indices:
                 continue
-            candidates = sorted(indices, key=lambda i: float(cosine[i]), reverse=True)[:min(48, len(indices))]
+            query_terms = _tokens(query)
+            query_sequence = _token_list(query)
+            short_named_phrase = len(query_sequence) == 2
+            page_terms: dict[int, set[str]] = {}
+            page_excerpts: dict[int, list[str]] = {}
+            for i in indices:
+                page = int(self.records[i].get("physicalPage", 0))
+                excerpt = str(self.records[i].get("excerpt", ""))
+                page_terms.setdefault(page, set()).update(_tokens(excerpt))
+                page_excerpts.setdefault(page, []).append(excerpt)
+            excluded_pages = {page for page, excerpts in page_excerpts.items()
+                              if any(_looks_like_image_acknowledgment(text) for text in excerpts)}
+            is_brown_sequard_query = {"brown", "sequard"}.issubset(set(query_sequence))
+            if is_brown_sequard_query:
+                for page, excerpts in page_excerpts.items():
+                    first = _normalize_biomedical(excerpts[0][:400]) if excerpts else ""
+                    page_text = _normalize_biomedical(" ".join(excerpts))
+                    dedicated = bool(re.search(r"\bbrown[\s-]+sequard\b.{0,80}\bhemisection\b", first))
+                    rapid_reference = "rapid review" in first[:120] and re.search(r"\bbrown[\s-]+sequard\b", page_text)
+                    if not (dedicated or rapid_reference):
+                        excluded_pages.add(page)
+            minimum_coverage = .60 if len(query_terms) >= 3 else 1.0
+            supported_pages = {page for page, terms in page_terms.items()
+                               if page not in excluded_pages
+                               and len(query_terms & terms) / max(1, len(query_terms)) >= minimum_coverage
+                               and (not short_named_phrase or _has_near_phrase(query_sequence, " ".join(page_excerpts[page])))}
+            # Dense similarity proposes candidates; exact distinctive terms
+            # are required before the cross-encoder can promote a page.
+            indices = [i for i in indices if int(self.records[i].get("physicalPage", 0)) in supported_pages
+                       and not _looks_like_locator_only(self.records[i].get("excerpt", ""))
+                       and len(query_terms & _tokens(self.records[i]["excerpt"])) >= min(2, len(query_terms))]
+            if not indices:
+                continue
+            candidates = sorted(indices, key=lambda i: float(cosine[i]), reverse=True)[:min(72, len(indices))]
             passages = [self.records[i]["excerpt"] for i in candidates]
             rerank = self.reranker.score(query, passages)
-            ranked = sorted(zip(candidates, rerank), key=lambda item: float(item[1]) + .15 * float(cosine[item[0]]), reverse=True)
+            ranked = sorted(zip(candidates, rerank), key=lambda item: (
+                .55 * (len(query_terms & _tokens(self.records[item[0]]["excerpt"])) / max(1, len(query_terms)))
+                + .25 * float(cosine[item[0]])
+                + .20 * max(0.0, min(1.0, (float(item[1]) + 5.0) / 5.0))
+                + _page_context_adjustment(query_sequence,
+                    page_excerpts[int(self.records[item[0]].get("physicalPage", 0))])), reverse=True)
             emitted: set[int] = set()
             for record_index, score in ranked:
                 if float(score) < MIN_RERANK_SCORE:
                     continue
                 record = self.records[record_index]
+                record_terms = _tokens(record.get("excerpt", ""))
+                overlap = query_terms & record_terms
+                # Require substantial exact support before a dense or cross-
+                # encoder match can become a book result.
+                coverage = len(query_terms & page_terms.get(int(record.get("physicalPage", 0)), set())) / max(1, len(query_terms))
+                if coverage < minimum_coverage:
+                    continue
+                distinctive = query_terms - _GENERIC_HEADING_TERMS
+                if distinctive and not (distinctive & record_terms):
+                    continue
+                score = (.55 * coverage + .25 * float(cosine[record_index])
+                         + .20 * max(0.0, min(1.0, (float(score) + 5.0) / 5.0)))
                 page = int(record["physicalPage"])
                 if page in emitted:
                     continue
                 emitted.add(page)
+                excerpt = " ".join(page_excerpts.get(page, []))
+                score = max(0.0, score + _page_context_adjustment(query_sequence, page_excerpts.get(page, [])))
                 layer = self._get_page_layer(book, page)
                 span_indices = self._focus_indices(layer, query)
                 results[book].append({
@@ -215,11 +453,19 @@ class ReferenceSearch:
 
     def _get_page_layer(self, canonical: str, page: int) -> dict[str, Any]:
         path = self.cache_root / f"{self._slug(canonical)}-{page:04d}.json"
+        ocr_path = self.ocr_layers.get((canonical, page))
         with _LAYER_LOCK:
             try:
-                return json.loads(path.read_text(encoding="utf-8"))
+                cached = json.loads(path.read_text(encoding="utf-8"))
+                if cached.get("spans"):
+                    return cached
+                if ocr_path and ocr_path.is_file():
+                    return json.loads(ocr_path.read_text(encoding="utf-8"))
+                return cached
             except (OSError, json.JSONDecodeError):
                 pass
+            if ocr_path and ocr_path.is_file():
+                return json.loads(ocr_path.read_text(encoding="utf-8"))
             entry = self.documents[canonical]
             result = subprocess.run(
                 ["pdftotext", "-bbox-layout", "-f", str(page), "-l", str(page),

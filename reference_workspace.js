@@ -4,8 +4,8 @@ const referenceParams=new URLSearchParams(location.search);
 const referenceOnly=referenceParams.get('reference')==='1';
 let referenceSession=referenceParams.get('referenceSession')||'',referenceChild=null,referenceChildReady=false,referencePending=null,referenceLastRequest=null;
 let referenceReceiving=false,referenceDetached=false,referenceLastTerm='',referenceTermContext='',referenceSpeech=null;
-const referenceStateFields=new Set(['bookPageView','bookHighlights','sourcePageView','readingHighlights','readingAutoHighlight','freehandStrokes','freehandLastKey','referenceSources','referenceViews','ankiCardPosition','ankiMediaPosition','imagePositions','guideHighlightBookTopics','referencePaneRatio','bookLabels']);
-const referenceMainFields=new Set(['view','page','scope','studyScope','objectiveQuiz','objectiveFilter','objectiveSearch','questionFilter']);
+const referenceStateFields=new Set(['bookPageView','bookHighlights','sourcePageView','readingHighlights','readingAutoHighlight','freehandStrokes','freehandLastKey','referenceSources','referenceViews','ankiCardPosition','ankiMediaPosition','imagePositions','guideHighlightBookTopics','referencePaneRatio','bookLabels','referenceSearchFamilies','referenceVoice']);
+const referenceMainFields=new Set(['view','page','scope','studyScope','objectiveQuiz','objectiveFilter','objectiveSearch','questionFilter','studyTarget']);
 function referenceClone(value){return value===undefined?undefined:JSON.parse(JSON.stringify(value))}
 function referenceEqual(a,b){
  if(a===b)return true;
@@ -103,6 +103,7 @@ window.addEventListener('message',event=>{
  const message=event.data,peer=referenceOnly?window.opener:referenceChild;
  if(!peer||event.source!==peer||message?.app!=='llu-reference'||message.session!==referenceSession)return;
  if(message.type==='ready'&&!referenceOnly){referenceChildReady=true;referencePeerMessage({type:'state',state});if(referencePending){referencePeerMessage(referencePending);referencePending=null}return}
+ if(message.type==='closed'&&!referenceOnly){referenceDetached=false;referenceChildReady=false;referenceChild=null;referencePending=null;document.body.classList.remove('reference-detached');$('#references-button').textContent='References';$('#references-button').title='Open references beside the guide';return}
  if(message.type==='state'){referenceMergeIncoming(message.state);return}
  if(message.type==='view'&&!referenceOnly){referenceLastRequest=message.request;return}
  if(message.type==='request'&&referenceOnly){referenceHandleRequest(message);return}
@@ -143,9 +144,7 @@ function referenceApplySize(){
 function referenceSetRatio(ratio){state.referencePaneRatio=Math.max(.3,Math.min(.75,ratio));referenceApplySize()}
 function openReferenceWorkspace(){
  if(referenceRoute('empty',{}))return;
- const documents=(DATA.source_catalog?.documents||[]).filter(doc=>['First Aid','Pathoma'].includes(doc.id)||doc.kind==='supplement'),hasCards=(ankiLibrary.notes||[]).length>0;
- const message=documents.length||hasCards?'Search your cards, books, lecture slides and notes. Choose a match to open its exact page.':'This public edition has no linked Anki cards or source PDFs. Add a private Anki export or source pack to enable local matches.';
- showSidePanel('References',`<section class="reference-empty"><h3>Look up a term or sentence</h3><p>${message}</p><div class="reference-library">${documents.map(doc=>`<button data-reference-library="${esc(doc.id)}">${esc(doc.title)} · ${doc.page_count} pages</button>`).join('')}</div></section>`);
+ showSidePanel('References',`<section class="reference-empty"><h3>Look up a term or sentence</h3><p>Search your cards, books, lecture slides and notes. Choose a match to open its exact page.</p><div class="reference-library">${(DATA.source_catalog?.documents||[]).filter(doc=>['First Aid','Pathoma'].includes(doc.id)||doc.kind==='supplement').map(doc=>`<button data-reference-library="${esc(doc.id)}">${esc(doc.title)} · ${doc.page_count} pages</button>`).join('')}</div></section>`);
 }
 function detachReferenceWorkspace(){
  if(referenceOnly)return;
@@ -167,39 +166,37 @@ function dockReferenceWorkspace(){
  $('#references-button').textContent='References';
  if(referenceLastRequest)referenceHandleRequest(referenceLastRequest);else openReferenceWorkspace();
 }
-function referenceSpeakText(value){
- const term=String(value||'').replace(/\s+/g,' ').trim();
- if(!term||term.length>180||term.split(' ').length>24){$('#reference-listen-status').textContent='Select a medical term or short phrase to hear it.';return}
- const synthesis=window.speechSynthesis;
- const nativeSpeech=window.webkit?.messageHandlers?.nativeSpeak;
- if(nativeSpeech){
-  if(referenceSpeech){nativeSpeech.postMessage({stop:true});referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Stopped.';return}
-  referenceSpeech={native:true};referenceLastTerm=term;referenceUpdateSpeechControls(true);$('#reference-listen-status').textContent='Listening: '+term;nativeSpeech.postMessage({text:term});return;
- }
- if(!synthesis||typeof SpeechSynthesisUtterance==='undefined'){$('#reference-listen-status').textContent='Speech is unavailable in this browser.';return}
- if(referenceSpeech){synthesis.cancel();referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Stopped.';return}
- const voices=synthesis.getVoices(),voice=voices.find(v=>v.localService&&/^en[-_]/i.test(v.lang))||voices.find(v=>v.localService&&v.lang==='en');
- if(!voice){$('#reference-listen-status').textContent='No installed English voice is available yet. Try Listen again once voices load.';return}
- referenceLastTerm=term;
- const spoken=term.replace(/\bIFN\s*[-–]?\s*(?:beta|β)(?!\w)/gi,'interferon beta');
- const utterance=new SpeechSynthesisUtterance(spoken);utterance.voice=voice;utterance.lang=voice.lang;utterance.rate=.86;
- referenceSpeech=utterance;referenceUpdateSpeechControls(true);
- $('#reference-listen-status').textContent='Listening: '+term;
- utterance.onend=()=>{referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Pronunciation · '+term};
- utterance.onerror=()=>{referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Could not play this term. Try Listen again.'};
- synthesis.cancel();synthesis.speak(utterance);
+function referenceStopSpeech(message='Stopped.'){
+ const current=referenceSpeech;referenceSpeech=null;
+ current?.controller?.abort();if(current?.audio){current.audio.pause();current.audio.src=''}if(current?.url)URL.revokeObjectURL(current.url);
+ referenceUpdateSpeechControls(false);const status=$('#reference-listen-status');if(status)status.textContent=message;
 }
-window.referenceNativeSpeechEnded=function(){referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Pronunciation · '+referenceLastTerm};
+async function referenceSpeakText(value){
+ const term=String(value||'').replace(/\s+/g,' ').trim(),status=$('#reference-listen-status');
+ if(!term||term.length>180||term.split(' ').length>24){status.textContent='Select a medical term or short phrase to hear it.';return}
+ if(referenceSpeech){referenceStopSpeech();return}
+ const controller=new AbortController(),request={controller};referenceSpeech=request;referenceLastTerm=term;referenceUpdateSpeechControls(true);
+ status.textContent='Preparing local neural voice…';
+ const spoken=term.replace(/\bIFN\s*[-–]?\s*(?:beta|β)(?!\w)/gi,'interferon beta');
+ const timer=setTimeout(()=>controller.abort(),45000);
+ try{
+  const response=await fetch(semanticEndpoint+'/tts',{method:'POST',headers:semanticRequestHeaders(),body:JSON.stringify({text:spoken,voice:state.referenceVoice||'Bella'}),signal:controller.signal}),result=await response.json();
+  if(!response.ok)throw Error(result.error||'Local voice unavailable.');if(referenceSpeech!==request)return;
+  if(result.mime!=='audio/wav'||typeof result.audio!=='string')throw Error('The local voice returned no audio.');
+  const binary=atob(result.audio),bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));request.url=URL.createObjectURL(new Blob([bytes],{type:'audio/wav'}));request.audio=new Audio(request.url);
+  request.audio.onended=()=>{if(referenceSpeech===request)referenceStopSpeech('Pronunciation · '+term)};
+  request.audio.onerror=()=>{if(referenceSpeech===request)referenceStopSpeech('Could not play the local voice. Try Listen again.')};
+  await request.audio.play();if(referenceSpeech===request)status.textContent='Listening · '+term;
+ }catch(error){if(referenceSpeech===request)referenceStopSpeech(error.name==='AbortError'?'Voice request timed out. Try Listen again.':error.name==='NotAllowedError'?'Audio is ready. Press Listen again to play it.':error.message)}
+ finally{clearTimeout(timer)}
+}
 function referenceUpdateSpeechControls(speaking){document.querySelectorAll('[data-reference-listen],[data-selection-listen]').forEach(button=>{button.textContent=speaking?'■ Stop':'🔊 Listen';button.setAttribute('aria-pressed',String(speaking))})}
 function referenceListenTerm(){const title=$('#side-title')?.textContent||'';return (window.getSelection()?.toString().trim()||(referenceTermContext===title?referenceLastTerm:'')||($('#side-content .background-reference')?title:'')||sourceViewerActive?.query||ankiContext?.topic||ankiContext?.searchQuery||ankiContext?.text||title).replace(/^source:/,'')}
 function referenceSetupControls(){
- // Asking for voices during startup lets the browser load its installed list
- // before the first Listen click, without speaking anything automatically.
- window.speechSynthesis?.getVoices();
  const panel=$('#side-panel'),head=panel.querySelector('.side-panel-head');
- const actions=document.createElement('div');actions.className='reference-workspace-actions';actions.innerHTML='<button data-reference-listen aria-pressed="false" title="Hear the selected term or reference heading">🔊 Listen</button><button data-reference-detach title="Send lookups to a separate tab">Open reference tab ↗</button><button data-reference-dock>Dock beside guide</button>';head.insertBefore(actions,$('#close-side'));
+ const actions=document.createElement('div');actions.className='reference-workspace-actions';actions.innerHTML=`<button data-reference-listen aria-pressed="false" title="Hear the selected term or reference heading">🔊 Listen</button><select aria-label="Local neural voice" data-reference-voice>${['Bella','Jasper','Luna','Bruno','Rosie','Hugo','Kiki','Leo'].map(voice=>`<option ${voice===(state.referenceVoice||'Bella')?'selected':''}>${voice}</option>`).join('')}</select><button data-reference-detach title="Send lookups to a separate tab">Open reference tab ↗</button><button data-reference-dock>Dock beside guide</button>`;head.insertBefore(actions,$('#close-side'));
  const status=document.createElement('p');status.id='reference-listen-status';status.className='reference-listen-status';status.setAttribute('role','status');head.after(status);
- const host=document.createElement('div');host.id='reference-search-host';status.after(host);
+ const host=document.createElement('div');host.id='reference-search-host';status.after(host);window.refreshReferenceSearchControls?.();
  const divider=document.createElement('div');divider.id='reference-divider';divider.className='reference-divider';divider.setAttribute('role','separator');divider.setAttribute('aria-orientation','vertical');divider.setAttribute('aria-label','Resize study and reference panes');divider.setAttribute('aria-valuemin','30');divider.setAttribute('aria-valuemax','75');divider.tabIndex=0;document.body.append(divider);
  let resizing=false;
  divider.addEventListener('pointerdown',event=>{event.preventDefault();resizing=true;divider.setPointerCapture(event.pointerId);document.body.classList.add('reference-resizing')});
@@ -219,6 +216,8 @@ function referenceSetupControls(){
   const background=event.target.closest('[data-open-background-result]');if(background){const entry=ankiContext?.backgroundMatches?.[Number(background.dataset.openBackgroundResult)];if(!entry)return;const url=entry.url&&/^https?:\/\//.test(entry.url)?entry.url:'';referenceLastTerm=entry.title;showSidePanel(entry.title,`<article class="background-reference"><div class="eyebrow">BACKGROUND REFERENCE</div><h3>${esc(entry.title)}</h3><div class="reference-definition">${esc(entry.summary||entry.excerpt||'')}</div><p class="source-links">${url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(entry.source||'Source')}</a>`:esc(entry.source||'')}${entry.source_updated?' · Updated '+esc(entry.source_updated):''}${entry.fetched_at?' · Local copy '+esc(entry.fetched_at):''}${entry.license?'<br>'+esc(entry.license):''}</p><button data-background-return>← Search results</button></article>`);return}
   if(event.target.closest('[data-background-return]'))renderAnkiReference({keepScroll:true});
  });
+ document.addEventListener('change',event=>{if(event.target.matches('[data-reference-voice]')){referenceStopSpeech('');state.referenceVoice=event.target.value;save()}});
+ window.addEventListener('pagehide',()=>{referenceStopSpeech('');if(referenceOnly)referencePeerMessage({type:'closed'})});
  if(referenceOnly){document.body.classList.add('reference-only');openReferenceWorkspace();referencePeerMessage({type:'ready'})}
 }
 referenceSetupControls();

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import importlib
 import json
 import mimetypes
@@ -21,6 +22,8 @@ from build_public import GENERATED_ASSETS
 PROJECT_ROOT = Path(__file__).resolve().parent
 APP_ROOT = PROJECT_ROOT / "StudyApp"
 MAX_JSON_BODY = 2 * 1024 * 1024
+MAX_QUERY_CHARS = 4000
+REFERENCE_FAMILIES = {"first_aid", "pathoma", "mehlman", "in_house"}
 
 
 class ServiceUnavailable(RuntimeError):
@@ -35,6 +38,7 @@ class AppServices:
         self.data_dir = secure_data_dir(data_dir or default_data_dir())
         self._progress_store = progress_store
         self._anki_bridge = anki_bridge
+        self._tts_service = None
         self._lock = threading.RLock()
 
     @property
@@ -65,6 +69,18 @@ class AppServices:
                 except Exception as exc:
                     raise ServiceUnavailable(f"Anki integration is unavailable: {type(exc).__name__}") from exc
         return self._anki_bridge
+
+    @property
+    def tts(self):
+        if self._tts_service is None:
+            with self._lock:
+                if self._tts_service is None:
+                    try:
+                        module = importlib.import_module("StudyApp.tts_service")
+                        self._tts_service = module.get_tts_service()
+                    except Exception as exc:
+                        raise ServiceUnavailable("The local speech service is unavailable.") from exc
+        return self._tts_service
 
 
 def _json_bytes(payload: Any) -> bytes:
@@ -151,6 +167,8 @@ def make_handler(services: AppServices, token: str, project_root: Path = PROJECT
                 self._call(lambda: services.anki.status())
             elif path == "/api/anki/coverage":
                 self._call(lambda: services.anki.coverage())
+            elif path == "/api/tts/status":
+                self._call(self._tts_status)
             elif path == "/":
                 self._serve_index()
             elif path == "/anki_context_data.js":
@@ -185,6 +203,10 @@ def make_handler(services: AppServices, token: str, project_root: Path = PROJECT
                     self._reply(400, {"error": "Expected state to be an object."})
                     return
                 self._call(lambda: services.progress.import_state(state, replace=True))
+            elif path == "/api/search":
+                self._search(body)
+            elif path == "/api/tts":
+                self._speech(body)
             elif path == "/api/anki/card":
                 self._call(lambda: services.anki.card_info(card_id=body.get("cardId")))
             elif path == "/api/anki/begin":
@@ -202,6 +224,51 @@ def make_handler(services: AppServices, token: str, project_root: Path = PROJECT
                 self._call(lambda: services.anki.sync_history())
             else:
                 self._reply(404, {"error": "Not found"})
+
+        def _speech(self, body: dict[str, Any]) -> None:
+            text, voice = body.get("text"), body.get("voice", "Bella")
+            if (not isinstance(text, str) or not text.strip() or len(text) > 180
+                    or len(text.split()) > 24 or not isinstance(voice, str)):
+                self._reply(400, {"error": "Choose a medical term or short phrase, up to 180 characters."})
+                return
+            try:
+                service = services.tts
+                status = service.status()
+                if not status.get("available"):
+                    raise ServiceUnavailable(status.get("message") or "The local voice is not installed.")
+                wav = service.synthesize(text.strip(), voice)
+                self._reply(200, {"audio": base64.b64encode(wav).decode("ascii"),
+                                  "mime": "audio/wav", "model": status.get("model")})
+            except ValueError as exc:
+                self._reply(400, {"error": str(exc)})
+            except ServiceUnavailable as exc:
+                self._reply(503, {"error": str(exc)})
+            except Exception:
+                self._reply(503, {"error": "Local speech synthesis is unavailable."})
+
+        def _tts_status(self):
+            status = services.tts.status()
+            if not isinstance(status, dict):
+                raise ServiceUnavailable("The local speech service returned an invalid status.")
+            # Do not expose user-specific environment paths to the browser.
+            return {key: value for key, value in status.items() if key != "missing_environment"}
+
+        def _search(self, body: dict[str, Any]) -> None:
+            query = body.get("query")
+            if not isinstance(query, str) or not query.strip() or len(query) > MAX_QUERY_CHARS:
+                self._reply(400, {"error": "Enter a search phrase up to 4000 characters."})
+                return
+            families = body.get("reference_families", sorted(REFERENCE_FAMILIES))
+            if (not isinstance(families, list)
+                    or any(not isinstance(family, str) or family not in REFERENCE_FAMILIES for family in families)):
+                self._reply(400, {"error": "Unknown reference family."})
+                return
+            if not families:
+                self._reply(200, {"matches": [], "books": {"First Aid": [], "Pathoma": []},
+                                  "mehlman": [], "sources": [], "search_scope": body.get("search_scope", "all"),
+                                  "method": "local-search-unavailable", "local_only": True})
+                return
+            self._reply(503, {"error": "Local search is unavailable in this public build. Configure a local source pack to search personal course materials."})
 
         def _serve_index(self) -> None:
             self._serve_public_file("index.html", "text/html; charset=utf-8", inject=True)

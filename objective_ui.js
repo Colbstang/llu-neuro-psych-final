@@ -4,6 +4,7 @@ state.objectives ||= {};
 let objectiveView = 'all';
 let objectiveSearch = '';
 let objectiveSection = '';
+let objectiveTopic = '';
 let objectiveQuiz = '';
 
 function objectiveRecord(id) {
@@ -24,7 +25,7 @@ function objectiveWrite(id) {
 
 function objectiveSource(o) {
   const link = (label, url, page, path = o.source_path) => {
-    const href = url || (!path ? '' : /^(?:\.{0,2}\/|imported-sources\/)/.test(path) ? path : `file://${encodeURI(path)}`);
+    const href = url || (path ? `file://${encodeURI(path)}` : '');
     const fragment = page ? `#page=${page}` : '';
     const name = `${label}${page ? ` · PDF p. ${page}` : ''}`;
     return href ? `<a href="${esc(href + fragment)}" target="_blank" rel="noopener">${esc(name)}</a>` : `<span>${esc(name)}</span>`;
@@ -87,7 +88,7 @@ function objectiveMarkup(sectionId) {
 function objectivePageMarkup() {
   return `<main class="objective-page" aria-labelledby="objectives-title">
     <header class="objective-page-header"><div><p class="objective-kicker">COURSE OBJECTIVES · VERBATIM</p><h1 id="objectives-title">Learning objectives</h1>
-      <p class="objective-coverage-note">${DATA.objectives.length ? 'Objectives, written answers, relevant source images, and saved review notes.' : 'No objective source pack is loaded. To use your private objectives, add a personal bundle or source-pack JSON under local-private/ and run python3 build_local.py. The public dataset contains no verbatim learning objectives.'}</p></div>
+      <p class="objective-coverage-note">Verbatim objectives, written answers, relevant source images, and saved review notes.</p></div>
       <label class="objective-search-label">Search all objectives<input id="objective-search" type="search" value="${esc(objectiveSearch)}" placeholder="Objective, lecture, source…"></label>
     </header>
     <div class="objective-page-toolbar"><div class="objective-filters" role="group" aria-label="Filter objectives">
@@ -105,6 +106,7 @@ function renderObjectiveList(container) {
     const r = objectiveRecord(o.id);
     return (objectiveView === 'all' || r.review === objectiveView)
       && (!objectiveSection || o.sections?.includes(objectiveSection))
+      && (!objectiveTopic || studyDashboardGraph().get(objectiveTopic)?.blocks.some(block=>o.sections?.includes(block.id)))
       && (!objectiveQuiz || (DATA.objective_answers[o.id]?.quiz_tags||o.quiz_tags||[]).includes(objectiveQuiz))
       && (!term || [o.text, o.lecture, o.source_path].join(' ').toLowerCase().includes(term));
   });
@@ -120,7 +122,9 @@ function renderObjectivesPage(container) {
 
 function mountObjectivesPage(container, options = {}) {
   objectiveSection = options.section || '';
+  objectiveTopic = options.topic || '';
   renderObjectivesPage(container);
+  if(objectiveTopic){const note=document.createElement('p');note.className='study-dashboard-sync';note.textContent='Topic: '+(studyDashboardGraph().get(objectiveTopic)?.title||objectiveTopic);container.querySelector('.objective-page-header').after(note)}
   const onInput = e => {
     if (e.target.id === 'objective-search') { objectiveSearch = e.target.value; renderObjectiveList(container); }
     if (e.target.matches('[data-objective-note]')) {

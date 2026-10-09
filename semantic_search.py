@@ -244,9 +244,11 @@ class Search:
                 break
         return results
 
-def serve(search, port):
-    from reference_search import ReferenceSearch, ReferenceIndexNotReady
-    references = ReferenceSearch(ROOT, search.encoder, search.reranker)
+def serve(search, port, reference_root=None):
+    from reference_search import ReferenceSearch, ReferenceIndexNotReady, REFERENCE_FAMILIES
+    from background_reference import BackgroundReference
+    references = ReferenceSearch(reference_root or ROOT, search.encoder, search.reranker)
+    background = BackgroundReference(ROOT)
     allowed_origins = {'null', f'http://127.0.0.1:{port}', f'http://localhost:{port}',
                        'http://127.0.0.1:8767', 'http://localhost:8767'}
     class Handler(BaseHTTPRequestHandler):
@@ -269,25 +271,56 @@ def serve(search, port):
             self.send_header('Content-Length', str(len(data)))
             self.end_headers()
             self.wfile.write(data)
+        def speech_service(self):
+            import importlib
+            app_root = ROOT / 'StudyApp'
+            if str(app_root) not in sys.path:
+                sys.path.insert(0, str(app_root))
+            return importlib.import_module('tts_service').get_tts_service()
         def do_OPTIONS(self):
             self.reply(200 if self.allowed() else 403, {})
         def do_GET(self):
             if not self.allowed():
                 return self.reply(403, {'error':'Origin is not permitted'})
+            if self.path == '/tts/status':
+                try:
+                    status = self.speech_service().status()
+                    if not isinstance(status, dict):
+                        return self.reply(503, {'error':'Local speech service status is unavailable'})
+                    return self.reply(200, {key: value for key, value in status.items()
+                                            if key != 'missing_environment'})
+                except Exception:
+                    return self.reply(503, {'error':'Local speech service is unavailable'})
             if self.path != '/health':
                 return self.reply(404, {'error':'Unknown endpoint'})
-            self.reply(200, {'ready': True, 'version':3, 'reference_documents':len(references.documents), 'books_ready':references.vectors is not None, 'model': MODEL, 'revision': REVISION,
+            self.reply(200, {'ready': True, 'version':4, 'reference_documents':len(references.documents), 'books_ready':references.vectors is not None, 'background_records':len(background.records), 'model': MODEL, 'revision': REVISION,
                              'card_count': len(search.records), 'dimensions': 384, 'local_only': True})
         def do_POST(self):
             if not self.allowed():
                 return self.reply(403, {'error':'Origin is not permitted'})
-            if self.path not in ['/search', '/source-page']:
+            if self.path not in ['/search', '/source-page', '/tts']:
                 return self.reply(404, {'error':'Unknown endpoint'})
             length = int(self.headers.get('Content-Length', '0'))
             if not 0 < length <= 16384:
                 return self.reply(413, {'error':'Query is too large'})
             try:
                 request = json.loads(self.rfile.read(length))
+                if self.path == '/tts':
+                    import base64
+                    text, voice = request.get('text'), request.get('voice', 'Bella')
+                    if (not isinstance(text, str) or not text.strip() or len(text) > 180
+                            or len(text.split()) > 24 or not isinstance(voice, str)):
+                        return self.reply(400, {'error':'Select a medical term or short phrase, up to 180 characters'})
+                    try:
+                        service = self.speech_service()
+                        wav = service.synthesize(text.strip(), voice)
+                        model = service.status().get('model')
+                        return self.reply(200, {'audio':base64.b64encode(wav).decode('ascii'),
+                                                'mime':'audio/wav', 'model':model})
+                    except ValueError as error:
+                        return self.reply(400, {'error':str(error)})
+                    except Exception:
+                        return self.reply(503, {'error':'Local speech synthesis is unavailable'})
                 if self.path == '/source-page':
                     page = request.get('page')
                     if not isinstance(page, int) or isinstance(page, bool):
@@ -299,9 +332,20 @@ def serve(search, port):
                 kind = request.get('kind', 'all')
                 if kind not in ['all', 'Ty', 'AnKing', 'NPS']:
                     return self.reply(400, {'error':'Unknown card scope'})
-                results = search.query(text, kind, request.get('limit', 8))
-                books = references.search_books(text, 3) if request.get('include_books') else None
-                self.reply(200, {'matches': results, 'books': books, 'method': 'local-sentence-embeddings', 'reranker': RERANK_MODEL,
+                scope = request.get('search_scope', 'all')
+                if scope not in ['all', 'cards', 'books', 'sources', 'background']:
+                    return self.reply(400, {'error':'Unknown reference scope'})
+                families = request.get('reference_families', list(REFERENCE_FAMILIES))
+                if (not isinstance(families, list)
+                        or any(not isinstance(family, str) or family not in REFERENCE_FAMILIES for family in families)):
+                    return self.reply(400, {'error':'Unknown reference family'})
+                families = list(dict.fromkeys(families))
+                results = search.query(text, kind, request.get('limit', 8)) if scope in ['all', 'cards'] else []
+                books = references.search_books(text, 3, families) if scope in ['all', 'books'] and request.get('include_books') else {}
+                mehlman = references.search_sources(text, 3, {'mehlman'}) if scope in ['all', 'books'] and request.get('include_books') and 'mehlman' in families else []
+                sources = references.search_sources(text, 6, {'in_house'} if 'in_house' in families else set()) if scope in ['all', 'sources'] and request.get('include_sources') else []
+                definitions = background.search(text, 4) if scope in ['all', 'background'] and request.get('include_background') else []
+                self.reply(200, {'matches': results, 'books': books, 'mehlman': mehlman, 'sources':sources, 'background':definitions, 'method': 'local-sentence-embeddings', 'reranker': RERANK_MODEL,
                                  'scope_count':len(search.records), 'model': MODEL, 'local_only': True})
             except ReferenceIndexNotReady as error:
                 self.reply(503, {'error':str(error)})
@@ -315,9 +359,10 @@ if __name__ == '__main__':
     parser.add_argument('--prepare', action='store_true')
     parser.add_argument('--query')
     parser.add_argument('--port', type=int, default=8768)
+    parser.add_argument('--reference-root', type=Path)
     args = parser.parse_args()
     search = Search()
     if args.query:
         print(json.dumps(search.query(args.query), indent=2))
     elif not args.prepare:
-        serve(search, args.port)
+        serve(search, args.port, args.reference_root)

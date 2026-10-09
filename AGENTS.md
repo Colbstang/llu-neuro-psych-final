@@ -1,5 +1,15 @@
 # Agent instructions
 
+## Study app and recall signals
+
+- The Study screen groups the current Neuro/Psych material by topic. In-house, Step, and Both select which evidence to prioritize; they do not imply a complete Step 1 or Step 2 curriculum. Retain the separate Week 8 scope and stable content IDs.
+- Show unresolved saved wrong questions, normalized objective ratings, and actual recent Anki ratings separately. Old objective values `later` and `reviewed` mean `bad` and `good`. Missing review history is unknown; never display it as mastery. Topic links may overlap. Anki remains the scheduler.
+- Recent signals count normal learn/review/relearn revlog events over 30 days. Exclude filtered/cram, manual/reschedule, invalid, and future records. SQLite upgrades must retain existing progress and cached review history.
+- Reference search families are First Aid, Pathoma, Mehlman, and in-house notes/slides. Persist `referenceSearchFamilies`, propagate it to retrieval, and fail closed for an empty selection. Keep exact PDF locators and highlighted passages.
+- Speech uses the pinned Kitten Micro 0.8 model through `StudyApp/tts_service.py`, with one isolated worker and bounded startup/generation. Run `StudyApp/install_tts.py` once; weights and runtime stay in private app data. Synthesis must work offline. Do not restore OS speech as an automatic fallback or start speech without an explicit Listen action.
+- Native windows owned by Swift ARC must set `isReleasedWhenClosed = false`. Keep reference windows alive until their close animation finishes; closing a reference window must leave the main guide running.
+- Verify using fake Anki transports, never by recording real test reviews. Run `python3 -m unittest StudyApp.test_progress_store StudyApp.test_anki_bridge StudyApp.test_app_server StudyApp.test_tts_service StudyApp.test_reference_search_families StudyApp.test_build_local`, and `node --test StudyApp/test_dashboard.js StudyApp/test_client.js StudyApp/test_reference_workspace.js`. The real voice check skips if its local model has not been installed.
+
 ## Course source library
 
 - Start with the current `data/source-catalog.json`, `data/source-import-pack.json` and `data/source-manifest.json` in this repository. The [Drive metadata folder](https://drive.google.com/drive/folders/1Kquft1oLerZXM3_Y-u1yrKDYfqbTNWe7) retains the original catalog; use the repository versions for the latest aliases. There are 202 stable catalog records, including all 195 IDs in the current local guide, mapping to 177 unique PDFs.

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import base64
 import tempfile
 import threading
 import unittest
@@ -22,6 +23,23 @@ class FakeBridge:
         return {"summary": None, "cards": {}}
 
 
+class FakeTTS:
+    def __init__(self, available=True):
+        self.available = available
+        self.calls = []
+        self.wav = b"RIFF\x00\x00\x00\x00WAVEfake-wav"
+
+    def status(self):
+        return {"available": self.available, "model": "fake-local-voice", "voices": ["Bella"],
+                "missing_environment": "user-specific-test-path"}
+
+    def synthesize(self, text, voice="Bella"):
+        if voice not in self.status()["voices"]:
+            raise ValueError("unknown voice")
+        self.calls.append((text, voice))
+        return self.wav
+
+
 class AppServerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -36,6 +54,7 @@ class AppServerTests(unittest.TestCase):
         asset.write_bytes(b"public-generated-image")
         self.token = "test-token"
         services = AppServices(self.root / "app-data", ProgressStore(self.root / "progress.sqlite3"), FakeBridge())
+        self.services = services
         self.server = create_server(0, services=services, token=self.token, project_root=self.project)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -94,6 +113,76 @@ class AppServerTests(unittest.TestCase):
         self.assertFalse(payload["available"])
         self.assertEqual(payload["allowed_card_count"], 0)
         self.assertFalse(payload["rating_write"])
+
+    def test_public_search_stub_validates_families_and_reports_missing_pack(self):
+        origin = self.base
+        status, _headers, body = self.request("/api/search", method="POST",
+                                              body={"query": "fragile x", "reference_families": ["all"]},
+                                              token=self.token, origin=origin)
+        self.assertEqual(status, 400)
+        self.assertIn("reference family", json.loads(body)["error"].lower())
+
+        status, _headers, body = self.request("/api/search", method="POST",
+                                              body={"query": "fragile x", "reference_families": []},
+                                              token=self.token, origin=origin)
+        result = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(result["books"], {"First Aid": [], "Pathoma": []})
+        self.assertEqual(result["mehlman"], [])
+        self.assertEqual(result["sources"], [])
+
+        status, _headers, body = self.request("/api/search", method="POST",
+                                              body={"query": "fragile x", "reference_families": ["first_aid"]},
+                                              token=self.token, origin=origin)
+        self.assertEqual(status, 503)
+        self.assertIn("local source pack", json.loads(body)["error"].lower())
+
+    def test_tts_origin_token_phrase_limit_audio_and_status(self):
+        tts = FakeTTS()
+        self.services._tts_service = tts
+        payload = {"text": "multiple sclerosis", "voice": "Bella"}
+
+        status, _headers, _body = self.request("/api/tts", method="POST", body=payload, origin=self.base)
+        self.assertEqual(status, 403)
+        status, _headers, _body = self.request("/api/tts", method="POST", body=payload, token=self.token)
+        self.assertEqual(status, 403)
+        self.assertEqual(tts.calls, [])
+
+        status, _headers, _body = self.request("/api/tts", method="POST",
+                                               body={"text": "x" * 181}, token=self.token, origin=self.base)
+        self.assertEqual(status, 400)
+        self.assertEqual(tts.calls, [])
+
+        status, _headers, _body = self.request("/api/tts", method="POST",
+                                               body={"text": "multiple sclerosis", "voice": "unknown"},
+                                               token=self.token, origin=self.base)
+        self.assertEqual(status, 400)
+        self.assertEqual(tts.calls, [])
+
+        status, _headers, body = self.request("/api/tts", method="POST", body=payload,
+                                              token=self.token, origin=self.base)
+        result = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(result["mime"], "audio/wav")
+        self.assertEqual(result["model"], "fake-local-voice")
+        self.assertEqual(base64.b64decode(result["audio"], validate=True), tts.wav)
+        self.assertEqual(tts.calls, [("multiple sclerosis", "Bella")])
+
+        status, _headers, body = self.request("/api/tts/status")
+        availability = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertTrue(availability["available"])
+        self.assertEqual(availability["model"], "fake-local-voice")
+        self.assertNotIn("missing_environment", availability)
+
+    def test_tts_unavailable_service_returns_503(self):
+        tts = FakeTTS(available=False)
+        self.services._tts_service = tts
+        status, _headers, body = self.request("/api/tts", method="POST",
+                                              body={"text": "multiple sclerosis"},
+                                              token=self.token, origin=self.base)
+        self.assertEqual(status, 503)
+        self.assertEqual(tts.calls, [])
 
 
 if __name__ == "__main__":

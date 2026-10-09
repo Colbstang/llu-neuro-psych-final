@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-09",
+  "requested_features": [
+    "offline small-model neural TTS",
+    "stable detached reference window",
+    "topic dashboard with school/Step targets and observable review signals",
+    "four selectable reference families",
+    "white background"
+  ],
+  "tests": {
+    "public_python_passed": 49,
+    "public_node_passed": 7,
+    "private_node_passed": 6,
+    "native_swift_build": "passed",
+    "browser_neural_playback": "passed",
+    "browser_reference_close": "passed",
+    "browser_mehlman_exact_page_and_navigation": "passed",
+    "browser_state_and_cached_review_reload": "passed"
+  },
+  "model": {
+    "id": "KittenML/kitten-tts-micro-0.8",
+    "revision": "1ccf72b2c2048fd17efac7de2fab32d10e225084",
+    "offline_real_inference": "passed",
+    "voice_count": 8
+  },
+  "content_preservation": {
+    "chapters": 53,
+    "objectives": 686,
+    "questions": 202,
+    "compiled_DATA_fields_equal": 33
+  },
+  "state": {
+    "live_progress_revision_and_contents_unchanged_during_service_update": true,
+    "original_browser_study_tab_not_reloaded": true,
+    "no_real_test_reviews_submitted": true
+  },
+  "native": {
+    "installed_version": "1.1 (2)",
+    "live_close_and_audio_test": "pending",
+    "blocker": "Mac locked"
+  },
+  "publication": {
+    "private_payloads": "excluded",
+    "local_model_weights": "excluded",
+    "personal_progress": "excluded"
+  },
+  "limits": [
+    "Neuro/Psych corpus only; not a complete Step 1/2 curriculum.",
+    "Native live close/audio regression awaits an unlocked Mac.",
+    "Mehlman PDFs are local additions and are not in the existing course archive."
+  ]
+}

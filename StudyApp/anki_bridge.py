@@ -31,6 +31,7 @@ MAX_ANKICONNECT_BATCH = 999
 MAX_LIVE_MEDIA_FILES = 24
 MAX_LIVE_MEDIA_FILE_BYTES = 8 * 1024 * 1024
 MAX_LIVE_MEDIA_TOTAL_BYTES = 16 * 1024 * 1024
+RECENT_REVIEW_WINDOW_DAYS = 30
 SAFE_CARD_FIELDS = (
     "cardId", "note", "ord", "queue", "type", "interval", "reps", "lapses",
     "nextReviews", "due", "mod", "deckName", "modelName", "factor", "left", "flags",
@@ -300,10 +301,14 @@ class AnkiBridge:
                 CREATE TABLE IF NOT EXISTS history_cards (
                     card_id INTEGER PRIMARY KEY,
                     review_count INTEGER NOT NULL,
-                    last_review_json TEXT
+                    last_review_json TEXT,
+                    signals_json TEXT
                 );
                 """
             )
+            history_columns = {row["name"] for row in conn.execute("PRAGMA table_info(history_cards)")}
+            if "signals_json" not in history_columns:
+                conn.execute("ALTER TABLE history_cards ADD COLUMN signals_json TEXT")
 
     def _call(self, action: str, params: dict[str, Any] | None = None) -> Any:
         return _unwrap_transport(self.transport, action, params or {})
@@ -590,6 +595,8 @@ class AnkiBridge:
         reviewed = {cid: rows for cid, rows in reviews_by_card.items() if rows}
         latest_id = max((int(row.get("id", 0)) for rows in reviewed.values() for row in rows), default=0)
         synced_at = time.time()
+        recent_start_ms = int((synced_at - RECENT_REVIEW_WINDOW_DAYS * 24 * 60 * 60) * 1000)
+        recent_end_ms = int(synced_at * 1000)
         cards: dict[str, Any] = {}
         with closing(self._connect()) as conn:
             conn.execute("BEGIN IMMEDIATE")
@@ -599,13 +606,17 @@ class AnkiBridge:
                 last = max(rows, key=lambda row: int(row.get("id", 0))) if rows else None
                 last_safe = ({key: last.get(key) for key in ("id", "ease", "ivl", "lastIvl", "time", "type")}
                              if last else None)
-                cards[str(cid)] = {"review_count": len(rows), "reviewed": bool(rows), "last_review": last_safe}
+                signals = self._recent_review_signals(rows, recent_start_ms, recent_end_ms)
+                cards[str(cid)] = {"review_count": len(rows), "reviewed": bool(rows), "last_review": last_safe,
+                                   **signals}
                 conn.execute(
-                    "INSERT INTO history_cards(card_id,review_count,last_review_json) VALUES(?,?,?)",
-                    (cid, len(rows), json.dumps(last_safe, separators=(",", ":")) if last_safe else None),
+                    "INSERT INTO history_cards(card_id,review_count,last_review_json,signals_json) VALUES(?,?,?,?)",
+                    (cid, len(rows), json.dumps(last_safe, separators=(",", ":")) if last_safe else None,
+                     json.dumps(signals, separators=(",", ":"))),
                 )
             summary = {"scope_card_count": len(card_ids), "reviewed_card_count": len(reviewed),
                        "review_count": review_count, "latest_review_id": latest_id,
+                       "recent_window_days": RECENT_REVIEW_WINDOW_DAYS,
                        "synced_at": synced_at, "guide_progress_changed": False}
             conn.execute("INSERT OR REPLACE INTO history_sync(singleton,summary_json,synced_at) VALUES(1,?,?)",
                          (json.dumps(summary, separators=(",", ":")), synced_at))
@@ -619,11 +630,33 @@ class AnkiBridge:
             }
         return result
 
+    @staticmethod
+    def _recent_review_signals(rows: list[dict[str, Any]], start_ms: int, end_ms: int) -> dict[str, int]:
+        """Count recent user ratings, excluding filtered, manual, and reschedule entries."""
+        signals = {"recent_review_count": 0, "recent_again_count": 0, "recent_hard_count": 0}
+        for row in rows:
+            try:
+                review_id = int(row["id"])
+                review_type = int(row["type"])
+                ease = int(row["ease"])
+            except (KeyError, TypeError, ValueError):
+                # Rows without an ID, type, or button response cannot establish
+                # that a normal review occurred, so they don't imply a zero-risk signal.
+                continue
+            if not start_ms <= review_id <= end_ms or review_type not in (0, 1, 2) or ease not in (1, 2, 3, 4):
+                continue
+            signals["recent_review_count"] += 1
+            if ease == 1:
+                signals["recent_again_count"] += 1
+            elif ease == 2:
+                signals["recent_hard_count"] += 1
+        return signals
+
     def coverage(self) -> dict[str, Any]:
         """Return the saved scoped history snapshot without contacting Anki."""
         with closing(self._connect()) as conn:
             summary_row = conn.execute("SELECT summary_json FROM history_sync WHERE singleton=1").fetchone()
-            rows = conn.execute("SELECT card_id,review_count,last_review_json FROM history_cards").fetchall()
+            rows = conn.execute("SELECT card_id,review_count,last_review_json,signals_json FROM history_cards").fetchall()
         if summary_row is None:
             return {"summary": None, "cards": {}}
         cards = {
@@ -631,6 +664,9 @@ class AnkiBridge:
                 "review_count": int(row["review_count"]),
                 "reviewed": int(row["review_count"]) > 0,
                 "last_review": json.loads(row["last_review_json"]) if row["last_review_json"] else None,
+                **(json.loads(row["signals_json"]) if row["signals_json"] else {
+                    "recent_review_count": None, "recent_again_count": None, "recent_hard_count": None,
+                }),
             }
             for row in rows
         }

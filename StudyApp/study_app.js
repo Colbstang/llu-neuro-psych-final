@@ -59,17 +59,18 @@ function studyAppDialog(){
 function studyAppSummaryMarkup(){
  const summary=studyAppCoverage.summary||{},cards=Object.values(studyAppCoverage.cards||{}),reviewed=cards.filter(card=>card.reviewed||card.review_count>0).length;
  const connected=!!studyAppConnection?.available,scoped=Number(studyAppConnection?.allowed_card_count||0)>0;
- return `<p><b>${connected?(scoped?'Anki connected':'Anki connected · no card scope imported'):'Anki is not connected'}</b>${studyAppConnection?.anki_connect_version?' · AnkiConnect '+esc(studyAppConnection.anki_connect_version):''}</p><p>${reviewed.toLocaleString()} linked cards reviewed${summary.review_count?' · '+Number(summary.review_count).toLocaleString()+' recorded reviews':''}${summary.synced_at?' · Last synced '+esc(new Date(summary.synced_at).toLocaleString()):''}</p>`;
+ return `<p><b>${connected?(scoped?'Anki connected':'Anki connected · no card scope imported'):'Anki is not connected'}</b>${studyAppConnection?.anki_connect_version?' · AnkiConnect '+esc(studyAppConnection.anki_connect_version):''}</p><p>${reviewed.toLocaleString()} linked cards reviewed${summary.review_count?' · '+Number(summary.review_count).toLocaleString()+' recorded reviews':''}${summary.synced_at?' · Last synced '+esc(new Date(Number(summary.synced_at)*1000).toLocaleString()):''}</p>`;
 }
 async function studyAppLoadAnki(){
  try{studyAppConnection=await studyAppRequest('/anki/status');studyAppCoverage=studyAppConnection.coverage||await studyAppRequest('/anki/coverage')}catch{studyAppConnection={available:false}}
  const button=$('#study-app-button');if(button)button.textContent=studyAppConnection?.available?(Number(studyAppConnection.allowed_card_count||0)>0?'App · Anki connected':'App · Anki scope needed'):'App · connect Anki';
  const target=$('[data-app-anki-status]');if(target)target.innerHTML=studyAppSummaryMarkup();
+ if(currentView==='dashboard'&&typeof renderStudyDashboard==='function')renderStudyDashboard();
 }
 async function studyAppSync(){
  const target=$('[data-app-anki-sync-status]'),button=$('[data-app-anki-sync]');if(button)button.disabled=true;if(target)target.textContent='Reading your Anki review history…';
- try{if(!studyAppConnection?.available){if(target)target.textContent='AnkiConnect is not available.';return}if(!Number(studyAppConnection.allowed_card_count||0)){if(target)target.textContent='No Anki card scope has been imported.';return}studyAppCoverage=await studyAppRequest('/anki/sync',{});await studyAppLoadAnki();if(target)target.textContent='Review history synced. Your learned sections stay as you marked them.';studyAppRefreshReviewControls()}
- catch(error){if(target)target.textContent=error.message}finally{if(button)button.disabled=false}
+ try{if(!studyAppConnection?.available){if(target)target.textContent='AnkiConnect is not available.';return false}if(!Number(studyAppConnection.allowed_card_count||0)){if(target)target.textContent='No Anki card scope has been imported.';return false}studyAppCoverage=await studyAppRequest('/anki/sync',{});await studyAppLoadAnki();if(target)target.textContent='Review history synced. Your learned sections stay as you marked them.';studyAppRefreshReviewControls();return true}
+ catch(error){if(target)target.textContent=error.message;return false}finally{if(button)button.disabled=false}
 }
 function studyAppTopicCoverage(){
  const config=ankiTopicMap[ankiContext?.topic],noteIds=new Set((config?.noteIds||[]).map(Number));if(!noteIds.size)return '';
@@ -132,7 +133,7 @@ async function studyAppRate(ease){
  finally{studyAppReviewPending=false;studyAppRefreshReviewControls()}
 }
 async function startStudyApp(){
- if(!studyAppConfig)return;
+ if(!studyAppConfig){render();save();return}
  document.body.classList.add('study-app-loading');studyAppStatus('Loading saved progress…');
  const local=studyAppCopy(state);let result;
  try{
@@ -141,7 +142,7 @@ async function startStudyApp(){
   else{studyAppBaseline={};if(Object.values(local.notes||{}).some(Boolean)||Object.values(local.good||{}).some(Boolean))result=await studyAppRequest('/progress/import',{state:local});else studyAppProgressNotice()}
   studyAppRevision=result.revision||0;studyAppReady=true;
   localStorage.setItem(KEY,JSON.stringify(state));referenceStateSnapshot=studyAppCopy(state);
-  currentView=location.hash.slice(1)||state.view||'guide';if(!['guide','objectives','questions','pathology','drugs','bugs'].includes(currentView))currentView='guide';ensureScopePage();render();save();
+  currentView=location.hash.slice(1)||state.view||'dashboard';if(!['dashboard','guide','objectives','questions','pathology','drugs','bugs'].includes(currentView))currentView='guide';ensureScopePage();render();save();
  }catch{render();studyAppStatus('App service unavailable · progress stays in this window')}
  finally{document.body.classList.remove('study-app-loading')}
  const button=document.createElement('button');button.id='study-app-button';button.textContent='App · Anki';button.onclick=async()=>{studyAppDialog().showModal();await studyAppLoadAnki()};document.querySelector('.toolbar').insertBefore(button,$('#export'));

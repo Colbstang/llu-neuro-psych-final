@@ -4,7 +4,7 @@ import Foundation
 import WebKit
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler, NSSpeechSynthesizerDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate {
     private enum HealthResult {
         case healthy
         case starting
@@ -24,8 +24,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     private var ownsBackend = false
     private var hasLoadedGuide = false
     private var startupAttempts = 0
-    private var speechSynthesizer: NSSpeechSynthesizer?
-    private weak var speechWebView: WKWebView?
     private var startupActivity: NSObjectProtocol?
     private let session = URLSession(configuration: .ephemeral)
 
@@ -72,8 +70,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        speechSynthesizer?.stopSpeaking()
-        speechSynthesizer = nil
         if ownsBackend, let process = backendProcess, process.isRunning {
             appendLauncherLog("App terminating; stopping app-owned server process \(process.processIdentifier)")
             process.terminate()
@@ -84,7 +80,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
     private func buildWindow() {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .default()
-        configuration.userContentController.add(self, name: "nativeSpeak")
+        // Listen is an explicit UI action, but neural synthesis completes
+        // asynchronously. Permit its returned audio after that gesture ends.
+        configuration.mediaTypesRequiringUserActionForPlayback = []
 
         let contentSize = NSSize(width: 1320, height: 900)
         webView = WKWebView(frame: NSRect(origin: .zero, size: contentSize), configuration: configuration)
@@ -140,6 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
             backing: .buffered,
             defer: false
         )
+        window.isReleasedWhenClosed = false
         window.title = "LLU Study"
         window.minSize = NSSize(width: 820, height: 600)
         window.center()
@@ -462,6 +461,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
                 backing: .buffered,
                 defer: false
             )
+            childWindow.isReleasedWhenClosed = false
             childWindow.title = "LLU Study"
             childWindow.minSize = NSSize(width: 640, height: 480)
             childWindow.center()
@@ -476,56 +476,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKNa
         return nil
     }
 
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        let payload = message.body as? String ?? ((message.body as? [String: Any])?["text"] as? String ?? "")
-        if payload == "stop" || (message.body as? [String: Any])?["stop"] as? Bool == true {
-            speechSynthesizer?.stopSpeaking()
-            speechSynthesizer = nil
-            notifySpeechEnded(speechWebView ?? message.webView)
-            return
-        }
-        speakLocally(payload, in: message.webView)
-    }
-
     func windowWillClose(_ notification: Notification) {
         guard let closingWindow = notification.object as? NSWindow,
               closingWindow !== window else { return }
-        auxiliaryWindows.removeAll { $0.window === closingWindow }
-    }
-
-    private func speakLocally(_ rawText: String, in sourceWebView: WKWebView?) {
-        let text = rawText.split(whereSeparator: \.isWhitespace).joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, text.count <= 180, text.split(separator: " ").count <= 24 else { return }
-        if speechSynthesizer?.isSpeaking == true {
-            speechSynthesizer?.stopSpeaking()
-            speechSynthesizer = nil
-            notifySpeechEnded(speechWebView)
-            return
+        // AppKit may still be completing its close animation when it posts
+        // willClose. Keep both the window and its WebKit view alive until the
+        // animation transaction has drained before dropping our ownership.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self, closingWindow] in
+            self?.auxiliaryWindows.removeAll { $0.window === closingWindow }
         }
-
-        let englishVoice = NSSpeechSynthesizer.availableVoices.first { voice in
-            let locale = NSSpeechSynthesizer.attributes(forVoice: voice)[.localeIdentifier] as? String
-            return locale?.lowercased().hasPrefix("en") == true
-        }
-        guard let englishVoice, let synthesizer = NSSpeechSynthesizer(voice: englishVoice) else { return }
-        speechSynthesizer = synthesizer
-        speechWebView = sourceWebView
-        synthesizer.delegate = self
-        synthesizer.rate = 155
-        let expanded = text.replacingOccurrences(of: #"\bIFN\s*[-–]?\s*(?:beta|β)(?!\w)"#, with: "interferon beta", options: .regularExpression)
-        synthesizer.startSpeaking(expanded)
-    }
-
-    func speechSynthesizer(_ sender: NSSpeechSynthesizer, didFinishSpeaking finishedSpeaking: Bool) {
-        if sender === speechSynthesizer {
-            speechSynthesizer = nil
-            notifySpeechEnded(speechWebView)
-        }
-    }
-
-    private func notifySpeechEnded(_ target: WKWebView?) {
-        speechWebView = nil
-        target?.evaluateJavaScript("window.referenceNativeSpeechEnded && window.referenceNativeSpeechEnded()", completionHandler: nil)
     }
 }
 

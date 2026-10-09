@@ -431,6 +431,26 @@ body>header{height:62px;box-sizing:border-box;position:sticky;top:0;z-index:10;p
 .semantic-search-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #d5ded5;margin:0 0 14px;font-size:11px;color:#47624f}
 .semantic-search-status small{display:block;flex-basis:100%;color:#617166}
 .semantic-search-status button{font-size:10px;padding:4px 7px;background:transparent}
+.reference-search-controls{display:grid;grid-template-columns:minmax(140px,1fr) minmax(110px,.48fr) auto;align-items:end;gap:7px;margin:12px 0;padding:10px;background:#f5f6ef;border:1px solid #e1e5dc;border-radius:6px}
+.reference-search-controls label{display:grid;gap:3px;font-size:9px;font-weight:650;letter-spacing:.03em;color:#5d6e61}
+.reference-search-controls input,.reference-search-controls select{width:100%;min-width:0;border:1px solid #d1d9d0;border-radius:4px;background:#fffefa;padding:6px 7px;font:inherit;font-size:11px;letter-spacing:normal;color:#24343b}
+.reference-search-controls button{font-size:10px;padding:6px 9px;white-space:nowrap}
+.reference-family-selector{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px 12px;margin:0;padding:6px 8px;border:1px solid #dfe5db;border-radius:4px;background:#fbfcf8}
+.reference-family-selector legend{padding:0 4px;font-size:9px;font-weight:650;color:#5d6e61}
+.reference-family-selector label{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:500;letter-spacing:normal;color:#344b3d;cursor:pointer}
+.reference-family-selector input{width:auto;margin:0;accent-color:#527b5d}
+.reference-passage-group{display:grid;gap:4px;margin:4px 0 7px}
+.reference-passage-group>strong{font-size:10px;color:#52675a}
+.reference-search-results{display:grid;gap:5px;margin:5px 0 12px}
+.reference-search-results details{border:1px solid #e0e4dc;border-radius:5px;background:#fffefa;padding:6px 9px}
+.reference-search-results summary{cursor:pointer;font-size:10px;font-weight:650;color:#41584a}
+.reference-search-results summary span{float:right;color:#758276;font-weight:500}
+.reference-search-results p{font-size:10px;color:#68766c;margin:5px 0 2px;line-height:1.5}
+.reference-search-results>details>div{display:grid;gap:5px;margin-top:6px}
+.reference-source-result{display:block;text-align:left;width:100%;padding:6px 8px;border:1px solid #e3e7df;border-radius:4px;background:#fbfcf8;color:inherit;text-decoration:none;font-size:10px;line-height:1.45}
+.reference-source-result b{display:block;color:#355444}
+.reference-source-result span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px;color:#67736a;font-weight:400}
+@media(max-width:560px){.reference-search-controls{grid-template-columns:1fr auto}.reference-search-controls label:first-child{grid-column:1/-1}.reference-search-controls label:nth-child(2){grid-column:1}.reference-search-controls button{grid-column:2;grid-row:2}}
 .skim-budget{display:block;margin-top:5px;color:#46674e;font-weight:600}
 .priority-label{font-size:9px;color:#896621;letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px}
 .edge-toc .nav-group{border:0;background:transparent;border-radius:0;margin:0;font-size:9px}
@@ -487,6 +507,16 @@ body:not(.with-panel) .reference-divider,.reference-detached .reference-divider,
 .study-app-import-notice{grid-column:1/-1;display:flex;gap:12px;align-items:center;background:#eef4ef;padding:12px 22px;color:#375446;font:13px/1.45 system-ui}.study-app-import-notice button{margin-left:auto}
 #study-app-settings{width:min(540px,85vw);border:1px solid #cbd8ce;border-radius:12px;padding:22px;color:#193345;background:#fbfbf7}#study-app-settings::backdrop{background:#102b3545}.app-dialog-head{display:flex;justify-content:space-between;align-items:center}.app-dialog-head h2{margin:0 0 12px}.app-dialog-head button{font-size:22px}#study-app-settings p{font-size:14px;line-height:1.55}#study-app-settings button{border:1px solid #c9d8ce;background:white;border-radius:6px;padding:8px 12px;color:#244f3f}
 .app-anki-review{margin:16px 0 8px;padding:12px 0;border-top:1px solid #d4dfd5;font:14px/1.45 system-ui}.app-anki-review>small{margin-left:8px;color:#64756b}.app-anki-review p{margin:8px 0}.app-anki-review.is-live{border-top:2px solid #398061}.app-anki-review button{padding:8px 12px;border:1px solid #bfd0c1;border-radius:5px;background:#fafcf9;color:#254e3b}.app-anki-review button:disabled{opacity:.55}.app-anki-ratings{display:flex;gap:8px;margin:10px 0}.app-anki-ratings button{flex:1;font-weight:650}.app-anki-ratings button:first-child{color:#a33434}.app-anki-ratings button small{display:block;font-size:11px;color:#52655a;font-weight:400}.app-help,.app-topic-coverage{color:#64756b;font-size:12px}
+
+/* White paper throughout the app; colored marks remain visible. */
+:root{--paper:#fff;--white:#fff}
+.reference-workspace-actions select{font-size:11px;max-width:86px;background:white;border:1px solid var(--line);border-radius:5px;color:var(--ink)}
+body,.shell,main#guide,.edge-toc,.side-panel,.guide-page,.week8-overview,.objective-page,#reference-search-host,#study-app-settings{background:#fff}
+.study-dashboard{font:14px/1.5 system-ui;color:var(--ink)}.study-dashboard-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:22px}.study-dashboard-heading h1{font:500 34px/1.15 Georgia,serif;margin:5px 0 10px}.study-dashboard-heading p{margin:0;color:var(--muted);max-width:590px}.study-dashboard-heading button{font-size:12px;white-space:nowrap}
+.study-target-control{display:flex;align-items:center;gap:4px;padding-bottom:20px;border-bottom:1px solid var(--line)}.study-target-control>span{font-size:12px;color:var(--muted);margin-right:10px}.study-target-control button,.study-dashboard-toolbar button{font-size:12px;padding:6px 11px;background:white}.study-target-control button[aria-pressed=true],.study-dashboard-toolbar button[aria-pressed=true]{background:#e7f0ed;color:#205d47;border-color:#a7c4b5}
+.study-dashboard-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding:24px 0}.study-dashboard-overview>div{display:flex;flex-direction:column;gap:5px}.study-dashboard-overview small{font-size:9px;letter-spacing:.07em;font-weight:650;color:#697a80}.study-dashboard-overview strong{font-size:28px;line-height:1.15;font-weight:600;letter-spacing:-.025em}.study-dashboard-overview i{font-size:13px;font-style:normal;font-weight:400}.study-dashboard-overview span{font-size:11px;color:var(--muted)}
+.study-dashboard-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px}.study-dashboard-toolbar>div{display:flex;gap:5px}.study-dashboard-sync{font-size:11px;color:#6d7d83;margin:8px 0 20px}.study-topic-list{border-top:1px solid var(--line)}.study-topic-row{display:grid;grid-template-columns:minmax(210px,1fr) auto;gap:10px 20px;padding:20px 0;border-bottom:1px solid var(--line)}.study-topic-title{display:block;border:none;background:none;border-radius:0;padding:0;text-align:left;font:600 17px/1.35 system-ui;color:#224b3d}.study-topic-title:hover{background:none;text-decoration:underline}.study-topic-description>small{display:block;margin-top:7px;font-size:11px;color:var(--muted)}.study-topic-signals{display:flex;gap:15px;align-items:flex-start}.study-signal{font-size:11px;color:#6b7b82;white-space:nowrap}.study-signal b{font-size:18px;font-weight:600;margin-right:3px}.study-signal small{display:block;font-size:10px}.study-signal.has-signal.question{color:#a33a32}.study-signal.has-signal.lo{color:#946429}.study-signal.has-signal.anki{color:#775291}.study-topic-actions{display:flex;gap:6px;grid-column:1/-1}.study-topic-actions button{font-size:11px;padding:4px 9px}.study-topic-actions small{font-size:10px;color:#697b73;margin-left:4px}.study-metric-explanation{margin-top:22px;border:0;border-top:1px solid var(--line);border-radius:0;font-size:12px}.study-metric-explanation summary{padding:13px 0;color:var(--muted)}.study-metric-explanation p{margin:0 0 12px}.study-dashboard-empty{padding:20px 0;color:var(--muted)}
+@media(max-width:1150px){.with-panel .study-topic-row{grid-template-columns:1fr}.with-panel .study-topic-signals{flex-wrap:wrap}.with-panel .study-dashboard-overview{gap:14px;grid-template-columns:1fr 1fr}.with-panel .study-dashboard-heading{display:block}.with-panel .study-dashboard-heading button{margin-top:12px}}@media(max-width:650px){.study-topic-row{grid-template-columns:1fr}.study-dashboard-heading{display:block}.study-dashboard-heading button{margin-top:12px}.study-dashboard-overview{grid-template-columns:1fr 1fr;gap:18px}.study-topic-signals{flex-wrap:wrap}}
 </style></head><body>
 <header><div class="brand">LLU / NEURO + PSYCH<small>Study guide · Localization to muscle pathology</small></div><div class="toolbar"><span class="save" id="save-status" role="status">Loading saved progress</span><button id="highlight-selection" title="Select text, then press H (Ctrl+Shift+H if a browser extension uses H)">Text highlight · H</button><button id="freehand-toggle" aria-pressed="false" title="Draw saved highlights on text, images, or book pages">Freehand</button><button id="rapid-button">Rapid pathology</button><button id="questions-button">Questions <span id="queue-count">0</span></button><button id="objectives-button">Objectives</button><button id="edit-toggle" aria-pressed="false">Edit guide</button><button id="export">Export progress</button><label class="import-label" for="import">Import progress</label><input id="import" class="hidden-input" type="file" accept="application/json"></div></header>
 <div class="shell"><aside class="edge-toc"><div class="eyebrow">CONTENTS</div><nav id="nav" aria-label="Guide contents"></nav><div class="progress"><div id="progress-text"></div><div class="track"><span id="progress-bar"></span></div>Mark a section learned to compact it.</div><p id="word-budget" class="word-budget"></p><div class="budget-note" hidden>≈700 words per page equivalent.<br>Detailed guide: no page cap.<br>Morning skim target: ≤80 equivalents.<br>Comparison sheets excluded.</div><div class="scope-note" hidden>Course review provides the structure and main content. Lecture notes add detail; NPS and <strong>!Ty</strong> tags help check coverage.<br><br>Select text → H to highlight (Ctrl+Shift+H fallback). Red outlines open missed-question facts. Underlined terms and images open on the right.</div></aside><main id="guide"></main></div>
@@ -518,15 +548,16 @@ $('#edit-toggle').onclick=()=>{const y=window.scrollY;editing=!editing;render();
 $('#export').onclick=()=>{const blob=new Blob([JSON.stringify({format:KEY,state},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='neuro-study-progress.json';a.click();URL.revokeObjectURL(a.href)};
 $('#import').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());if(d.format!==KEY||!d.state)throw Error('wrong format');state={...state,...d.state};state.page=Math.max(0,Math.min(pages.length-1,state.page|0));ensureScopePage();save();render();$('#save-status').textContent='Progress imported'}catch{$('#save-status').textContent='Could not import this progress file'}e.target.value=''};
 const questionSections=pages.flatMap((p,i)=>p.blocks.map(b=>({id:b.id,title:b.title,page:p.title,pageIndex:i})));
-state.questions||={};let questionActive='',questionView='all';
-function qRecord(id){return state.questions[id]||{sections:[],tags:[],review:'not_queued',note:''}}
-function qWrite(id){state.questions[id]||={sections:[],tags:[],review:'not_queued',note:''};return state.questions[id]}
+state.questions||={};let questionActive='',questionView='all',questionTopic='',questionOnlyMissed=false;
+function qRecord(id){return qWrite(id)}
+function qWrite(id){const r=state.questions[id]||={};if(!Array.isArray(r.sections))r.sections=[];if(!Array.isArray(r.tags))r.tags=[];if(typeof r.review!=='string')r.review='not_queued';if(typeof r.note!=='string')r.note='';return r}
 function suggestedFor(q,id){return (q.suggested_sections||[]).some(s=>s.block_id===id)}
 function questionSectionButton(id){const linked=DATA.questions.filter(q=>qRecord(q.id).sections.includes(id)).length;const suggestions=DATA.questions.filter(q=>suggestedFor(q,id)&&!qRecord(q.id).sections.includes(id)).length;return `<button class="question-section-button" data-section-questions="${id}" ${linked||suggestions?'':'hidden'}>Questions: ${linked} linked${suggestions?' · '+suggestions+' suggested':''}</button>`}
 function updateQuestionLinks(){document.querySelectorAll('[data-section-questions]').forEach(b=>{const id=b.dataset.sectionQuestions;const linked=DATA.questions.filter(q=>qRecord(q.id).sections.includes(id)).length;const suggestions=DATA.questions.filter(q=>suggestedFor(q,id)&&!qRecord(q.id).sections.includes(id)).length;b.hidden=!(linked||suggestions);b.textContent=`Questions: ${linked} linked${suggestions?' · '+suggestions+' suggested':''}`});$('#queue-count').textContent=DATA.questions.filter(q=>scopeQuestion(q)&&qRecord(q.id).review==='later').length}
 function openQuestions(section=''){navigateView('questions',{section});}
-function initializeQuestions(section=''){initQuestionPage();questionView='all';$('#question-search').value='';$('#question-section-filter').value=section;questionActive='';renderQuestionList()}
-function renderQuestionList(){if(!$('#question-list'))return;const term=$('#question-search').value.toLowerCase().trim(),section=$('#question-section-filter').value;let qs=DATA.questions.filter(q=>{const r=qRecord(q.id);return scopeQuestion(q)&&(questionView!=='later'||r.review==='later')&&(!section||r.sections.includes(section)||suggestedFor(q,section))&&(!term||[q.id,q.title,q.trigger,q.key_fact,...r.tags].join(' ').toLowerCase().includes(term))});if(!qs.some(q=>q.id===questionActive))questionActive=qs[0]?.id||'';$('#all-questions').setAttribute('aria-pressed',String(questionView==='all'));$('#queued-questions').setAttribute('aria-pressed',String(questionView==='later'));$('#question-count').textContent=`${qs.length} of ${DATA.questions.filter(scopeQuestion).length} questions${section?' · linked or suggested for this section':''}`;$('#question-list').innerHTML=qs.map(q=>{const r=qRecord(q.id);return `<button class="question-item ${q.id===questionActive?'active':''}" data-question-id="${q.id}">${esc(q.title)}<small>${esc(q.source_status)} in original appendix · ${r.review==='later'?'Review later':r.review==='reviewed'?'Reviewed':'Not queued'}${r.sections.length?' · '+r.sections.length+' section link'+(r.sections.length===1?'':'s'):''}</small></button>`}).join('')||'<p class="question-empty">No questions match. Use All questions to choose more, or change the filter.</p>';renderQuestionDetail()}
+function initializeQuestions(section='',options={}){initQuestionPage();questionView='all';questionTopic=options.topic||'';questionOnlyMissed=!!options.missed;$('#question-search').value='';$('#question-section-filter').value=section;questionActive='';if(questionTopic){const note=document.createElement('p');note.className='study-dashboard-sync';note.textContent='Topic: '+(studyDashboardGraph().get(questionTopic)?.title||questionTopic)+(questionOnlyMissed?' · unresolved missed questions':'');$('#question-section-filter').parentElement.after(note)}renderQuestionList()}
+function questionTopicFits(q){return (!questionTopic||studyDashboardGraph().get(questionTopic)?.blocks.some(block=>qRecord(q.id).sections.includes(block.id)))&&(!questionOnlyMissed||/wrong/i.test(q.source_status||'')&&qRecord(q.id).review!=='reviewed')}
+function renderQuestionList(){if(!$('#question-list'))return;const term=$('#question-search').value.toLowerCase().trim(),section=$('#question-section-filter').value;let qs=DATA.questions.filter(q=>{const r=qRecord(q.id);return scopeQuestion(q)&&questionTopicFits(q)&&(questionView!=='later'||r.review==='later')&&(!section||r.sections.includes(section)||suggestedFor(q,section))&&(!term||[q.id,q.title,q.trigger,q.key_fact,...r.tags].join(' ').toLowerCase().includes(term))});if(!qs.some(q=>q.id===questionActive))questionActive=qs[0]?.id||'';$('#all-questions').setAttribute('aria-pressed',String(questionView==='all'));$('#queued-questions').setAttribute('aria-pressed',String(questionView==='later'));$('#question-count').textContent=`${qs.length} of ${DATA.questions.filter(scopeQuestion).length} questions${section?' · linked or suggested for this section':''}`;$('#question-list').innerHTML=qs.map(q=>{const r=qRecord(q.id);return `<button class="question-item ${q.id===questionActive?'active':''}" data-question-id="${q.id}">${esc(q.title)}<small>${esc(q.source_status)} in original appendix · ${r.review==='later'?'Review later':r.review==='reviewed'?'Reviewed':'Not queued'}${r.sections.length?' · '+r.sections.length+' section link'+(r.sections.length===1?'':'s'):''}</small></button>`}).join('')||'<p class="question-empty">No questions match. Use All questions to choose more, or change the filter.</p>';renderQuestionDetail()}
 function renderQuestionDetail(){if(!$('#question-detail'))return;const q=DATA.questions.find(q=>q.id===questionActive);if(!q){$('#question-detail').innerHTML='<p class="question-empty">Choose a question to review.</p>';return}const r=qRecord(q.id);const suggested=(q.suggested_sections||[]).filter(s=>!r.sections.includes(s.block_id));const screenshot=questionImageUrl(q);$('#question-detail').innerHTML=`<div class="question-id">${esc(q.id)} · Original result: ${esc(q.source_status)}</div><h3>${esc(q.title.replace(/^(AMBOSS|UWorld) - /,''))}</h3><p class="question-trigger"><strong>Captured question context</strong><br>${esc(q.trigger)}</p><div class="auto-question-links"><strong>Tagged and linked for you</strong><p>${r.tags.length?r.tags.map(t=>`<span class="topic-chip">${esc(t)}</span>`).join(' '):esc(q.title.replace(/^(AMBOSS|UWorld)\s*[-–]\s*/,''))}</p><p>${r.sections.length?r.sections.map(id=>`<button data-jump-section="${id}">${esc(questionSections.find(b=>b.id===id)?.title||id)}</button>`).join(' '):'This question belongs to a later guide section; no match is forced into this opening draft.'}</p>${q.auto_rationale?`<p class="source-links">${esc(q.auto_rationale)}</p>`:''}</div><label class="review-note-label">What do you want to revisit?<textarea id="question-review-note" placeholder="Record the distinction you missed…">${esc(r.note)}</textarea></label><div class="queue-actions"><button id="queue-question" class="${r.review==='later'?'queued':''}">${r.review==='later'?'Remove from review later':'Review later'}</button><button id="reviewed-question" ${r.review==='reviewed'?'disabled':''}>${r.review==='reviewed'?'Marked reviewed':'Mark reviewed'}</button></div><div class="question-saved" role="status">${r.review==='later'?'Saved in your review-later queue':r.review==='reviewed'?'Reviewed; original result preserved':'Not in your review queue'}</div><details class="question-explanation"><summary>Show saved explanation and original screenshot</summary><div><p><strong>Key fact from appendix</strong><br>${esc(q.key_fact)}</p><p><strong>Original trap note</strong><br>${esc(q.trap)}</p><p class="question-tags-help">The original review screenshot may already show the answer. Some appendix trap notes are generic placeholders.</p><button class="source-image-button" data-source-image="${screenshot}" data-image-caption="${esc(q.title)}"><img loading="lazy" src="${screenshot}" alt="${esc(q.title)} original review screenshot"></button></div></details><p class="appendix-link"><a href="../Question%20Appendix/index.html" target="_blank" rel="noopener">Open the full original appendix</a></p>`;}
 function persistQuestion(){save();updateQuestionLinks()}
 function initQuestionPage(){ $('#question-section-filter').innerHTML='<option value="">All guide sections / unlinked</option>'+questionSections.filter(s=>!week8Scope()||scopePageSelected(pages[s.pageIndex])).map(s=>`<option value="${s.id}">Section ${s.pageIndex+1} · ${esc(s.title)}</option>`).join('');
@@ -716,6 +747,7 @@ state.objectives ||= {};
 let objectiveView = 'all';
 let objectiveSearch = '';
 let objectiveSection = '';
+let objectiveTopic = '';
 let objectiveQuiz = '';
 
 function objectiveRecord(id) {
@@ -736,7 +768,7 @@ function objectiveWrite(id) {
 
 function objectiveSource(o) {
   const link = (label, url, page, path = o.source_path) => {
-    const href = url || (!path ? '' : /^(?:\.{0,2}\/|imported-sources\/)/.test(path) ? path : `file://${encodeURI(path)}`);
+    const href = url || (path ? `file://${encodeURI(path)}` : '');
     const fragment = page ? `#page=${page}` : '';
     const name = `${label}${page ? ` · PDF p. ${page}` : ''}`;
     return href ? `<a href="${esc(href + fragment)}" target="_blank" rel="noopener">${esc(name)}</a>` : `<span>${esc(name)}</span>`;
@@ -799,7 +831,7 @@ function objectiveMarkup(sectionId) {
 function objectivePageMarkup() {
   return `<main class="objective-page" aria-labelledby="objectives-title">
     <header class="objective-page-header"><div><p class="objective-kicker">COURSE OBJECTIVES · VERBATIM</p><h1 id="objectives-title">Learning objectives</h1>
-      <p class="objective-coverage-note">${DATA.objectives.length ? 'Objectives, written answers, relevant source images, and saved review notes.' : 'No objective source pack is loaded. To use your private objectives, add a personal bundle or source-pack JSON under local-private/ and run python3 build_local.py. The public dataset contains no verbatim learning objectives.'}</p></div>
+      <p class="objective-coverage-note">Verbatim objectives, written answers, relevant source images, and saved review notes.</p></div>
       <label class="objective-search-label">Search all objectives<input id="objective-search" type="search" value="${esc(objectiveSearch)}" placeholder="Objective, lecture, source…"></label>
     </header>
     <div class="objective-page-toolbar"><div class="objective-filters" role="group" aria-label="Filter objectives">
@@ -817,6 +849,7 @@ function renderObjectiveList(container) {
     const r = objectiveRecord(o.id);
     return (objectiveView === 'all' || r.review === objectiveView)
       && (!objectiveSection || o.sections?.includes(objectiveSection))
+      && (!objectiveTopic || studyDashboardGraph().get(objectiveTopic)?.blocks.some(block=>o.sections?.includes(block.id)))
       && (!objectiveQuiz || (DATA.objective_answers[o.id]?.quiz_tags||o.quiz_tags||[]).includes(objectiveQuiz))
       && (!term || [o.text, o.lecture, o.source_path].join(' ').toLowerCase().includes(term));
   });
@@ -832,7 +865,9 @@ function renderObjectivesPage(container) {
 
 function mountObjectivesPage(container, options = {}) {
   objectiveSection = options.section || '';
+  objectiveTopic = options.topic || '';
   renderObjectivesPage(container);
+  if(objectiveTopic){const note=document.createElement('p');note.className='study-dashboard-sync';note.textContent='Topic: '+(studyDashboardGraph().get(objectiveTopic)?.title||objectiveTopic);container.querySelector('.objective-page-header').after(note)}
   const onInput = e => {
     if (e.target.id === 'objective-search') { objectiveSearch = e.target.value; renderObjectiveList(container); }
     if (e.target.matches('[data-objective-note]')) {
@@ -888,25 +923,26 @@ window.renderObjectivesPage = renderObjectivesPage;
 window.mountObjectivesPage = mountObjectivesPage;
 
 let currentView=location.hash.slice(1)||state.view||'guide',objectiveMount=null,viewOptions={};
-if(!['guide','objectives','questions','pathology','drugs','bugs'].includes(currentView))currentView='guide';
+if(!['dashboard','guide','objectives','questions','pathology','drugs','bugs'].includes(currentView))currentView='guide';
 const sheetViews={'drugs':'drugs','bugs':'bugs','pathology':'pathology'};
 function resolveSheet(view){return DATA.comparison_sheets.find(s=>s.id===sheetViews[view])||DATA.comparison_sheets.find(s=>view==='drugs'?/drug/i.test(s.title):view==='bugs'?/infection/i.test(s.title):/pathology/i.test(s.title))}
 function navigateView(view,options={}){
  if(objectiveMount){objectiveMount.destroy();objectiveMount=null}
- currentView=['guide','objectives','questions','pathology','drugs','bugs'].includes(view)?view:'guide';viewOptions=options;state.view=currentView;editing=false;
+ currentView=['dashboard','guide','objectives','questions','pathology','drugs','bugs'].includes(view)?view:'guide';viewOptions=options;state.view=currentView;editing=false;
  if(location.hash!==('#'+currentView))history.pushState(null,'','#'+currentView);render();save();if(!options.keepScroll)window.scrollTo(0,0);
 }
 function render(){
  renderNav();$('#edit-toggle').hidden=currentView!=='guide';
- if(currentView==='guide')renderGuide();
+ if(currentView==='dashboard')renderStudyDashboard();
+ else if(currentView==='guide')renderGuide();
  else if(currentView==='objectives'){if(objectiveMount)objectiveMount.destroy();objectiveMount=mountObjectivesPage($('#guide'),viewOptions)}
- else if(currentView==='questions'){$('#guide').innerHTML=$('#questions-page-template').innerHTML;initializeQuestions(viewOptions.section||'')}
+ else if(currentView==='questions'){$('#guide').innerHTML=$('#questions-page-template').innerHTML;initializeQuestions(viewOptions.section||'',viewOptions)}
  else {const sheet=resolveSheet(currentView);$('#guide').innerHTML=comparisonMarkup(sheet.id)}
  updateQuestionLinks();
 }
 renderNav=function(){
  const short=['Neuroaxis','Deficit pattern','Tempo','Myositis','IBM / DMD'];
- const views=[['guide','Read'],['objectives','LOs'],['questions','Questions'],['pathology','Pathology'],['drugs','Drugs'],['bugs','Bugs']];
+ const views=[['dashboard','Study'],['guide','Read'],['objectives','LOs'],['questions','Questions'],['pathology','Pathology'],['drugs','Drugs'],['bugs','Bugs']];
  const item=({p,i})=>`<button class="nav-item ${i===state.page?'active':''}" data-page="${i}" title="${esc(p.title)}">${esc(p.short_title||short[i]||p.title)}</button>`;
  const entries=scopePageEntries();state.navGroups||={};
  const groups=scopeTopicGroups();
@@ -1629,7 +1665,9 @@ function ankiCardsMarkup(){
 }
 function renderAnkiReference(options={}){
  if(!ankiContext)return;if(ankiReferenceMode==='books'){openBookReference(activeRef,referenceBook);return}
- bookMarkMode=false;showSidePanel(ankiContext.title,`${referenceTabsMarkup(ankiReferenceMode)}${ankiContextMarkup()}${ankiReferenceMode==='images'?ankiMediaMarkup():ankiCardsMarkup()}`,{keepScroll:!!options.keepScroll,anchor:referenceOrigin?.element});
+ const sameContext=$('#side-panel').dataset.ankiContextKey===ankiContext.key;
+ bookMarkMode=false;showSidePanel(ankiContext.title,`${referenceTabsMarkup(ankiReferenceMode)}${ankiContextMarkup()}${ankiReferenceMode==='images'?ankiMediaMarkup():ankiCardsMarkup()}`,{keepScroll:options.keepScroll??sameContext,anchor:referenceOrigin?.element});
+ $('#side-panel').dataset.ankiContextKey=ankiContext.key;
  state.referenceViews[ankiContext.key]=ankiReferenceMode;save();
 }
 function ankiStepCard(delta){const cards=ankiCardResults(),index=cards.findIndex(x=>Number(x.card.id)===ankiCurrentCard);if(!cards.length)return;ankiCurrentCard=Number(cards[Math.max(0,Math.min(cards.length-1,index+delta))].card.id);ankiCardRevealed=false;renderAnkiReference()}
@@ -1657,10 +1695,24 @@ document.addEventListener('keydown',e=>{
 
 // Sentence embeddings are served locally. Explicit topic links retain their
 // curated image-first view; selecting a sentence starts with eight close cards.
-const semanticEndpoint='http://127.0.0.1:8768';
+const semanticEndpoint=window.STUDY_APP_CONFIG?.apiBase||'http://127.0.0.1:8768';
+function semanticRequestHeaders(){return {'Content-Type':'application/json',...(window.STUDY_APP_CONFIG?{'X-LLU-App-Token':window.STUDY_APP_CONFIG.token}:{})}}
+const referenceFamilyOptions=[['first_aid','First Aid'],['pathoma','Pathoma'],['mehlman','Mehlman'],['in_house','In-house notes / slides']];
+const referenceFamilyDefaults=referenceFamilyOptions.map(([key])=>key);
+function selectedReferenceFamilies(context){const selected=context?.referenceSearchFamilies??state.referenceSearchFamilies;return Array.isArray(selected)?referenceFamilyDefaults.filter(key=>selected.includes(key)):referenceFamilyDefaults.slice()}
+state.referenceSearchFamilies=selectedReferenceFamilies();
+window.referenceSearchFamiliesMarkup=function(context){const selected=new Set(selectedReferenceFamilies(context));return `<fieldset class="reference-family-selector" data-reference-family-selector><legend>Reference families</legend>${referenceFamilyOptions.map(([key,label])=>`<label><input type="checkbox" data-reference-family value="${key}" ${selected.has(key)?'checked':''}><span>${label}</span></label>`).join('')}</fieldset>`};
+const referenceFamilyContainers=new WeakSet();
+window.setupReferenceSearchFamilies=function(container,contextGetter=()=>window.referencePanelSearchContext?.()){if(!container||referenceFamilyContainers.has(container))return;referenceFamilyContainers.add(container);container.addEventListener('change',event=>{if(!event.target.matches('[data-reference-family]'))return;const families=[...container.querySelectorAll('[data-reference-family]:checked')].map(input=>input.value);state.referenceSearchFamilies=referenceFamilyDefaults.filter(key=>families.includes(key));save();const context=contextGetter?.();if(context){context.referenceSearchFamilies=state.referenceSearchFamilies.slice();if(context.searchQuery||context.text)fetchSemanticCards(context)}})};
 let semanticRequestSerial=0,semanticAbort=null;
 const lexicalCardResults=ankiCardResults,legacyOpenAnkiContext=openAnkiContext,legacyContextMarkup=ankiContextMarkup;
+const legacyAnkiCardsMarkup=ankiCardsMarkup;
+ankiCardsMarkup=function(){
+ if(ankiContext?.searchScope&&ankiContext.searchScope!=='all'&&ankiContext.searchScope!=='cards')return '';
+ return legacyAnkiCardsMarkup();
+};
 ankiCardResults=function(context=ankiContext){
+ if(context?.searchScope&&context.searchScope!=='all'&&context.searchScope!=='cards')return [];
  if(!context||!Array.isArray(context.semanticCardIds))return lexicalCardResults(context);
  const query=ankiNormalize(context.filterText||''),hits=new Map(context.matches.map(h=>[Number(h.id),h]));
  return context.semanticCardIds.map(id=>{
@@ -1672,11 +1724,63 @@ ankiCardResults=function(context=ankiContext){
 };
 ankiContextMarkup=function(){
  const content=legacyContextMarkup(),context=ankiContext;if(!context?.retrieval)return content;
- const messages={loading:'Finding the closest cards…',semantic:`Local sentence search · ${context.semanticCardIds.length} close cards · allowed tags only`,fallback:'Text matches · local sentence search is offline',empty:'No close sentence match in the allowed tags'};
- return `${content}<div class="semantic-search-status" role="status"><span>${esc(messages[context.retrieval]||'')}</span>${context.retrieval==='fallback'?'<small>Install a local source index and sentence-search models to enable semantic search.</small><button data-semantic-retry>Retry sentence search</button>':''}${['semantic','empty'].includes(context.retrieval)?'<button data-semantic-broaden>Broaden text matches</button>':''}</div>`;
+ const status=semanticSearchStatus(context),showBroaden=['all','cards'].includes(context.searchScope||'all');
+ return `${content}<div class="semantic-search-status" role="status"><span>${esc(status)}</span>${context.retrieval==='fallback'?'<small>Run Start Study Guide.command to enable local search.</small><button data-semantic-retry>Retry search</button>':''}${showBroaden&&['semantic','empty'].includes(context.retrieval)?'<button data-semantic-broaden>Broaden text matches</button>':''}</div>${sourceSearchResultsMarkup(context)}`;
 };
+function semanticSearchStatus(context){
+ const scope=context.searchScope||'all';
+ if(context.retrieval==='loading')return `Searching ${scope==='all'?'all sources':scope==='sources'?'slides / notes':scope}…`;
+ const counts={cards:ankiCardResults(context).length,books:Object.values(context.bookMatches||{}).reduce((sum,hits)=>sum+(Array.isArray(hits)?hits.length:0),0)+(context.mehlmanMatches||[]).length,sources:(context.sourceMatches||context.sources||[]).length,background:(context.backgroundMatches||context.background||[]).length};
+ const labels={cards:'Cards',books:'Books','sources':'Slides / notes',background:'Background'};
+ const keys=scope==='all'?['cards','books','sources','background']:[scope];
+ const found=keys.filter(key=>counts[key]>0).map(key=>`${labels[key]}: ${counts[key]}`);
+ if(found.length)return found.join(' · ');
+ if(context.retrieval==='fallback')return scope==='all'?'No local search results':'No matches in '+(labels[scope]||scope);
+ return `No matches in ${scope==='all'?'all sources':labels[scope]||scope}`;
+}
+function referenceSearchControls(context){
+ context||={text:'',searchScope:'all'};
+ const query=context.searchQuery??context.text??'',selected=context.searchScope||'all';
+ return `<form class="reference-search-controls" data-reference-search-form><label>Search<input type="search" data-reference-search-query value="${esc(query)}" placeholder="Search cards, books, slides, or notes" aria-label="Search study sources"></label><label>In<select data-reference-search-source aria-label="Choose sources to search"><option value="all" ${selected==='all'?'selected':''}>All sources</option><option value="cards" ${selected==='cards'?'selected':''}>Cards</option><option value="books" ${selected==='books'?'selected':''}>Books</option><option value="sources" ${selected==='sources'?'selected':''}>Slides / notes</option><option value="background" ${selected==='background'?'selected':''}>Background</option></select></label><button type="submit">Search</button></form>`;
+}
+window.referenceSearchControls=referenceSearchControls;
+window.refreshReferenceSearchControls=function(context=ankiContext){const host=document.getElementById('reference-search-host');if(host){const active=context||{text:'',searchScope:'all'};host.innerHTML=referenceSearchControls(active)+window.referenceSearchFamiliesMarkup(active);window.setupReferenceSearchFamilies(host,()=>window.referencePanelSearchContext?.()||ankiContext)}};
+window.referencePanelSearchContext=function(){return ankiContext||window.referenceSearchFallbackContext||null;};
+function resultDocumentId(hit){return hit?.documentId||hit?.document_id||hit?.sourceId||hit?.source_id||hit?.id||''}
+function resultPage(hit){return Number(hit?.physicalPage||hit?.page||hit?.pageNumber||hit?.page_number||1)||1}
+function referenceResultExcerpt(value,query){
+ const text=String(value||'').replace(/\s+/g,' ').trim();if(text.length<=230)return text;
+ const lower=text.toLowerCase(),phrase=String(query||'').toLowerCase();let at=lower.indexOf(phrase);
+ if(at<0)for(const term of phrase.match(/[\p{L}\p{N}]+/gu)||[]){if(term.length>3&&(at=lower.indexOf(term))>=0)break}
+ const start=Math.max(0,at-60),snippet=text.slice(start,start+230);return (start?'…':'')+snippet+(start+230<text.length?'…':'');
+}
+function sourceResultButton(hit,query,label=''){
+ const id=resultDocumentId(hit),page=resultPage(hit),title=hit.title||hit.label||hit.name||'Source document',excerpt=referenceResultExcerpt(hit.excerpt||hit.text||hit.snippet||'',query);
+ const localId=(DATA.source_catalog?.documents||[]).some(doc=>doc.id===id);
+ const attribution=[label||hit.source||hit.attribution,hit.source_updated?`Updated ${hit.source_updated}`:''].filter(Boolean).join(' · ');
+ if(id&&localId)return `<button class="reference-source-result" data-open-source-result data-document-id="${esc(id)}" data-page="${page}" data-query="${esc(query)}"><b>${esc(title)} · PDF ${page}${attribution?` · ${esc(attribution)}`:''}</b>${excerpt?`<span>${esc(excerpt)}</span>`:''}</button>`;
+ const url=hit.url||hit.href;if(url&&/^https?:\/\//i.test(url))return `<a class="reference-source-result" href="${esc(url)}" target="_blank" rel="noopener"><b>${esc(title)}${label?` · ${esc(label)}`:''}</b>${excerpt?`<span>${esc(excerpt)}</span>`:''}</a>`;
+ return '';
+}
+function backgroundResultButton(hit,index){
+ const title=hit.title||hit.label||'Background source',attribution=hit.source||hit.attribution||'',excerpt=hit.excerpt||hit.summary||'';
+ return `<button class="reference-source-result reference-background-result" type="button" data-open-background-result="${index}" data-index="${index}"><b>${esc(title)}${attribution?` · ${esc(attribution)}`:''}</b>${excerpt?`<span>${esc(excerpt)}</span>`:''}</button>`;
+}
+function sourceSearchResultsMarkup(context){
+ const books=context.bookMatches||{},sources=context.sourceMatches||context.sources||[],background=context.backgroundMatches||context.background||[],mehlman=context.mehlmanMatches||books.Mehlman||[];
+ const scope=context.searchScope||'all',showAll=scope==='all';
+ const query=context.searchQuery||context.text||'';
+ const sourceRows=(Array.isArray(sources)?sources:[]).slice(0,5).map(hit=>sourceResultButton(hit,query,'In-house notes / slides')).join('');
+ const bookRows=['First Aid','Pathoma'].map(name=>[name,(books[name]||[])]).concat([['Mehlman',mehlman]]).map(([name,hits])=>hits.length?`<div class="reference-passage-group"><strong>${name}</strong>${hits.slice(0,3).map(hit=>sourceResultButton(hit,query,name)).join('')}</div>`:'').join('');
+ const backgroundRows=(Array.isArray(background)?background:[]).slice(0,4).map((hit,index)=>backgroundResultButton(hit,index)).join('');
+ const bookCount=scope==='all'||scope==='books'?Object.values(books).reduce((sum,hits)=>sum+(Array.isArray(hits)?hits.length:0),0)+(Array.isArray(mehlman)?mehlman.length:0):0;
+ const sourceCount=scope==='all'||scope==='sources'?(Array.isArray(sources)?sources.length:0):0,backgroundCount=scope==='all'||scope==='background'?(Array.isArray(background)?background.length:0):0;
+ const noFamilies=selectedReferenceFamilies(context).length===0;
+ if(!bookCount&&!sourceCount&&!backgroundCount&&!noFamilies)return '';
+ return `<section class="reference-search-results" aria-label="Search results">${noFamilies?'<p role="status">No reference sources selected.</p>':''}${bookCount?`<details open><summary>Standards <span>${bookCount}</span></summary><div>${bookRows||'<p>No local standards passages matched.</p>'}</div></details>`:''}${sourceCount?`<details open><summary>In-house notes / slides <span>${sourceCount}</span></summary><div>${sourceRows||'<p>No local in-house passages matched.</p>'}</div></details>`:''}${backgroundCount?`<details ${showAll?'':'open'}><summary>Background <span>${backgroundCount}</span></summary><div>${backgroundRows||'<p>No background source passages matched.</p>'}</div></details>`:''}</section>`;
+}
 function narrowLexicalContext(context){
- context.matches=ankiMatchContext(context);
+ const oldText=context.text;context.text=context.searchQuery||oldText;context.matches=ankiMatchContext(context);context.text=oldText;
  context.semanticCardIds=lexicalCardResults(context).slice(0,12).map(item=>Number(item.card.id));
  const notes=new Set(context.semanticCardIds.map(id=>Number(ankiCards.get(id)?.note)));
  context.matches=context.matches.filter(h=>notes.has(Number(h.id)));
@@ -1684,24 +1788,28 @@ function narrowLexicalContext(context){
 }
 async function fetchSemanticCards(context){
  const serial=++semanticRequestSerial;semanticAbort?.abort();const controller=new AbortController();semanticAbort=controller;
- context.retrieval='loading';context.matches=[];context.semanticCardIds=[];renderAnkiReference();
+ context.retrieval='loading';context.matches=[];context.semanticCardIds=[];context.bookMatches={'First Aid':[],'Pathoma':[]};context.mehlmanMatches=[];context.sourceMatches=[];context.backgroundMatches=[];renderAnkiReference();window.refreshReferenceSearchControls(context);
  const timer=setTimeout(()=>controller.abort(),45000);
  try{
-  const response=await fetch(semanticEndpoint+'/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:context.text.slice(0,4000),kind:context.filter||'all',limit:8,include_books:true}),signal:controller.signal});
+  const query=String(context.searchQuery??context.text??'').slice(0,4000),scope=context.searchScope||'all',referenceFamilies=selectedReferenceFamilies(context);
+  const response=await fetch(semanticEndpoint+'/search',{method:'POST',headers:semanticRequestHeaders(),body:JSON.stringify({query,kind:context.filter||'all',search_scope:scope,reference_families:referenceFamilies,limit:8,include_books:scope==='all'||scope==='books',include_sources:scope==='all'||scope==='sources',include_background:scope==='all'||scope==='background'}),signal:controller.signal});
   if(!response.ok)throw Error('Local search unavailable');const result=await response.json();
   if(serial!==semanticRequestSerial||ankiContext!==context)return;
   if(result.method!=='local-sentence-embeddings'||!Array.isArray(result.matches))throw Error('Unexpected local search response');
   const cards=result.matches.filter(h=>ankiCards.has(Number(h.cardId))&&ankiNotes.has(Number(h.noteId))&&Number(ankiCards.get(Number(h.cardId)).note)===Number(h.noteId));
   context.semanticCardIds=cards.map(h=>Number(h.cardId));context.matches=[];
   for(const hit of cards){if(context.matches.some(n=>n.id===Number(hit.noteId)))continue;context.matches.push({id:Number(hit.noteId),score:hit.score,reasons:[hit.reason]})}
-  context.bookMatches=result.books||{'First Aid':[],'Pathoma':[]};
+  context.bookMatches=result.books||{'First Aid':[],'Pathoma':[]};context.mehlmanMatches=result.mehlman||[];
+  context.sourceMatches=result.sources||result.sourceMatches||result.notes||result.slides||[];
+  context.backgroundMatches=result.background||result.backgroundMatches||result.background_sources||[];
   context.retrieval=cards.length?'semantic':'empty';
  }catch(error){if(serial!==semanticRequestSerial||ankiContext!==context)return;narrowLexicalContext(context)}
- finally{clearTimeout(timer);if(serial===semanticRequestSerial&&ankiContext===context&&!$('#side-panel').hidden){ankiCardRevealed=false;renderAnkiReference()}}
+ finally{clearTimeout(timer);if(serial===semanticRequestSerial&&ankiContext===context&&!$('#side-panel').hidden){ankiCardRevealed=false;renderAnkiReference();window.refreshReferenceSearchControls(context)}}
 }
+window.fetchSemanticCards=fetchSemanticCards;
 openAnkiContext=function(options){
  if(options.fromNote||options.kind==='topic'||options.kind==='connections')return legacyOpenAnkiContext(options);
- ankiContext=ankiMakeContext(options);activeRef=ankiContext.topic||ankiContext.topics.find(t=>ankiBookAvailable(t,'First Aid')||ankiBookAvailable(t,'Pathoma'))||'';
+ ankiContext=ankiMakeContext(options);ankiContext.searchScope=options.searchScope||'all';ankiContext.referenceSearchFamilies=selectedReferenceFamilies(options);if(options.searchQuery!==undefined)ankiContext.searchQuery=options.searchQuery;activeRef=ankiContext.topic||ankiContext.topics.find(t=>ankiBookAvailable(t,'First Aid')||ankiBookAvailable(t,'Pathoma'))||'';
  if(!ankiContext.topic&&activeRef)ankiContext.topic=activeRef;if(options.node&&activeRef)setReferenceContext(activeRef,options.node);
  ankiCardRevealed=false;ankiCurrentCard=options.cardId||Number(state.ankiCardPosition[ankiContext.key])||0;ankiReferenceMode=options.view||'cards';
  fetchSemanticCards(ankiContext);
@@ -1711,6 +1819,13 @@ document.addEventListener('click',e=>{
  if(e.target.closest('[data-semantic-retry]')&&ankiContext)fetchSemanticCards(ankiContext);
  if(e.target.closest('[data-semantic-broaden]')&&ankiContext){delete ankiContext.semanticCardIds;delete ankiContext.retrieval;ankiContext.matches=ankiMatchContext(ankiContext);renderAnkiReference()}
  if(e.target.closest('[data-anki-filter]')&&ankiContext?.retrieval)fetchSemanticCards(ankiContext);
+});
+document.addEventListener('submit',e=>{
+ const form=e.target.closest('[data-reference-search-form]');if(!form)return;
+ e.preventDefault();const query=form.querySelector('[data-reference-search-query]')?.value.trim()||'';
+ const scope=form.querySelector('[data-reference-search-source]')?.value||'all';
+ ankiContext=ankiMakeContext({kind:'selection',text:query,title:query?`Search · ${query.slice(0,72)}`:'Search study sources',topics:[],blockId:''});
+ ankiContext.searchQuery=query;ankiContext.searchScope=scope;ankiContext.referenceSearchFamilies=selectedReferenceFamilies();activeRef='';ankiReferenceMode='cards';ankiCardRevealed=false;ankiCurrentCard=0;fetchSemanticCards(ankiContext);
 });
 
 // Exact local source pages share the book viewer's selectable text, persisted
@@ -1742,7 +1857,7 @@ function sourceDocument(value){
 async function fetchSourcePage(documentId,page,query=''){
  const key=JSON.stringify([documentId,page,query.slice(0,4000)]);
  if(sourcePageCache.has(key))return sourcePageCache.get(key);
- const response=await fetch(semanticEndpoint+'/source-page',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({documentId,page,query:query.slice(0,4000)}),signal:AbortSignal.timeout(45000)});
+ const response=await fetch(semanticEndpoint+'/source-page',{method:'POST',headers:semanticRequestHeaders(),body:JSON.stringify({documentId,page,query:query.slice(0,4000)}),signal:AbortSignal.timeout(45000)});
  const result=await response.json();if(!response.ok)throw Error(result.error||'Source viewer unavailable');
  if(!result.layer?.spans||!result.image)throw Error('The exact source page could not be rendered');
  sourcePageCache.set(key,result);return result;
@@ -1766,33 +1881,51 @@ function renderSourceViewer(){
  activeRef=topic;referenceBook=result.documentId;
  const hits=result.focus?.spans?.length||0;
  const pageMarkup=bookPageMarkup(result.documentId,page,book,{pages:[page],printed_pages:[result.printed_page||'—']}).replace(/<figcaption>[^<]*<\/figcaption>/,`<figcaption>${esc(doc.title||result.title)} · PDF ${page}</figcaption>`);
- showSidePanel(doc.title||result.title,`<div class="source-page-toolbar"><button data-source-step="-" aria-label="Previous source page" ${page<=1?'disabled':''}>‹</button><span>PDF ${page} / ${count}</span><button data-source-step="+" aria-label="Next source page" ${page>=count?'disabled':''}>›</button><button data-source-return>Linked page</button></div><div class="book-mark-toolbar"><button id="book-mark-toggle" aria-pressed="${bookMarkMode}">${bookMarkMode?'Cancel page marking':'Mark a page region'}</button><span>Select text · H, or use Freehand.</span></div><p class="book-focus-legend">${hits?'<b>Matching source passage highlighted</b>':'No confident matching passage on this page. Full source shown.'} <button data-book-find-passage>Find passage</button></p><div class="panel-media book-page-media">${pageMarkup}</div>`,{sourceViewer:true,bookPanel:true,keepZoom:true,anchor:view.node});
+ showSidePanel(doc.title||result.title,`<div class="source-page-toolbar"><button data-source-step="-" aria-label="Previous source page" ${page<=1?'disabled':''}>‹</button><label>PDF page <input type="number" min="1" max="${count}" value="${page}" data-source-page-input aria-label="PDF page number"> / ${count}</label><button data-source-step="+" aria-label="Next source page" ${page>=count?'disabled':''}>›</button><button data-source-return title="Return to the page that opened this document">Linked page · ${view.linkedPage}</button></div><div class="book-mark-toolbar"><button id="book-mark-toggle" aria-pressed="${bookMarkMode}">${bookMarkMode?'Cancel page marking':'Mark a page region'}</button><span>Select text · H, or use Freehand.</span></div><p class="book-focus-legend">${hits?'<b>Matching source passage highlighted</b>':'No confident matching passage on this page. Full source shown.'} <button data-book-find-passage>Find passage</button></p><div class="panel-media book-page-media">${pageMarkup}</div>`,{sourceViewer:true,bookPanel:true,keepZoom:true,keepScroll:true,anchor:view.node});
  sourceViewerActive=view;applySideZoom();setBookMarkMode(bookMarkMode);
 }
 renderBookPanel=function(){if(sourceViewerActive)return renderSourceViewer();return priorRenderBookPanel()};
-async function openExactSource(doc,page,query,node,linkedPage=page){
+async function openExactSource(doc,page,query,node,linkedPage=page,forcePage=false){
  const serial=++sourceViewerSerial,topic='source:'+doc.id+':'+ankiNormalize(query).slice(0,140);
- const saved=state.sourcePageView[topic],target=linkedPage===page&&saved?.linkedPage===linkedPage?saved.page:page;
+ const saved=state.sourcePageView[topic],target=forcePage?page:(linkedPage===page&&saved?.linkedPage===linkedPage?saved.page:page);
  showSidePanel(doc.title,'<p role="status">Opening the exact slide / notes page…</p>',{anchor:node});
  try{
   const result=await fetchSourcePage(doc.id,target,query);if(serial!==sourceViewerSerial||$('#side-panel').hidden)return;
   installSourcePage(result,topic);sourceViewerActive={document:doc,result,query,node,topic,linkedPage};bookMarkMode=false;
-  state.sourcePageView[topic]={page:target,linkedPage};renderSourceViewer();requestAnimationFrame(scrollToLinkedPassage);save();
- }catch(error){if(serial!==sourceViewerSerial)return;showSidePanel(doc.title,`<p>The local source index or this PDF is not installed for this source.</p><p>Add the PDF to a private source pack and prepare its local page index before retrying. Your notes and highlights are saved.</p><p class="source-view-error">${esc(error.message)}</p>`,{anchor:node})}
+  state.sourcePageView[topic]={page:target,linkedPage};renderSourceViewer();if(target===linkedPage)requestAnimationFrame(scrollToLinkedPassage);save();
+ }catch(error){if(serial!==sourceViewerSerial)return;showSidePanel(doc.title,`<p>The local source viewer is offline or this PDF is unavailable.</p><p>Run <strong>Start Study Guide.command</strong> and retry this source link. Your notes and highlights are saved.</p><p class="source-view-error">${esc(error.message)}</p>`,{anchor:node})}
 }
+// Public entry point for semantic search results. IDs are resolved only against
+// the local catalog; callers never pass a filesystem path to the source API.
+window.openSourceDocumentById=function(documentId,page=1,query='',options={}){
+ const doc=(DATA.source_catalog?.documents||[]).find(item=>item.id===documentId);
+ if(!doc)return false;
+ const linkedPage=Number(options.linkedPage||page)||1,node=options.node||referenceOrigin?.element||null;
+ openExactSource(doc,Number(page)||1,String(query||''),node,linkedPage,options.forcePage===true);return true;
+};
+const priorOpenBookReference=openBookReference;
+openBookReference=function(key,book){
+ const map=DATA.book_pages.keywords[key]||{},selected=book||state.bookPageView[bookViewKey(key,'active-book')]||(map['First Aid']?.pages.length?'First Aid':'Pathoma');
+ if(selected==='Both'||!map[selected]?.pages?.length||!(DATA.source_catalog?.documents||[]).some(doc=>doc.id===selected))return priorOpenBookReference(key,book);
+ const page=getBookPageView(key,selected,map[selected].pages)||map[selected].pages[0];
+ if(!page)return priorOpenBookReference(key,book);
+ state.bookPageView[bookViewKey(key,'active-book')]=selected;
+ const query=ankiContext?.searchQuery||ankiContext?.text||referenceOrigin?.text||key;
+ window.openSourceDocumentById(selected,page,query,{linkedPage:page,node:referenceOrigin?.element});
+};
 function bookSearchMatchesMarkup(context){
- const books=context?.bookMatches;if(!books)return '';
+ const books=context?.bookMatches;if(!books||!['all','books'].includes(context?.searchScope||'all'))return '';
  return `<details class="passage-book-matches" open><summary>Book passages for this sentence</summary>${['First Aid','Pathoma'].map(book=>`<div class="passage-book-group"><strong>${book}</strong>${(books[book]||[]).length?(books[book]||[]).map((hit,i)=>`<button data-search-book="${book}" data-search-book-hit="${i}"><b>PDF ${hit.page}${hit.printed_page?' · printed '+esc(hit.printed_page):''}</b><span>${esc(hit.excerpt||'')}</span></button>`).join(''):'<p>No close passage found in the local edition.</p>'}</div>`).join('')}</details>`;
 }
 const baseSemanticMarkup=ankiContextMarkup;
-ankiContextMarkup=function(){return baseSemanticMarkup()+bookSearchMatchesMarkup(ankiContext)};
+ankiContextMarkup=function(){return baseSemanticMarkup()+(typeof sourceSearchResultsMarkup==='function'?'':bookSearchMatchesMarkup(ankiContext))};
 const baseReferenceTabs=referenceTabsMarkup;
 referenceTabsMarkup=function(mode='books'){
  let html=baseReferenceTabs(mode);if(ankiContext?.bookMatches)for(const book of ['First Aid','Pathoma','Both']){
   const available=book==='Both'?Object.values(ankiContext.bookMatches).some(h=>h.length):ankiContext.bookMatches[book]?.length;
   if(available)html=html.replace(`data-panel-book="${book}"`, `data-search-book="${book}"`).replace(new RegExp(`(<button data-search-book="${book}"[^>]*?) disabled`),'$1');
  }
- return html;
+ return html.replace(/<\/div>$/,`<button data-search-mehlman>Mehlman</button></div>`);
 };
 async function openSearchedBook(book,hitIndex=null,pageOverride=null){
  const context=ankiContext;if(!context?.bookMatches)return;
@@ -1800,9 +1933,12 @@ async function openSearchedBook(book,hitIndex=null,pageOverride=null){
  for(const name of books){const hits=context.bookMatches[name]||[];if(!hits.length)continue;map[name]={pages:hits.map(h=>Number(h.page)),printed_pages:hits.map(h=>h.printed_page||'—'),match:'sentence',note:'Closest passage from local sentence search. Highlight shows the matching source text.'}}
  DATA.book_pages.keywords[topic]=map;activeRef=topic;referenceBook=book;ankiReferenceMode='books';bookMarkMode=false;
  const requested=books.map(name=>{const hits=context.bookMatches[name]||[];if(!hits.length)return null;const saved=getBookPageView(topic,name,map[name].pages),hit=hits[hitIndex??hits.findIndex(h=>h.page===saved)]||hits[0],page=pageOverride&&book===name?pageOverride:hit.page;state.bookPageView[bookViewKey(topic,name)]=page;return {name,page,hit}}).filter(Boolean);
+ // Keep the Both selector in the mapped passage panel. Choosing an individual
+ // search hit opens that book as a full document at the exact matching page.
+ if(book!=='Both'&&requested.length===1){const hit=requested[0];window.openSourceDocumentById(book,hit.page,context.searchQuery||context.text,{linkedPage:hit.page,node:referenceOrigin?.element});return}
  showSidePanel('Book passages for selected text','<p role="status">Opening the matched book passage…</p>',{anchor:referenceOrigin?.element});
  try{
-  const results=await Promise.all(requested.map(({name,page})=>fetchSourcePage(name,page,context.text)));
+  const results=await Promise.all(requested.map(({name,page})=>fetchSourcePage(name,page,context.searchQuery||context.text)));
   if(serial!==sourceViewerSerial||ankiContext!==context||$('#side-panel').hidden)return;
   results.forEach(result=>installSourcePage(result,topic));priorRenderBookPanel();requestAnimationFrame(()=>{const saved=state.bookPageView[bookViewKey(topic,book+'-scroll')];if(saved!==undefined)$('#side-content').scrollTop=saved;else scrollToLinkedPassage()});save();
  }catch(error){if(serial===sourceViewerSerial)showSidePanel('Book passages',`<p>Could not open the local PDF: ${esc(error.message)}</p><button data-semantic-retry>Retry search</button>`)}
@@ -1812,15 +1948,22 @@ window.openPassageSearch=function(item){
  openAnkiContext({kind:'selection',text:item.quote,blockId:item.block_id,title:'References for highlighted sentence',node});
 };
 document.addEventListener('click',e=>{
+ if(e.target.closest('[data-search-mehlman]')){const context=ankiContext;if(!context)return;const hit=context.mehlmanMatches?.[0],query=context.searchQuery||context.topic||context.text;if(hit)window.openSourceDocumentById(resultDocumentId(hit),resultPage(hit),query,{node:referenceOrigin?.element});else openAnkiContext({kind:'selection',text:query,searchQuery:query,searchScope:'books',referenceSearchFamilies:['mehlman'],title:'Mehlman · '+query.slice(0,70),topics:[]});return}
  const book=e.target.closest('[data-search-book]');if(book){e.preventDefault();e.stopImmediatePropagation();openSearchedBook(book.dataset.searchBook,book.dataset.searchBookHit===undefined?null:Number(book.dataset.searchBookHit));return}
- const sourceStep=e.target.closest('[data-source-step],[data-source-return]');if(sourceStep&&sourceViewerActive){e.preventDefault();e.stopImmediatePropagation();const v=sourceViewerActive,page=sourceStep.hasAttribute('data-source-return')?v.linkedPage:Number(v.result.page)+(sourceStep.dataset.sourceStep==='+'?1:-1);delete state.sourcePageView[v.topic];openExactSource(v.document,page,v.query,v.node,v.linkedPage);return}
- if(activeRef.startsWith('passage:')&&ankiContext?.bookMatches){const tab=e.target.closest('[data-book-page],[data-book-step]');if(tab){e.preventDefault();e.stopImmediatePropagation();const name=tab.dataset.bookName||referenceBook,ref=DATA.book_pages.keywords[activeRef][name],at=ref.pages.indexOf(getBookPageView(activeRef,name,ref.pages)),page=tab.dataset.bookPage?Number(tab.dataset.bookPage):ref.pages[Math.max(0,Math.min(ref.pages.length-1,at+(tab.dataset.bookStep==='+'?1:-1)))];openSearchedBook(name,null,page);return}}
+ const sourceResult=e.target.closest('[data-open-source-result]');if(sourceResult){e.preventDefault();e.stopImmediatePropagation();window.openSourceDocumentById(sourceResult.dataset.documentId,Number(sourceResult.dataset.page||1),sourceResult.dataset.query||ankiContext?.searchQuery||ankiContext?.text||'',{node:referenceOrigin?.element});return}
+ const sourceStep=e.target.closest('[data-source-step],[data-source-return]');if(sourceStep&&sourceViewerActive){e.preventDefault();e.stopImmediatePropagation();const v=sourceViewerActive,page=sourceStep.hasAttribute('data-source-return')?v.linkedPage:Number(v.result.page)+(sourceStep.dataset.sourceStep==='+'?1:-1);state.sourcePageView[v.topic]={page,linkedPage:v.linkedPage};openExactSource(v.document,page,v.query,v.node,v.linkedPage,true);return}
+ const mappedBookPage=e.target.closest('[data-book-page],[data-book-step]');if(mappedBookPage&&activeRef){const name=mappedBookPage.dataset.bookName||referenceBook,ref=DATA.book_pages.keywords[activeRef]?.[name]||{pages:[]},current=Number(getBookPageView(activeRef,name,ref.pages)||ref.pages[0]||1),page=mappedBookPage.dataset.bookPage?Number(mappedBookPage.dataset.bookPage):Math.max(1,Math.min(Number(DATA.source_catalog?.documents?.find(d=>d.id===name)?.page_count)||Infinity,current+(mappedBookPage.dataset.bookStep==='+'?1:-1)));e.preventDefault();e.stopImmediatePropagation();if(name==='Both')return;state.bookPageView[bookViewKey(activeRef,name)]=page;const query=ankiContext?.searchQuery||ankiContext?.text||referenceOrigin?.text||'';window.openSourceDocumentById(name,page,query,{linkedPage:page,node:referenceOrigin?.element});return}
  const link=e.target.closest('#guide a[href],#side-content a[href]');if(!link||!/\.pdf(?:#|$|\?)/i.test(link.getAttribute('href')||'')||/Open full PDF|Open original PDF|Download/i.test(link.textContent))return;
  const doc=sourceDocument(link.getAttribute('href'));
  if(doc?.ambiguous){e.preventDefault();e.stopImmediatePropagation();showSidePanel('Source link is ambiguous','<p>This filename matches more than one local PDF, so the guide cannot safely choose a source page.</p><p>Use a citation that includes the specific lecture or a cataloged source link.</p>',{anchor:link});return}
  if(!doc)return;
  const page=Number((link.getAttribute('href').match(/#page=(\d+)/)||[])[1]||1);e.preventDefault();e.stopImmediatePropagation();openExactSource(doc,page,sourceQuery(link),link);
 },true);
+document.addEventListener('change',e=>{
+ const input=e.target.closest('[data-source-page-input]');if(!input||!sourceViewerActive)return;
+ const view=sourceViewerActive,count=Number(view.result.page_count||view.document.page_count)||1,page=Math.max(1,Math.min(count,Math.round(Number(input.value)||1)));
+ state.sourcePageView[view.topic]={page,linkedPage:view.linkedPage};openExactSource(view.document,page,view.query,view.node,view.linkedPage,true);
+});
 
 // Reference controls are outside the scrolling page. A separate reference tab
 // communicates only with the app-created opener using a per-session token.
@@ -1828,8 +1971,8 @@ const referenceParams=new URLSearchParams(location.search);
 const referenceOnly=referenceParams.get('reference')==='1';
 let referenceSession=referenceParams.get('referenceSession')||'',referenceChild=null,referenceChildReady=false,referencePending=null,referenceLastRequest=null;
 let referenceReceiving=false,referenceDetached=false,referenceLastTerm='',referenceTermContext='',referenceSpeech=null;
-const referenceStateFields=new Set(['bookPageView','bookHighlights','sourcePageView','readingHighlights','readingAutoHighlight','freehandStrokes','freehandLastKey','referenceSources','referenceViews','ankiCardPosition','ankiMediaPosition','imagePositions','guideHighlightBookTopics','referencePaneRatio','bookLabels']);
-const referenceMainFields=new Set(['view','page','scope','studyScope','objectiveQuiz','objectiveFilter','objectiveSearch','questionFilter']);
+const referenceStateFields=new Set(['bookPageView','bookHighlights','sourcePageView','readingHighlights','readingAutoHighlight','freehandStrokes','freehandLastKey','referenceSources','referenceViews','ankiCardPosition','ankiMediaPosition','imagePositions','guideHighlightBookTopics','referencePaneRatio','bookLabels','referenceSearchFamilies','referenceVoice']);
+const referenceMainFields=new Set(['view','page','scope','studyScope','objectiveQuiz','objectiveFilter','objectiveSearch','questionFilter','studyTarget']);
 function referenceClone(value){return value===undefined?undefined:JSON.parse(JSON.stringify(value))}
 function referenceEqual(a,b){
  if(a===b)return true;
@@ -1927,6 +2070,7 @@ window.addEventListener('message',event=>{
  const message=event.data,peer=referenceOnly?window.opener:referenceChild;
  if(!peer||event.source!==peer||message?.app!=='llu-reference'||message.session!==referenceSession)return;
  if(message.type==='ready'&&!referenceOnly){referenceChildReady=true;referencePeerMessage({type:'state',state});if(referencePending){referencePeerMessage(referencePending);referencePending=null}return}
+ if(message.type==='closed'&&!referenceOnly){referenceDetached=false;referenceChildReady=false;referenceChild=null;referencePending=null;document.body.classList.remove('reference-detached');$('#references-button').textContent='References';$('#references-button').title='Open references beside the guide';return}
  if(message.type==='state'){referenceMergeIncoming(message.state);return}
  if(message.type==='view'&&!referenceOnly){referenceLastRequest=message.request;return}
  if(message.type==='request'&&referenceOnly){referenceHandleRequest(message);return}
@@ -1967,9 +2111,7 @@ function referenceApplySize(){
 function referenceSetRatio(ratio){state.referencePaneRatio=Math.max(.3,Math.min(.75,ratio));referenceApplySize()}
 function openReferenceWorkspace(){
  if(referenceRoute('empty',{}))return;
- const documents=(DATA.source_catalog?.documents||[]).filter(doc=>['First Aid','Pathoma'].includes(doc.id)||doc.kind==='supplement'),hasCards=(ankiLibrary.notes||[]).length>0;
- const message=documents.length||hasCards?'Search your cards, books, lecture slides and notes. Choose a match to open its exact page.':'This public edition has no linked Anki cards or source PDFs. Add a private Anki export or source pack to enable local matches.';
- showSidePanel('References',`<section class="reference-empty"><h3>Look up a term or sentence</h3><p>${message}</p><div class="reference-library">${documents.map(doc=>`<button data-reference-library="${esc(doc.id)}">${esc(doc.title)} · ${doc.page_count} pages</button>`).join('')}</div></section>`);
+ showSidePanel('References',`<section class="reference-empty"><h3>Look up a term or sentence</h3><p>Search your cards, books, lecture slides and notes. Choose a match to open its exact page.</p><div class="reference-library">${(DATA.source_catalog?.documents||[]).filter(doc=>['First Aid','Pathoma'].includes(doc.id)||doc.kind==='supplement').map(doc=>`<button data-reference-library="${esc(doc.id)}">${esc(doc.title)} · ${doc.page_count} pages</button>`).join('')}</div></section>`);
 }
 function detachReferenceWorkspace(){
  if(referenceOnly)return;
@@ -1991,39 +2133,37 @@ function dockReferenceWorkspace(){
  $('#references-button').textContent='References';
  if(referenceLastRequest)referenceHandleRequest(referenceLastRequest);else openReferenceWorkspace();
 }
-function referenceSpeakText(value){
- const term=String(value||'').replace(/\s+/g,' ').trim();
- if(!term||term.length>180||term.split(' ').length>24){$('#reference-listen-status').textContent='Select a medical term or short phrase to hear it.';return}
- const synthesis=window.speechSynthesis;
- const nativeSpeech=window.webkit?.messageHandlers?.nativeSpeak;
- if(nativeSpeech){
-  if(referenceSpeech){nativeSpeech.postMessage({stop:true});referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Stopped.';return}
-  referenceSpeech={native:true};referenceLastTerm=term;referenceUpdateSpeechControls(true);$('#reference-listen-status').textContent='Listening: '+term;nativeSpeech.postMessage({text:term});return;
- }
- if(!synthesis||typeof SpeechSynthesisUtterance==='undefined'){$('#reference-listen-status').textContent='Speech is unavailable in this browser.';return}
- if(referenceSpeech){synthesis.cancel();referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Stopped.';return}
- const voices=synthesis.getVoices(),voice=voices.find(v=>v.localService&&/^en[-_]/i.test(v.lang))||voices.find(v=>v.localService&&v.lang==='en');
- if(!voice){$('#reference-listen-status').textContent='No installed English voice is available yet. Try Listen again once voices load.';return}
- referenceLastTerm=term;
- const spoken=term.replace(/\bIFN\s*[-–]?\s*(?:beta|β)(?!\w)/gi,'interferon beta');
- const utterance=new SpeechSynthesisUtterance(spoken);utterance.voice=voice;utterance.lang=voice.lang;utterance.rate=.86;
- referenceSpeech=utterance;referenceUpdateSpeechControls(true);
- $('#reference-listen-status').textContent='Listening: '+term;
- utterance.onend=()=>{referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Pronunciation · '+term};
- utterance.onerror=()=>{referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Could not play this term. Try Listen again.'};
- synthesis.cancel();synthesis.speak(utterance);
+function referenceStopSpeech(message='Stopped.'){
+ const current=referenceSpeech;referenceSpeech=null;
+ current?.controller?.abort();if(current?.audio){current.audio.pause();current.audio.src=''}if(current?.url)URL.revokeObjectURL(current.url);
+ referenceUpdateSpeechControls(false);const status=$('#reference-listen-status');if(status)status.textContent=message;
 }
-window.referenceNativeSpeechEnded=function(){referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Pronunciation · '+referenceLastTerm};
+async function referenceSpeakText(value){
+ const term=String(value||'').replace(/\s+/g,' ').trim(),status=$('#reference-listen-status');
+ if(!term||term.length>180||term.split(' ').length>24){status.textContent='Select a medical term or short phrase to hear it.';return}
+ if(referenceSpeech){referenceStopSpeech();return}
+ const controller=new AbortController(),request={controller};referenceSpeech=request;referenceLastTerm=term;referenceUpdateSpeechControls(true);
+ status.textContent='Preparing local neural voice…';
+ const spoken=term.replace(/\bIFN\s*[-–]?\s*(?:beta|β)(?!\w)/gi,'interferon beta');
+ const timer=setTimeout(()=>controller.abort(),45000);
+ try{
+  const response=await fetch(semanticEndpoint+'/tts',{method:'POST',headers:semanticRequestHeaders(),body:JSON.stringify({text:spoken,voice:state.referenceVoice||'Bella'}),signal:controller.signal}),result=await response.json();
+  if(!response.ok)throw Error(result.error||'Local voice unavailable.');if(referenceSpeech!==request)return;
+  if(result.mime!=='audio/wav'||typeof result.audio!=='string')throw Error('The local voice returned no audio.');
+  const binary=atob(result.audio),bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));request.url=URL.createObjectURL(new Blob([bytes],{type:'audio/wav'}));request.audio=new Audio(request.url);
+  request.audio.onended=()=>{if(referenceSpeech===request)referenceStopSpeech('Pronunciation · '+term)};
+  request.audio.onerror=()=>{if(referenceSpeech===request)referenceStopSpeech('Could not play the local voice. Try Listen again.')};
+  await request.audio.play();if(referenceSpeech===request)status.textContent='Listening · '+term;
+ }catch(error){if(referenceSpeech===request)referenceStopSpeech(error.name==='AbortError'?'Voice request timed out. Try Listen again.':error.name==='NotAllowedError'?'Audio is ready. Press Listen again to play it.':error.message)}
+ finally{clearTimeout(timer)}
+}
 function referenceUpdateSpeechControls(speaking){document.querySelectorAll('[data-reference-listen],[data-selection-listen]').forEach(button=>{button.textContent=speaking?'■ Stop':'🔊 Listen';button.setAttribute('aria-pressed',String(speaking))})}
 function referenceListenTerm(){const title=$('#side-title')?.textContent||'';return (window.getSelection()?.toString().trim()||(referenceTermContext===title?referenceLastTerm:'')||($('#side-content .background-reference')?title:'')||sourceViewerActive?.query||ankiContext?.topic||ankiContext?.searchQuery||ankiContext?.text||title).replace(/^source:/,'')}
 function referenceSetupControls(){
- // Asking for voices during startup lets the browser load its installed list
- // before the first Listen click, without speaking anything automatically.
- window.speechSynthesis?.getVoices();
  const panel=$('#side-panel'),head=panel.querySelector('.side-panel-head');
- const actions=document.createElement('div');actions.className='reference-workspace-actions';actions.innerHTML='<button data-reference-listen aria-pressed="false" title="Hear the selected term or reference heading">🔊 Listen</button><button data-reference-detach title="Send lookups to a separate tab">Open reference tab ↗</button><button data-reference-dock>Dock beside guide</button>';head.insertBefore(actions,$('#close-side'));
+ const actions=document.createElement('div');actions.className='reference-workspace-actions';actions.innerHTML=`<button data-reference-listen aria-pressed="false" title="Hear the selected term or reference heading">🔊 Listen</button><select aria-label="Local neural voice" data-reference-voice>${['Bella','Jasper','Luna','Bruno','Rosie','Hugo','Kiki','Leo'].map(voice=>`<option ${voice===(state.referenceVoice||'Bella')?'selected':''}>${voice}</option>`).join('')}</select><button data-reference-detach title="Send lookups to a separate tab">Open reference tab ↗</button><button data-reference-dock>Dock beside guide</button>`;head.insertBefore(actions,$('#close-side'));
  const status=document.createElement('p');status.id='reference-listen-status';status.className='reference-listen-status';status.setAttribute('role','status');head.after(status);
- const host=document.createElement('div');host.id='reference-search-host';status.after(host);
+ const host=document.createElement('div');host.id='reference-search-host';status.after(host);window.refreshReferenceSearchControls?.();
  const divider=document.createElement('div');divider.id='reference-divider';divider.className='reference-divider';divider.setAttribute('role','separator');divider.setAttribute('aria-orientation','vertical');divider.setAttribute('aria-label','Resize study and reference panes');divider.setAttribute('aria-valuemin','30');divider.setAttribute('aria-valuemax','75');divider.tabIndex=0;document.body.append(divider);
  let resizing=false;
  divider.addEventListener('pointerdown',event=>{event.preventDefault();resizing=true;divider.setPointerCapture(event.pointerId);document.body.classList.add('reference-resizing')});
@@ -2043,6 +2183,8 @@ function referenceSetupControls(){
   const background=event.target.closest('[data-open-background-result]');if(background){const entry=ankiContext?.backgroundMatches?.[Number(background.dataset.openBackgroundResult)];if(!entry)return;const url=entry.url&&/^https?:\/\//.test(entry.url)?entry.url:'';referenceLastTerm=entry.title;showSidePanel(entry.title,`<article class="background-reference"><div class="eyebrow">BACKGROUND REFERENCE</div><h3>${esc(entry.title)}</h3><div class="reference-definition">${esc(entry.summary||entry.excerpt||'')}</div><p class="source-links">${url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(entry.source||'Source')}</a>`:esc(entry.source||'')}${entry.source_updated?' · Updated '+esc(entry.source_updated):''}${entry.fetched_at?' · Local copy '+esc(entry.fetched_at):''}${entry.license?'<br>'+esc(entry.license):''}</p><button data-background-return>← Search results</button></article>`);return}
   if(event.target.closest('[data-background-return]'))renderAnkiReference({keepScroll:true});
  });
+ document.addEventListener('change',event=>{if(event.target.matches('[data-reference-voice]')){referenceStopSpeech('');state.referenceVoice=event.target.value;save()}});
+ window.addEventListener('pagehide',()=>{referenceStopSpeech('');if(referenceOnly)referencePeerMessage({type:'closed'})});
  if(referenceOnly){document.body.classList.add('reference-only');openReferenceWorkspace();referencePeerMessage({type:'ready'})}
 }
 referenceSetupControls();
@@ -2108,17 +2250,18 @@ function studyAppDialog(){
 function studyAppSummaryMarkup(){
  const summary=studyAppCoverage.summary||{},cards=Object.values(studyAppCoverage.cards||{}),reviewed=cards.filter(card=>card.reviewed||card.review_count>0).length;
  const connected=!!studyAppConnection?.available,scoped=Number(studyAppConnection?.allowed_card_count||0)>0;
- return `<p><b>${connected?(scoped?'Anki connected':'Anki connected · no card scope imported'):'Anki is not connected'}</b>${studyAppConnection?.anki_connect_version?' · AnkiConnect '+esc(studyAppConnection.anki_connect_version):''}</p><p>${reviewed.toLocaleString()} linked cards reviewed${summary.review_count?' · '+Number(summary.review_count).toLocaleString()+' recorded reviews':''}${summary.synced_at?' · Last synced '+esc(new Date(summary.synced_at).toLocaleString()):''}</p>`;
+ return `<p><b>${connected?(scoped?'Anki connected':'Anki connected · no card scope imported'):'Anki is not connected'}</b>${studyAppConnection?.anki_connect_version?' · AnkiConnect '+esc(studyAppConnection.anki_connect_version):''}</p><p>${reviewed.toLocaleString()} linked cards reviewed${summary.review_count?' · '+Number(summary.review_count).toLocaleString()+' recorded reviews':''}${summary.synced_at?' · Last synced '+esc(new Date(Number(summary.synced_at)*1000).toLocaleString()):''}</p>`;
 }
 async function studyAppLoadAnki(){
  try{studyAppConnection=await studyAppRequest('/anki/status');studyAppCoverage=studyAppConnection.coverage||await studyAppRequest('/anki/coverage')}catch{studyAppConnection={available:false}}
  const button=$('#study-app-button');if(button)button.textContent=studyAppConnection?.available?(Number(studyAppConnection.allowed_card_count||0)>0?'App · Anki connected':'App · Anki scope needed'):'App · connect Anki';
  const target=$('[data-app-anki-status]');if(target)target.innerHTML=studyAppSummaryMarkup();
+ if(currentView==='dashboard'&&typeof renderStudyDashboard==='function')renderStudyDashboard();
 }
 async function studyAppSync(){
  const target=$('[data-app-anki-sync-status]'),button=$('[data-app-anki-sync]');if(button)button.disabled=true;if(target)target.textContent='Reading your Anki review history…';
- try{if(!studyAppConnection?.available){if(target)target.textContent='AnkiConnect is not available.';return}if(!Number(studyAppConnection.allowed_card_count||0)){if(target)target.textContent='No Anki card scope has been imported.';return}studyAppCoverage=await studyAppRequest('/anki/sync',{});await studyAppLoadAnki();if(target)target.textContent='Review history synced. Your learned sections stay as you marked them.';studyAppRefreshReviewControls()}
- catch(error){if(target)target.textContent=error.message}finally{if(button)button.disabled=false}
+ try{if(!studyAppConnection?.available){if(target)target.textContent='AnkiConnect is not available.';return false}if(!Number(studyAppConnection.allowed_card_count||0)){if(target)target.textContent='No Anki card scope has been imported.';return false}studyAppCoverage=await studyAppRequest('/anki/sync',{});await studyAppLoadAnki();if(target)target.textContent='Review history synced. Your learned sections stay as you marked them.';studyAppRefreshReviewControls();return true}
+ catch(error){if(target)target.textContent=error.message;return false}finally{if(button)button.disabled=false}
 }
 function studyAppTopicCoverage(){
  const config=ankiTopicMap[ankiContext?.topic],noteIds=new Set((config?.noteIds||[]).map(Number));if(!noteIds.size)return '';
@@ -2181,7 +2324,7 @@ async function studyAppRate(ease){
  finally{studyAppReviewPending=false;studyAppRefreshReviewControls()}
 }
 async function startStudyApp(){
- if(!studyAppConfig)return;
+ if(!studyAppConfig){render();save();return}
  document.body.classList.add('study-app-loading');studyAppStatus('Loading saved progress…');
  const local=studyAppCopy(state);let result;
  try{
@@ -2190,7 +2333,7 @@ async function startStudyApp(){
   else{studyAppBaseline={};if(Object.values(local.notes||{}).some(Boolean)||Object.values(local.good||{}).some(Boolean))result=await studyAppRequest('/progress/import',{state:local});else studyAppProgressNotice()}
   studyAppRevision=result.revision||0;studyAppReady=true;
   localStorage.setItem(KEY,JSON.stringify(state));referenceStateSnapshot=studyAppCopy(state);
-  currentView=location.hash.slice(1)||state.view||'guide';if(!['guide','objectives','questions','pathology','drugs','bugs'].includes(currentView))currentView='guide';ensureScopePage();render();save();
+  currentView=location.hash.slice(1)||state.view||'dashboard';if(!['dashboard','guide','objectives','questions','pathology','drugs','bugs'].includes(currentView))currentView='guide';ensureScopePage();render();save();
  }catch{render();studyAppStatus('App service unavailable · progress stays in this window')}
  finally{document.body.classList.remove('study-app-loading')}
  const button=document.createElement('button');button.id='study-app-button';button.textContent='App · Anki';button.onclick=async()=>{studyAppDialog().showModal();await studyAppLoadAnki()};document.querySelector('.toolbar').insertBefore(button,$('#export'));
@@ -2209,5 +2352,70 @@ async function startStudyApp(){
  setInterval(studyAppRefresh,12000);await studyAppLoadAnki();
  if(studyAppConnection?.available&&!studyAppCoverage.summary?.synced_at)studyAppSync();
 }
+
+/* A topic-level starting point. Counts describe observed signals, not mastery. */
+state.studyTarget ||= 'both';
+let studyDashboardMap=null,studyDashboardFilter='all';
+function studyDashboardLOReview(id){const value=state.objectives?.[id]?.review;return value==='reviewed'?'good':value==='later'?'bad':value}
+function studyDashboardGraph(){
+ if(studyDashboardMap)return studyDashboardMap;
+ const noteCards=new Map();
+ for(const card of ankiLibrary.cards){const key=Number(card.note);if(!noteCards.has(key))noteCards.set(key,[]);noteCards.get(key).push(String(card.id))}
+ studyDashboardMap=new Map((DATA.topic_groups?.groups||[]).map(group=>{
+  const chapters=pages.filter(page=>group.page_ids.includes(page.id)),blocks=chapters.flatMap(page=>page.blocks),named=new Set();
+  for(const page of chapters)for(const term of [...(page.keywords||[]),...ankiDetectTopics(page.title+' '+page.blocks.map(block=>block.title+' '+ankiPlain(block.html)).join(' '))]){
+   const canonical=ankiCanonicalAliases[term]||term;if(ankiTopicMap[canonical])named.add(canonical);else if(ankiTopicMap[term])named.add(term);
+  }
+  const cardIds=new Set();for(const topic of named)for(const note of ankiTopicMap[topic]?.noteIds||[])for(const id of noteCards.get(Number(note))||[])cardIds.add(id);
+  return [group.id,{...group,chapters,blocks,cardIds:[...cardIds],named:[...named]}];
+ }));return studyDashboardMap;
+}
+function studyDashboardRows(){
+ const allowed=new Set(scopePageEntries().map(({p})=>p.id)),objectives=scopeObjectives();
+ return [...studyDashboardGraph().values()].map(group=>{
+  const chapters=group.chapters.filter(page=>allowed.has(page.id));if(!chapters.length)return null;
+  const blocks=chapters.flatMap(page=>page.blocks),ids=new Set(blocks.map(block=>block.id));
+  const los=objectives.filter(lo=>(lo.sections||[]).some(id=>ids.has(id)));
+  const questions=DATA.questions.filter(q=>scopeQuestion(q)&&(state.questions?.[q.id]?.sections||[]).some(id=>ids.has(id)));
+  const wrong=questions.filter(q=>/wrong/i.test(q.source_status||'')&&state.questions?.[q.id]?.review!=='reviewed');
+  const bad=los.filter(lo=>studyDashboardLOReview(lo.id)==='bad'),unrated=los.filter(lo=>!['good','bad'].includes(studyDashboardLOReview(lo.id)));
+  const cardIds=week8Scope()?group.cardIds.filter(id=>{
+   const card=ankiCards.get(Number(id)),note=ankiNotes.get(Number(card?.note));
+   return (note?.quizTags||[]).some(tag=>/Quiz[_ ]?0?7(?:$|::)/i.test(tag))||chapters.some(page=>(page.keywords||[]).some(term=>(ankiTopicMap[ankiCanonicalAliases[term]||term]?.noteIds||[]).includes(Number(card?.note))));
+  }):group.cardIds;
+  const records=cardIds.map(id=>studyAppCoverage.cards?.[id]).filter(Boolean),known=records.filter(card=>Number.isInteger(card.recent_review_count));
+  const recentReviews=known.reduce((n,card)=>n+card.recent_review_count,0),again=known.reduce((n,card)=>n+card.recent_again_count,0),hard=known.reduce((n,card)=>n+card.recent_hard_count,0);
+  const reviewed=records.filter(card=>card.review_count>0).length,learned=blocks.filter(block=>state.good[block.id]).length;
+  const count=guideReadingCounts(blocks),priority=wrong.length+(state.studyTarget==='step'?0:bad.length)+(state.studyTarget==='in_house'?0:again);
+  return {...group,chapters,blocks,los,wrong,bad,unrated,cardIds,known:known.length,recentReviews,again,hard,reviewed,learned,count,priority};
+ }).filter(Boolean);
+}
+function studyDashboardSignal(value,label,kind){return `<span class="study-signal ${value?'has-signal '+kind:''}"><b>${value}</b> ${label}</span>`}
+function renderStudyDashboard(){
+ const all=studyDashboardRows(),rows=all.filter(row=>studyDashboardFilter!=='needs_work'||row.priority>0).sort((a,b)=>b.priority-a.priority),counts=guideLengthCounts();
+ const uniqueWrong=new Set(all.flatMap(row=>row.wrong.map(q=>q.id))),bad=new Set(all.flatMap(row=>row.bad.map(lo=>lo.id))),synced=studyAppCoverage.summary?.synced_at;
+ const target=state.studyTarget,showSchool=target!=='step',showStep=target!=='in_house';
+ $('#guide').innerHTML=`<section class="study-dashboard">
+  <div class="study-dashboard-heading"><div><p class="eyebrow">${week8Scope()?'WEEK 8 / QUIZ 7':'NEURO + PSYCH'}</p><h1>Study by topic</h1><p>Start with the distinctions you missed. Read, practice, then keep a short skim.</p></div><button data-dashboard-continue>Continue reading →</button></div>
+  <div class="study-target-control" role="group" aria-label="Study target"><span>Target</span>${[['in_house','In-house'],['step','Step'],['both','Both']].map(([key,label])=>`<button data-study-target="${key}" aria-pressed="${target===key}">${label}</button>`).join('')}</div>
+  <div class="study-dashboard-overview"><div><small>UNRESOLVED MISSED QUESTIONS</small><strong>${uniqueWrong.size}</strong><span>from your saved bank</span></div>${showSchool?`<div><small>OBJECTIVES MARKED BAD</small><strong>${bad.size}</strong><span>your own ratings</span></div>`:''}<div><small>READ WITH CURRENT COLLAPSES</small><strong>${(counts.current/counts.unit).toFixed(1)} <i>page eq.</i></strong><span>${(counts.full/counts.unit).toFixed(1)} fully expanded · ${(counts.skim/counts.unit).toFixed(1)} all learned</span></div></div>
+  <div class="study-dashboard-toolbar"><div role="group" aria-label="Topic filter">${[['all','All topics'],['needs_work','Needs work']].map(([key,label])=>`<button data-dashboard-filter="${key}" aria-pressed="${studyDashboardFilter===key}">${label}</button>`).join('')}</div>${studyAppConfig?`<button data-app-anki-sync ${studyDashboardSyncPending?'disabled':''}>${studyDashboardSyncPending?'Syncing…':'Sync Anki'}</button>`:''}</div>
+  <p class="study-dashboard-sync" role="status">${studyDashboardSyncMessage||(!synced?'Anki review signals appear after a sync in the app.':`Anki synced ${esc(new Date(Number(synced)*1000).toLocaleString())} · last ${studyAppCoverage.summary.recent_window_days||30} days`)}${!studyAppConfig?' Open LLU Study to sync reviews.':''}</p>
+  <div class="study-topic-list">${rows.map(row=>`<article class="study-topic-row"><div class="study-topic-description"><button class="study-topic-title" data-dashboard-topic="${esc(row.id)}">${esc(row.short_title||row.title)} →</button><small>${row.chapters.length} chapter${row.chapters.length===1?'':'s'} · ${row.learned}/${row.blocks.length} sections learned · ${(row.count.current/counts.unit).toFixed(1)} page eq.</small></div><div class="study-topic-signals">${studyDashboardSignal(row.wrong.length,'missed','question')}${showSchool?studyDashboardSignal(row.bad.length,'LOs bad','lo'):''}${showStep?`<span class="study-signal ${row.again?'has-signal anki':''}" title="Again ratings in normal Anki learning, review, or relearning during the last 30 days"><b>${row.known?row.again:'—'}</b> Again${row.known?`<small>${row.recentReviews} recent reviews${row.hard?' · '+row.hard+' Hard':''}</small>`:'<small>not synced</small>'}</span>`:''}</div><div class="study-topic-actions"><button data-dashboard-topic="${esc(row.id)}">Read</button>${showSchool?`<button data-dashboard-los="${esc(row.id)}">LOs <small>${row.unrated.length} unrated</small></button>`:''}${row.wrong.length?`<button data-dashboard-missed="${esc(row.id)}">Missed facts</button>`:''}</div></article>`).join('')||'<p class="study-dashboard-empty">No recorded trouble signals in this view. Unrated objectives and unreviewed cards still need assessment.</p>'}</div>
+  <details class="study-metric-explanation"><summary>What these signals mean</summary><p>Missed = a saved wrong question you have not marked reviewed. LOs bad = your objective ratings. Again and Hard = actual Anki ratings over the last 30 days; no review data shows a dash. Cards are linked through named topics, so a card or question may inform more than one topic. These are review priorities, not a mastery score.</p><p>${showSchool?'In-house uses course objectives and your missed facts. ':''}${showStep?'Step prioritizes missed facts and Anki recall. This set covers Neuro/Psych; other Step 1 and Step 2 subjects still need to be added. ':''}Page equivalents use ${counts.unit} words and reflect sections you have collapsed.</p></details>
+ </section>`;
+}
+let studyDashboardSyncPending=false,studyDashboardSyncMessage='';
+function studyDashboardJump(topic){const group=studyDashboardRows().find(row=>row.id===topic);if(!group)return;state.page=pages.findIndex(page=>page.id===group.chapters[0].id);state.navGroups||={};state.navGroups[group.id]=true;navigateView('guide');document.getElementById('topic-'+topic)?.scrollIntoView({block:'start'})}
+document.addEventListener('click',event=>{
+ const target=event.target.closest('[data-study-target]');if(target){state.studyTarget=target.dataset.studyTarget;save();renderStudyDashboard();return}
+ const filter=event.target.closest('[data-dashboard-filter]');if(filter){studyDashboardFilter=filter.dataset.dashboardFilter;renderStudyDashboard();return}
+ const topic=event.target.closest('[data-dashboard-topic]');if(topic){studyDashboardJump(topic.dataset.dashboardTopic);return}
+ if(event.target.closest('[data-dashboard-continue]')){navigateView('guide');document.getElementById('page-'+state.page)?.scrollIntoView({block:'start'});return}
+ const lo=event.target.closest('[data-dashboard-los]');if(lo){const group=studyDashboardRows().find(row=>row.id===lo.dataset.dashboardLos);objectiveSection='';objectiveSearch='';objectiveQuiz='';objectiveView='all';navigateView('objectives',{topic:group.id});return}
+ const missed=event.target.closest('[data-dashboard-missed]');if(missed){const group=studyDashboardRows().find(row=>row.id===missed.dataset.dashboardMissed);navigateView('questions',{topic:group.id,missed:true});return}
+});
+const studyDashboardOriginalSync=studyAppSync;
+studyAppSync=async function(){studyDashboardSyncPending=true;studyDashboardSyncMessage='Reading Anki review history…';if(currentView==='dashboard')renderStudyDashboard();try{const ok=await studyDashboardOriginalSync();studyDashboardSyncMessage=ok?'':'Anki sync failed. Open Anki with AnkiConnect and try again.'}finally{studyDashboardSyncPending=false;if(currentView==='dashboard')renderStudyDashboard()}};
 
 initReadingTools();render();save();startStudyApp();</script></body></html>

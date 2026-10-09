@@ -1,6 +1,7 @@
 """All review writes in this suite use a fake AnkiConnect transport."""
 from __future__ import annotations
 
+import time
 import tempfile
 import sqlite3
 import json
@@ -305,6 +306,62 @@ class AnkiBridgeTests(unittest.TestCase):
         self.assertEqual(cached, synced)
         self.assertEqual(len(self.fake.answer_calls), count)
         self.assertFalse(synced["summary"]["guide_progress_changed"])
+
+    def test_history_sync_counts_recent_normal_reviews_and_rating_signals(self) -> None:
+        now = time.time()
+
+        def review(days_ago: float, review_type: int, ease: int) -> dict[str, Any]:
+            return {"cid": 101, "id": int((now - days_ago * 86400) * 1000), "usn": 1,
+                    "ease": ease, "ivl": 8, "lastIvl": 7, "factor": 2500, "time": 900,
+                    "type": review_type}
+
+        self.fake.reviews[101] = [
+            review(32, 1, 1),  # outside the window
+            review(29, 0, 1),  # learning, Again
+            review(14, 1, 2),  # review, Hard
+            review(6, 2, 3),   # relearning, Good
+            review(3, 3, 1),   # filtered/cram
+            review(2, 4, 1),   # rescheduled/manual
+            review(-1, 1, 1),  # future timestamp
+            {"id": int(now * 1000), "ease": 1},  # missing type is unknown
+        ]
+
+        synced = self.bridge.sync_history(include_reviews=True)
+        signals = synced["cards"]["101"]
+        self.assertEqual(synced["summary"]["recent_window_days"], 30)
+        self.assertIsInstance(synced["summary"]["synced_at"], float)
+        self.assertEqual(synced["summary"]["review_count"], 8)  # full-history coverage semantics
+        self.assertEqual(signals["review_count"], 8)
+        self.assertEqual(signals["recent_review_count"], 3)
+        self.assertEqual(signals["recent_again_count"], 1)
+        self.assertEqual(signals["recent_hard_count"], 1)
+        self.assertEqual(len(synced["reviews_by_card"]["101"]), 8)
+        self.assertEqual(self.fake.answer_calls, [])
+
+        cached = self.bridge.coverage()
+        self.assertEqual(cached["cards"]["101"]["recent_review_count"], 3)
+        self.assertEqual(cached["cards"]["101"]["recent_again_count"], 1)
+        self.assertEqual(cached["cards"]["101"]["recent_hard_count"], 1)
+        self.assertEqual(cached["cards"]["201"]["recent_review_count"], 0)
+
+    def test_old_history_cache_migration_keeps_recent_signals_unknown(self) -> None:
+        legacy_db = Path(self.temp.name) / "legacy-ledger.sqlite3"
+        summary = {"scope_card_count": 1, "reviewed_card_count": 1, "review_count": 2,
+                   "synced_at": 123.0, "guide_progress_changed": False}
+        with sqlite3.connect(legacy_db) as conn:
+            conn.execute("CREATE TABLE history_sync(singleton INTEGER PRIMARY KEY, summary_json TEXT NOT NULL, synced_at REAL NOT NULL)")
+            conn.execute("INSERT INTO history_sync VALUES(1,?,123.0)", (json.dumps(summary),))
+            conn.execute("CREATE TABLE history_cards(card_id INTEGER PRIMARY KEY, review_count INTEGER NOT NULL, last_review_json TEXT)")
+            conn.execute("INSERT INTO history_cards VALUES(101,2,'{\"id\":1000,\"ease\":3}')")
+
+        migrated = AnkiBridge(CARD_MAP, legacy_db, transport=self.fake).coverage()
+        card_cache = migrated["cards"]["101"]
+        self.assertEqual(card_cache["review_count"], 2)
+        self.assertEqual(card_cache["last_review"]["id"], 1000)
+        self.assertIsNone(card_cache["recent_review_count"])
+        self.assertIsNone(card_cache["recent_again_count"])
+        self.assertIsNone(card_cache["recent_hard_count"])
+        self.assertNotIn("recent_window_days", migrated["summary"])
 
     def test_history_sync_splits_requests_at_ankiconnect_batch_limit(self) -> None:
         ids = list(range(20000, 21005))

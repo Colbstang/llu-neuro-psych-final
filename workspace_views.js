@@ -1,23 +1,24 @@
 let currentView=location.hash.slice(1)||state.view||'guide',objectiveMount=null,viewOptions={};
-if(!['guide','objectives','questions','pathology','drugs','bugs'].includes(currentView))currentView='guide';
+if(!['dashboard','guide','objectives','questions','pathology','drugs','bugs'].includes(currentView))currentView='guide';
 const sheetViews={'drugs':'drugs','bugs':'bugs','pathology':'pathology'};
 function resolveSheet(view){return DATA.comparison_sheets.find(s=>s.id===sheetViews[view])||DATA.comparison_sheets.find(s=>view==='drugs'?/drug/i.test(s.title):view==='bugs'?/infection/i.test(s.title):/pathology/i.test(s.title))}
 function navigateView(view,options={}){
  if(objectiveMount){objectiveMount.destroy();objectiveMount=null}
- currentView=['guide','objectives','questions','pathology','drugs','bugs'].includes(view)?view:'guide';viewOptions=options;state.view=currentView;editing=false;
+ currentView=['dashboard','guide','objectives','questions','pathology','drugs','bugs'].includes(view)?view:'guide';viewOptions=options;state.view=currentView;editing=false;
  if(location.hash!==('#'+currentView))history.pushState(null,'','#'+currentView);render();save();if(!options.keepScroll)window.scrollTo(0,0);
 }
 function render(){
  renderNav();$('#edit-toggle').hidden=currentView!=='guide';
- if(currentView==='guide')renderGuide();
+ if(currentView==='dashboard')renderStudyDashboard();
+ else if(currentView==='guide')renderGuide();
  else if(currentView==='objectives'){if(objectiveMount)objectiveMount.destroy();objectiveMount=mountObjectivesPage($('#guide'),viewOptions)}
- else if(currentView==='questions'){$('#guide').innerHTML=$('#questions-page-template').innerHTML;initializeQuestions(viewOptions.section||'')}
+ else if(currentView==='questions'){$('#guide').innerHTML=$('#questions-page-template').innerHTML;initializeQuestions(viewOptions.section||'',viewOptions)}
  else {const sheet=resolveSheet(currentView);$('#guide').innerHTML=comparisonMarkup(sheet.id)}
  updateQuestionLinks();
 }
 renderNav=function(){
  const short=['Neuroaxis','Deficit pattern','Tempo','Myositis','IBM / DMD'];
- const views=[['guide','Read'],['objectives','LOs'],['questions','Questions'],['pathology','Pathology'],['drugs','Drugs'],['bugs','Bugs']];
+ const views=[['dashboard','Study'],['guide','Read'],['objectives','LOs'],['questions','Questions'],['pathology','Pathology'],['drugs','Drugs'],['bugs','Bugs']];
  const item=({p,i})=>`<button class="nav-item ${i===state.page?'active':''}" data-page="${i}" title="${esc(p.title)}">${esc(p.short_title||short[i]||p.title)}</button>`;
  const entries=scopePageEntries();state.navGroups||={};
  const groups=scopeTopicGroups();

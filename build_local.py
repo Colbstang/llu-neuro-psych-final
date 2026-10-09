@@ -221,6 +221,19 @@ def load_anki(path: Path|None) -> dict:
     data=assigned_json(path.read_text(errors='replace'),'window.ANKI_CONTEXT=')
     return data
 
+def copy_runtime_modules(runtime: Path, source_root: Path=ROOT) -> None:
+    """Stage generic search and local speech code without copying private indexes."""
+    for name in ('semantic_search.py','reference_search.py','background_reference.py','prepare_reference_catalog.py'):
+        source=source_root/name
+        if source.is_file():shutil.copy2(source,runtime/name)
+    tts_source=source_root/'StudyApp'
+    tts_runtime=runtime/'StudyApp'
+    for name in ('tts_service.py','tts_worker.py','install_tts.py','tts-requirements.lock'):
+        source=tts_source/name
+        if source.is_file():
+            tts_runtime.mkdir(parents=True,exist_ok=True)
+            shutil.copy2(source,tts_runtime/name)
+
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument('--bundle',type=Path,default=PRIVATE/'personal-bundle.html',help='Private compiled app HTML with const DATA=…')
@@ -257,9 +270,7 @@ def main():
     (RUNTIME/'source_catalog.json').write_text(json.dumps(catalog,ensure_ascii=False,indent=2)+'\n')
     output=RUNTIME/'index.html'
     build_public.build(data,output)
-    for name in ('semantic_search.py','reference_search.py','prepare_reference_catalog.py'):
-        source=ROOT/name
-        if source.is_file():shutil.copy2(source,RUNTIME/name)
+    copy_runtime_modules(RUNTIME)
     shutil.copy2(ROOT/'requirements.txt',RUNTIME/'requirements.txt')
     print(f'Built private edition at {output}; it is ignored by Git. Copied {copied_media} referenced Anki media files.')
 

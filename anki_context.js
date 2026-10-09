@@ -144,7 +144,9 @@ function ankiCardsMarkup(){
 }
 function renderAnkiReference(options={}){
  if(!ankiContext)return;if(ankiReferenceMode==='books'){openBookReference(activeRef,referenceBook);return}
- bookMarkMode=false;showSidePanel(ankiContext.title,`${referenceTabsMarkup(ankiReferenceMode)}${ankiContextMarkup()}${ankiReferenceMode==='images'?ankiMediaMarkup():ankiCardsMarkup()}`,{keepScroll:!!options.keepScroll,anchor:referenceOrigin?.element});
+ const sameContext=$('#side-panel').dataset.ankiContextKey===ankiContext.key;
+ bookMarkMode=false;showSidePanel(ankiContext.title,`${referenceTabsMarkup(ankiReferenceMode)}${ankiContextMarkup()}${ankiReferenceMode==='images'?ankiMediaMarkup():ankiCardsMarkup()}`,{keepScroll:options.keepScroll??sameContext,anchor:referenceOrigin?.element});
+ $('#side-panel').dataset.ankiContextKey=ankiContext.key;
  state.referenceViews[ankiContext.key]=ankiReferenceMode;save();
 }
 function ankiStepCard(delta){const cards=ankiCardResults(),index=cards.findIndex(x=>Number(x.card.id)===ankiCurrentCard);if(!cards.length)return;ankiCurrentCard=Number(cards[Math.max(0,Math.min(cards.length-1,index+delta))].card.id);ankiCardRevealed=false;renderAnkiReference()}

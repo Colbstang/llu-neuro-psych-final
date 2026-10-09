@@ -31,14 +31,14 @@ CSS = [
     'continuous_style.css', 'workspace_style.css', 'book_highlights.css',
     'freehand.css', 'study_practice.css', 'anki_context.css',
     'objective_compact.css', 'week8_style.css', 'image_navigation.css',
-    'semantic_search.css', 'source_viewer.css', 'reference_workspace.css', 'StudyApp/study_app.css',
+    'semantic_search.css', 'source_viewer.css', 'reference_workspace.css', 'StudyApp/study_app.css', 'study_dashboard.css',
 ]
 JS = [
     'guide_app.js', 'study_scope.js', 'reference_panel.js',
     'image_navigation.js', 'book_highlights.js', 'objective_ui.js',
     'workspace_views.js', 'reading_tools.js', 'freehand.js',
     'study_practice.js', 'guide_skim.js', 'anki_context.js',
-    'semantic_search.js', 'source_viewer.js', 'reference_workspace.js', 'StudyApp/study_app.js',
+    'semantic_search.js', 'source_viewer.js', 'reference_workspace.js', 'StudyApp/study_app.js', 'study_dashboard.js',
 ]
 
 
