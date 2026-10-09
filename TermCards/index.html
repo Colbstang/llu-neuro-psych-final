@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Medical term cards · Step study</title>
+  <link rel="stylesheet" href="term_cards.css">
+  <script src="term_cards.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="identity"><span class="app-icon" aria-hidden="true">S</span><strong>Step study</strong><span class="pilot-label">Definition pilot</span></div>
+    <label class="auto-toggle"><input id="auto-terms" type="checkbox" checked> Automatic definitions</label>
+  </header>
+  <div class="workspace">
+    <main class="reading-pane">
+      <div class="reading-intro">
+        <p class="eyebrow">READ + UNDERSTAND</p>
+        <h1>Medical term cards</h1>
+        <p class="help">Hover over an underlined term for a quick definition. Click to keep it beside your reading.</p>
+      </div>
+      <nav class="sample-tabs" aria-label="Reading samples">
+        <button type="button" data-sample="renal" aria-pressed="true">Renal</button>
+        <button type="button" data-sample="immunology" aria-pressed="false">Immunology</button>
+        <button type="button" data-sample="neuro" aria-pressed="false">Neuro / Psych</button>
+        <button type="button" data-sample="custom" aria-pressed="false">Your text</button>
+      </nav>
+      <div id="custom-editor" hidden>
+        <label for="reading-input">Paste a paragraph to try the scanner</label>
+        <textarea id="reading-input" rows="5" placeholder="Paste study text here. Recognition runs on this device."></textarea>
+        <button type="button" id="scan-text">Read this text</button>
+      </div>
+      <article id="reading" class="reading" data-medical-text aria-label="Study reading"></article>
+      <footer class="reading-footer"><span id="scanner-status" role="status">Loading medical terms…</span><span>MDWiki</span></footer>
+    </main>
+    <aside class="definition-pane" aria-label="Medical definitions">
+      <form id="lookup-form" class="lookup-form">
+        <label for="term-query" class="sr-only">Look up a medical term</label>
+        <input id="term-query" type="search" maxlength="160" autocomplete="off" placeholder="Look up a medical term…">
+        <button type="submit">Look up</button>
+      </form>
+      <div class="definition-toolbar">
+        <div class="history-controls"><button type="button" id="term-back" aria-label="Previous definition" disabled>←</button><button type="button" id="term-forward" aria-label="Next definition" disabled>→</button></div>
+        <button type="button" id="define-selection" disabled>Define selected text</button>
+      </div>
+      <div id="definition" class="definition-content" aria-live="polite">
+        <div class="empty-definition"><span class="definition-mark" aria-hidden="true">Aa</span><h2>A definition when you need it</h2><p>Choose a term in the reading, or look one up here.</p><div id="suggested-terms" class="related-terms"></div></div>
+      </div>
+    </aside>
+  </div>
+  <div id="term-hover" class="term-hover" role="dialog" aria-label="Quick definition" hidden></div>
+</body>
+</html>

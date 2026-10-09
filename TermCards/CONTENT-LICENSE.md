@@ -1,0 +1,9 @@
+# Term card content and image licenses
+
+Article definitions and summaries in `data/terms.json` are excerpted from MDWiki lead content and redistributed under [CC BY-SA 4.0 International](https://creativecommons.org/licenses/by-sa/4.0/). Retain their attribution and license notices when sharing or adapting them. The coordinating review verified MDWiki's current full license body on 2026-10-09. The relevant rights page is [WikiProjectMed:Copyrights](https://mdwiki.org/wiki/WikiProjectMed:Copyrights). Each record identifies its MDWiki page, source revision, page history, license, and fetch time in `source`.
+
+For pages that MDWiki marked as mirrored, the exact source revision ID was verified against Wikipedia's API. Those records link to the original article, exact revision, and contributor history alongside the MDWiki page and its history. Other records cite the MDWiki page and revision metadata returned by that API. The source audit describes the retrieval and attribution methods, title mappings, and omitted terms.
+
+The entries are a small reference seed, not a complete medical glossary. Definitions use the first one or two complete source sentences when they fit within 80 words. Summaries preserve source wording and are capped at 350 words on complete sentence boundaries; a `changes` note marks shortened summaries. Intro HTML was converted to plain text, with lists, tables, figures, and citation markers excluded.
+
+Five illustrative images are linked from Wikimedia Commons. Each record's `image` object includes the Commons file page, direct media URL, credited artist, and the file's individual CC BY or CC BY-SA license and license URL. Image licenses apply separately from the MDWiki text license. Reusers must retain the applicable attribution and comply with the specific license, including share-alike terms where present.

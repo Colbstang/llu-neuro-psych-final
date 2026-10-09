@@ -1,0 +1,107 @@
+{
+  "schema": "medical-term-cards-source-audit-v1",
+  "generated_at": "2026-10-09T22:17:48Z",
+  "record_count": 77,
+  "source_method": {
+    "provider": "MDWiki Action API",
+    "endpoint": "https://mdwiki.org/w/api.php",
+    "query": "action=query&prop=extracts|info|revisions&exintro=1&explaintext=1&inprop=url&rvprop=ids|timestamp&formatversion=2&redirects=1",
+    "retrieval": "Lead extracts and page/revision metadata were fetched from MDWiki. Definitions are the first source sentence (occasionally two when the first is unusually short); summaries preserve source wording and are limited to complete sentences up to 350 words. Whitespace was normalized for readable JSON. No unsupported clinical claims were added.",
+    "license_verification": {
+      "verified_on": "2026-10-09",
+      "url": "https://mdwiki.org/wiki/WikiProjectMed:Copyrights",
+      "result": "The current full license body identifies CC BY-SA 4.0 International. The page states CC BY-SA 3.0 and 4.0 in its heading; the current body was checked by the coordinating agent.",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "copyright_url": "https://mdwiki.org/wiki/WikiProjectMed:Copyrights"
+    },
+    "attribution": "Every article record links to its MDWiki page, specific revision, and page history. Some source text may be mirrored; no speculative original Wikipedia revision link is included when the retrieved article data did not identify one.",
+    "user_agent_contact": "https://github.com/Colbstang/llu-neuro-psych-final",
+    "additional_method": "For source pages whose extracts endpoint returned missing/no extract, action=parse was used to render the article. Intro paragraphs were extracted as text before the first level-2/3 heading, skipping table/list/figure/script/style/reference-citation content and hidden short descriptions. Where MDWiki marked the source revision as mirrored, its revision ID was verified against the English Wikipedia API and records link to the exact original revision, article, and contributor history. No raw HTML is stored."
+  },
+  "omissions": [
+    {
+      "requested_term": "interferon beta-1b",
+      "reason": "No usable introductory extract returned for this title; kept distinct from interferon beta-1a."
+    },
+    {
+      "requested_term": "anaphylatoxin",
+      "reason": "No usable standalone introductory extract returned; complement-system context is in the complement record."
+    },
+    {
+      "requested_term": "opsonization",
+      "reason": "No usable standalone introductory extract returned for this term; complement-system context remains in its own record."
+    },
+    {
+      "requested_term": "C3a and C5a as separate terms",
+      "reason": "The exact-title MDWiki pages are disambiguation pages (“may refer to”); no fragment-specific medical definition was inferred."
+    },
+    {
+      "requested_term": "HLA",
+      "reason": "No usable introductory extract was found for the requested HLA/general human leukocyte antigen entry."
+    },
+    {
+      "requested_term": "demyelination",
+      "reason": "No usable introductory extract was found under this process name. The separate available “Demyelinating disease” card was not treated as a synonym."
+    },
+    {
+      "requested_term": "myelin",
+      "reason": "The exact-title page returned no usable introductory extract."
+    }
+  ],
+  "images": {
+    "count": 5,
+    "provenance": "Image metadata was fetched from Wikimedia Commons imageinfo extmetadata; each listed asset has its own file page, credited artist, and explicit CC BY/CC BY-SA license. Only URLs/attribution metadata are included; image pixels were not downloaded.",
+    "included_files": [
+      "https://commons.wikimedia.org/wiki/File:09_Hegasy_Complement_System_Wiki_EN_CCBYSA.png",
+      "https://commons.wikimedia.org/wiki/File:Kidney_Glomerulus_Cell_Types.png",
+      "https://commons.wikimedia.org/wiki/File:Schematic_diagram_of_immune_cells-driven_multiple_sclerosis_pathology.jpg",
+      "https://commons.wikimedia.org/wiki/File:Histological_sample_of_Substantia_nigra_in_Parkinson%27s_disease.jpg",
+      "https://commons.wikimedia.org/wiki/File:Antibody_IgG1_structure.png"
+    ]
+  },
+  "content_notes": [
+    "This seed demonstrates a scanner corpus and is not a comprehensive medical glossary.",
+    "Aliases were limited to clear spelling, acronym, or naming variants; broad IFN beta was not aliased to interferon beta-1a.",
+    "Mirrored-source records retain the MDWiki page/history and verified exact English Wikipedia article, history, and oldid links. The MDWiki `license_url` points to the Creative Commons license; its own rights page is stored separately as `copyright_url`.",
+    "The generic Interferon record is separate from the specific interferon beta-1a card; neither is treated as equivalent to interferon beta-1b."
+  ],
+  "parse_rescued_record_count": 14,
+  "parse_rescued_titles": [
+    "Nephritic syndrome",
+    "Hypoalbuminemia",
+    "Adaptive immune system",
+    "T cell",
+    "B cell",
+    "Macrophage",
+    "Neutrophil",
+    "Cytokine",
+    "Interleukin",
+    "Oligodendrocyte",
+    "Interferon",
+    "Opsonin",
+    "Glomerulus (kidney)",
+    "Tumor necrosis factor"
+  ],
+  "title_mappings": [
+    {
+      "requested_term": "glomerulus",
+      "canonical_title": "Glomerulus (kidney)",
+      "reason": "The bare-title page is a disambiguation page; the kidney-specific article supplies the card."
+    },
+    {
+      "requested_term": "TNF-alpha",
+      "canonical_title": "Tumor necrosis factor",
+      "reason": "The article lead identifies TNF as formerly known as TNF-α; the alias is attached to this source-backed card."
+    },
+    {
+      "requested_term": "hyperlipidemia",
+      "canonical_title": "Hyperlipidemia",
+      "reason": "A usable introductory lead was recovered with action=parse when the extracts endpoint returned none."
+    },
+    {
+      "requested_term": "interferon",
+      "canonical_title": "Interferon",
+      "reason": "A broad interferon card is separate from interferon beta-1a."
+    }
+  ]
+}
