@@ -20,3 +20,5 @@ semantic_service.log
 __pycache__/
 *.py[cod]
 .DS_Store
+/StudyApp/*.sqlite3*
+/StudyApp/anki-scope.json

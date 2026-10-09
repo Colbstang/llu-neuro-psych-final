@@ -442,6 +442,51 @@ body>header{height:62px;box-sizing:border-box;position:sticky;top:0;z-index:10;p
 .source-page-toolbar{display:flex;align-items:center;gap:.55rem;position:sticky;top:0;background:var(--paper,#fffdf7);padding:.5rem 0;z-index:4}.source-page-toolbar span{flex:1;font-size:.85rem}.source-view-error{font-size:.8rem;color:#8a4141}.passage-book-matches{margin:.6rem 0;border-top:1px solid #d4dcd5;padding-top:.55rem}.passage-book-matches summary{font-size:.88rem;cursor:pointer}.passage-book-group{margin:.6rem 0}.passage-book-group>strong{font-size:.8rem}.passage-book-group>button{display:block;text-align:left;width:100%;margin:.35rem 0;padding:.5rem;font-size:.8rem;line-height:1.4}.passage-book-group>button span{display:block;margin-top:.2rem;font-weight:400;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.passage-book-group>p{font-size:.8rem;color:#66766f}.path-reference-image{position:relative}.path-reference-image[data-masked="true"] img{filter:blur(14px)}.path-reference-image .image-mask-label{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;background:#eef2edbb;font-weight:600}
 
 .comparison-sheet .path-image{max-width:160px;margin:.5rem 0}.comparison-sheet .path-image img{max-height:115px;object-fit:contain}.comparison-sheet .path-image figcaption{font-size:.65rem;line-height:1.25}.comparison-sheet .path-image button{padding:0;border:0;background:none}
+
+:root{--reference-width:calc((100vw - 96px)/2);--study-header-height:62px}
+.with-panel .shell{margin-right:var(--reference-width);max-width:none}
+.with-panel .side-panel{width:var(--reference-width);max-width:none;top:var(--study-header-height);display:flex;flex-direction:column;box-sizing:border-box}
+.side-panel[hidden]{display:none!important}
+.side-panel-head{flex:0 0 auto;gap:7px;align-items:center;padding:9px 12px}
+.side-panel-head h2{font-size:15px;line-height:1.25;margin:0;min-width:0;flex:1}
+.reference-workspace-actions{display:flex;gap:5px;flex:0 0 auto}
+.reference-workspace-actions button,.side-panel-head>button{padding:5px 8px;font-size:11px;white-space:nowrap}
+#reference-search-host{flex:0 0 auto;border-bottom:1px solid #d6dfd4;background:#f5f7f1;padding:8px 12px}
+#reference-search-host .reference-search-controls{margin:0;align-items:end;grid-template-columns:minmax(100px,1fr) 115px auto;gap:7px}
+#reference-search-host .reference-search-controls label{font-size:10px;gap:3px}
+#reference-search-host input,#reference-search-host select{padding:6px 7px;font-size:12px;min-width:0}
+#reference-search-host button{padding:7px 9px;font-size:12px}
+.side-content{flex:1 1 auto;min-height:0;overscroll-behavior:contain;overflow-anchor:none}
+.reference-divider{position:fixed;top:var(--study-header-height);bottom:0;right:calc(var(--reference-width) - 4px);width:9px;z-index:21;cursor:col-resize;background:transparent;touch-action:none}
+.reference-divider::after{content:'';position:absolute;top:0;bottom:0;left:4px;width:1px;background:#b9c7bc}
+.reference-divider:hover::after,.reference-divider:focus::after,.reference-resizing .reference-divider::after{width:3px;left:3px;background:#356b54}
+.reference-divider:focus-visible{outline:2px solid #356b54;outline-offset:2px}
+body:not(.with-panel) .reference-divider,.reference-detached .reference-divider,.reference-only .reference-divider{display:none}
+.reference-resizing{cursor:col-resize;user-select:none}
+.reference-listen-status{font-size:10px;min-height:14px;line-height:1.3;color:#516557;margin:0 12px 4px}
+.reference-listen-status:empty{display:none}
+.reference-empty,.background-reference{max-width:720px;margin:0 auto;font-size:14px;line-height:1.6}
+.reference-empty h3,.background-reference h3{font-size:22px;margin:5px 0 12px}
+.reference-library{display:grid;gap:6px;margin-top:14px}
+.reference-library button{text-align:left;font-size:12px;padding:9px}
+.background-reference .reference-definition{white-space:pre-line}
+.background-reference .source-links{font-size:11px;line-height:1.6;border-top:1px solid #d7e1d8;padding-top:12px}
+.reference-only>header,.reference-only .shell{display:none!important}
+.reference-only .side-panel{left:0;right:0;top:0;width:100vw;max-width:none;display:flex;flex-direction:column;height:100vh;box-sizing:border-box}
+.reference-only .side-content{padding:16px 22px}
+.reference-only .side-panel-head{background:#19312f;color:white}
+.reference-only .side-panel-head button{background:#294e43;color:white;border-color:#567669}
+.reference-only #close-side{display:none}
+.reference-only .reference-workspace-actions button[data-reference-detach]{display:none}
+.reference-only .reference-workspace-actions button[data-reference-dock]{display:inline-block}
+.reference-workspace-actions button[data-reference-dock]{display:none}
+@media(max-width:700px){:root{--reference-width:calc((100vw - 72px)*.6)}.with-panel .shell{margin-right:var(--reference-width)}.side-panel-head{flex-wrap:wrap}.side-panel-head h2{flex-basis:100%}#reference-search-host .reference-search-controls{grid-template-columns:minmax(70px,1fr) 95px auto}.reference-divider{width:12px}}
+@media print{.reference-divider,#reference-search-host,.reference-listen-status{display:none!important}}
+
+.study-app-loading .shell{visibility:hidden}.study-app-loading::after{content:'Loading your saved study progress…';position:fixed;inset:40% 0;text-align:center;color:#285344;font:600 18px system-ui}
+.study-app-import-notice{grid-column:1/-1;display:flex;gap:12px;align-items:center;background:#eef4ef;padding:12px 22px;color:#375446;font:13px/1.45 system-ui}.study-app-import-notice button{margin-left:auto}
+#study-app-settings{width:min(540px,85vw);border:1px solid #cbd8ce;border-radius:12px;padding:22px;color:#193345;background:#fbfbf7}#study-app-settings::backdrop{background:#102b3545}.app-dialog-head{display:flex;justify-content:space-between;align-items:center}.app-dialog-head h2{margin:0 0 12px}.app-dialog-head button{font-size:22px}#study-app-settings p{font-size:14px;line-height:1.55}#study-app-settings button{border:1px solid #c9d8ce;background:white;border-radius:6px;padding:8px 12px;color:#244f3f}
+.app-anki-review{margin:16px 0 8px;padding:12px 0;border-top:1px solid #d4dfd5;font:14px/1.45 system-ui}.app-anki-review>small{margin-left:8px;color:#64756b}.app-anki-review p{margin:8px 0}.app-anki-review.is-live{border-top:2px solid #398061}.app-anki-review button{padding:8px 12px;border:1px solid #bfd0c1;border-radius:5px;background:#fafcf9;color:#254e3b}.app-anki-review button:disabled{opacity:.55}.app-anki-ratings{display:flex;gap:8px;margin:10px 0}.app-anki-ratings button{flex:1;font-weight:650}.app-anki-ratings button:first-child{color:#a33434}.app-anki-ratings button small{display:block;font-size:11px;color:#52655a;font-weight:400}.app-help,.app-topic-coverage{color:#64756b;font-size:12px}
 </style></head><body>
 <header><div class="brand">LLU / NEURO + PSYCH<small>Study guide · Localization to muscle pathology</small></div><div class="toolbar"><span class="save" id="save-status" role="status">Loading saved progress</span><button id="highlight-selection" title="Select text, then press H (Ctrl+Shift+H if a browser extension uses H)">Text highlight · H</button><button id="freehand-toggle" aria-pressed="false" title="Draw saved highlights on text, images, or book pages">Freehand</button><button id="rapid-button">Rapid pathology</button><button id="questions-button">Questions <span id="queue-count">0</span></button><button id="objectives-button">Objectives</button><button id="edit-toggle" aria-pressed="false">Edit guide</button><button id="export">Export progress</button><label class="import-label" for="import">Import progress</label><input id="import" class="hidden-input" type="file" accept="application/json"></div></header>
 <div class="shell"><aside class="edge-toc"><div class="eyebrow">CONTENTS</div><nav id="nav" aria-label="Guide contents"></nav><div class="progress"><div id="progress-text"></div><div class="track"><span id="progress-bar"></span></div>Mark a section learned to compact it.</div><p id="word-budget" class="word-budget"></p><div class="budget-note" hidden>≈700 words per page equivalent.<br>Detailed guide: no page cap.<br>Morning skim target: ≤80 equivalents.<br>Comparison sheets excluded.</div><div class="scope-note" hidden>Course review provides the structure and main content. Lecture notes add detail; NPS and <strong>!Ty</strong> tags help check coverage.<br><br>Select text → H to highlight (Ctrl+Shift+H fallback). Red outlines open missed-question facts. Underlined terms and images open on the right.</div></aside><main id="guide"></main></div>
@@ -1628,7 +1673,7 @@ ankiCardResults=function(context=ankiContext){
 ankiContextMarkup=function(){
  const content=legacyContextMarkup(),context=ankiContext;if(!context?.retrieval)return content;
  const messages={loading:'Finding the closest cards…',semantic:`Local sentence search · ${context.semanticCardIds.length} close cards · allowed tags only`,fallback:'Text matches · local sentence search is offline',empty:'No close sentence match in the allowed tags'};
- return `${content}<div class="semantic-search-status" role="status"><span>${esc(messages[context.retrieval]||'')}</span>${context.retrieval==='fallback'?'<small>Run Start Study Guide.command to enable local embeddings.</small><button data-semantic-retry>Retry sentence search</button>':''}${['semantic','empty'].includes(context.retrieval)?'<button data-semantic-broaden>Broaden text matches</button>':''}</div>`;
+ return `${content}<div class="semantic-search-status" role="status"><span>${esc(messages[context.retrieval]||'')}</span>${context.retrieval==='fallback'?'<small>Install a local source index and sentence-search models to enable semantic search.</small><button data-semantic-retry>Retry sentence search</button>':''}${['semantic','empty'].includes(context.retrieval)?'<button data-semantic-broaden>Broaden text matches</button>':''}</div>`;
 };
 function narrowLexicalContext(context){
  context.matches=ankiMatchContext(context);
@@ -1733,7 +1778,7 @@ async function openExactSource(doc,page,query,node,linkedPage=page){
   const result=await fetchSourcePage(doc.id,target,query);if(serial!==sourceViewerSerial||$('#side-panel').hidden)return;
   installSourcePage(result,topic);sourceViewerActive={document:doc,result,query,node,topic,linkedPage};bookMarkMode=false;
   state.sourcePageView[topic]={page:target,linkedPage};renderSourceViewer();requestAnimationFrame(scrollToLinkedPassage);save();
- }catch(error){if(serial!==sourceViewerSerial)return;showSidePanel(doc.title,`<p>The local source viewer is offline or this PDF is unavailable.</p><p>Run <strong>Start Study Guide.command</strong> and retry this source link. Your notes and highlights are saved.</p><p class="source-view-error">${esc(error.message)}</p>`,{anchor:node})}
+ }catch(error){if(serial!==sourceViewerSerial)return;showSidePanel(doc.title,`<p>The local source index or this PDF is not installed for this source.</p><p>Add the PDF to a private source pack and prepare its local page index before retrying. Your notes and highlights are saved.</p><p class="source-view-error">${esc(error.message)}</p>`,{anchor:node})}
 }
 function bookSearchMatchesMarkup(context){
  const books=context?.bookMatches;if(!books)return '';
@@ -1777,4 +1822,392 @@ document.addEventListener('click',e=>{
  const page=Number((link.getAttribute('href').match(/#page=(\d+)/)||[])[1]||1);e.preventDefault();e.stopImmediatePropagation();openExactSource(doc,page,sourceQuery(link),link);
 },true);
 
-initReadingTools();render();save();</script></body></html>
+// Reference controls are outside the scrolling page. A separate reference tab
+// communicates only with the app-created opener using a per-session token.
+const referenceParams=new URLSearchParams(location.search);
+const referenceOnly=referenceParams.get('reference')==='1';
+let referenceSession=referenceParams.get('referenceSession')||'',referenceChild=null,referenceChildReady=false,referencePending=null,referenceLastRequest=null;
+let referenceReceiving=false,referenceDetached=false,referenceLastTerm='',referenceTermContext='',referenceSpeech=null;
+const referenceStateFields=new Set(['bookPageView','bookHighlights','sourcePageView','readingHighlights','readingAutoHighlight','freehandStrokes','freehandLastKey','referenceSources','referenceViews','ankiCardPosition','ankiMediaPosition','imagePositions','guideHighlightBookTopics','referencePaneRatio','bookLabels']);
+const referenceMainFields=new Set(['view','page','scope','studyScope','objectiveQuiz','objectiveFilter','objectiveSearch','questionFilter']);
+function referenceClone(value){return value===undefined?undefined:JSON.parse(JSON.stringify(value))}
+function referenceEqual(a,b){
+ if(a===b)return true;
+ if(a===null||b===null||typeof a!=='object'||typeof b!=='object')return false;
+ if(Array.isArray(a)||Array.isArray(b))return Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.every((value,index)=>referenceEqual(value,b[index]));
+ const keys=Object.keys(a);return keys.length===Object.keys(b).length&&keys.every(key=>Object.prototype.hasOwnProperty.call(b,key)&&referenceEqual(a[key],b[key]));
+}
+function referenceObject(value){return value!==null&&typeof value==='object'&&!Array.isArray(value)}
+function referenceMergeDelta(before,after,current){
+ if(referenceEqual(before,after))return referenceClone(current);
+ if(referenceObject(after)&&referenceObject(before)){
+  const merged=referenceObject(current)?referenceClone(current):{};
+  for(const key of new Set([...Object.keys(before),...Object.keys(after)])){
+   if(!(key in after)){if(key in before)delete merged[key];continue}
+   if(!referenceEqual(before[key],after[key]))merged[key]=referenceMergeDelta(before[key],after[key],merged[key]);
+  }return merged;
+ }
+ if(Array.isArray(after)&&Array.isArray(before)&&[...before,...after].every(x=>referenceObject(x)&&x.id)){
+  const prior=new Map(before.map(x=>[x.id,x])),next=new Map(after.map(x=>[x.id,x]));
+  const merged=new Map((Array.isArray(current)?current:[]).filter(x=>x?.id).map(x=>[x.id,referenceClone(x)]));
+  for(const [id,old] of prior)if(!next.has(id))merged.delete(id);
+  for(const [id,item] of next)if(!referenceEqual(prior.get(id),item))merged.set(id,referenceMergeDelta(prior.get(id),item,merged.get(id)));
+  return [...merged.values()];
+ }
+ return referenceClone(after);
+}
+let referenceStateSnapshot=referenceClone(state);
+const referenceOriginalSave=save;
+function referenceMergeIncoming(incoming){
+ if(!referenceObject(incoming))return;
+ const current=state,merged=referenceMergeDelta(referenceStateSnapshot,current,incoming)||{};
+ if(!referenceOnly)for(const key of referenceMainFields)if(key in current)merged[key]=current[key];
+ state={...current,...merged};referenceStateSnapshot=referenceClone(incoming);
+ if(typeof window.refreshReadingAnnotations==='function')window.refreshReadingAnnotations();
+}
+save=function(){
+ try{
+  let latest=referenceClone(referenceStateSnapshot);try{const stored=localStorage.getItem(KEY);if(stored)latest=JSON.parse(stored)}catch{}
+  const proposed=referenceOnly?Object.fromEntries(Object.entries(state).filter(([key])=>referenceStateFields.has(key))):state;
+  const baseline=referenceOnly?Object.fromEntries(Object.entries(referenceStateSnapshot).filter(([key])=>referenceStateFields.has(key))):referenceStateSnapshot;
+  const merged=referenceMergeDelta(baseline,proposed,latest)||latest;
+  localStorage.setItem(KEY,JSON.stringify(merged));
+  const own=state;state={...state,...merged};if(!referenceOnly)for(const key of referenceMainFields)if(key in own)state[key]=own[key];
+  referenceStateSnapshot=referenceClone(state);
+  const status=$('#save-status');if(status)status.textContent='Saved on this browser';
+  referencePeerMessage({type:'state',state:merged});
+ }catch{referenceOriginalSave()}
+};
+window.addEventListener('storage',event=>{if(event.key===KEY&&event.newValue){try{referenceMergeIncoming(JSON.parse(event.newValue))}catch{}}});
+function referencePeerMessage(message){
+ const peer=referenceOnly?window.opener:referenceChild;
+ if(!peer||peer.closed||!referenceSession)return;
+ try{peer.postMessage({app:'llu-reference',session:referenceSession,...message},'*')}catch{}
+}
+function referenceSafePayload(value){
+ if(typeof value==='string'){
+  return value.replace(/blob:[^"'<>\s]+/g,source=>{const id=typeof embeddedMediaIDs!=='undefined'?embeddedMediaIDs.get(source):null;return id?'@asset:'+id:source});
+ }
+ if(Array.isArray(value))return value.map(referenceSafePayload);
+ if(referenceObject(value))return Object.fromEntries(Object.entries(value).filter(([key,item])=>key!=='node'&&key!=='element'&&!(item instanceof Node)).map(([key,item])=>[key,referenceSafePayload(item)]));
+ return value;
+}
+function referenceResolvePayload(value){
+ if(typeof value==='string'&&value.includes('@asset:'))return resolveMedia(value);
+ if(Array.isArray(value))return value.map(referenceResolvePayload);
+ if(referenceObject(value))return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,referenceResolvePayload(item)]));
+ return value;
+}
+function referenceRoute(kind,payload){
+ const request={type:'request',kind,payload:referenceSafePayload(payload),courseSources:referenceSafePayload(state.referenceSources||{})};
+ if(referenceOnly){if(!referenceReceiving&&kind!=='panel'){referenceLastRequest=request;referencePeerMessage({type:'view',request})}return false}
+ if(referenceReceiving||!referenceDetached)return false;
+ referenceLastRequest=request;
+ if(!referenceChild||referenceChild.closed){referenceDetached=false;document.body.classList.remove('reference-detached');return false}
+ if(referenceChildReady)referencePeerMessage(request);else referencePending=request;
+ return true;
+}
+function referenceHandleRequest(message){
+ referenceLastRequest=message;
+ referenceReceiving=true;
+ try{
+  if(message.courseSources)state.referenceSources={...state.referenceSources,...message.courseSources};
+  const payload=referenceResolvePayload(message.payload||{});
+  if(message.kind==='anki')openAnkiContext(payload);
+  else if(message.kind==='topic'){referenceOrigin={topic:payload.topic,text:payload.originText||'',element:null};openStudyReference(payload.topic,payload.book)}
+  else if(message.kind==='source')openExactSource(payload.doc,payload.page,payload.query,null,payload.linkedPage,payload.forcePage);
+  else if(message.kind==='images')openImageGallery(payload);
+  else if(message.kind==='rapid')openRapid();
+  else if(message.kind==='search')openAnkiContext({kind:'selection',text:payload.query,searchQuery:payload.query,searchScope:payload.scope,title:'Search · '+payload.query.slice(0,80),topics:[]});
+  else if(message.kind==='panel')showSidePanel(payload.title,payload.html,payload.options||{});
+  else openReferenceWorkspace();
+ }finally{referenceReceiving=false}
+}
+window.addEventListener('message',event=>{
+ const message=event.data,peer=referenceOnly?window.opener:referenceChild;
+ if(!peer||event.source!==peer||message?.app!=='llu-reference'||message.session!==referenceSession)return;
+ if(message.type==='ready'&&!referenceOnly){referenceChildReady=true;referencePeerMessage({type:'state',state});if(referencePending){referencePeerMessage(referencePending);referencePending=null}return}
+ if(message.type==='state'){referenceMergeIncoming(message.state);return}
+ if(message.type==='view'&&!referenceOnly){referenceLastRequest=message.request;return}
+ if(message.type==='request'&&referenceOnly){referenceHandleRequest(message);return}
+ if(message.type==='dock'&&!referenceOnly){if(message.request)referenceLastRequest=message.request;dockReferenceWorkspace()}
+});
+const referenceLocalOpenAnki=openAnkiContext;
+openAnkiContext=function(options){if(referenceRoute('anki',options))return;return referenceLocalOpenAnki(options)};window.openAnkiContext=openAnkiContext;
+const referenceLocalOpenTopic=openStudyReference;
+openStudyReference=function(topic,book){if(referenceRoute('topic',{topic,book,originText:referenceOrigin?.text||''}))return;return referenceLocalOpenTopic(topic,book)};
+const referenceLocalOpenSource=openExactSource;
+openExactSource=function(doc,page,query,node,linkedPage=page,forcePage=false){if(referenceRoute('source',{doc,page,query,linkedPage,forcePage}))return;return referenceLocalOpenSource(doc,page,query,node,linkedPage,forcePage)};
+const referenceLocalOpenImages=openImageGallery;
+openImageGallery=function(options){if(referenceRoute('images',options))return;return referenceLocalOpenImages(options)};
+const referenceLocalOpenRapid=openRapid;
+openRapid=function(){if(referenceRoute('rapid',{}))return;return referenceLocalOpenRapid()};$('#rapid-button').onclick=openRapid;
+const referenceLocalFetch=fetchSemanticCards;
+fetchSemanticCards=function(context){if(referenceRoute('search',{query:context.searchQuery||context.text,scope:context.searchScope||'all'}))return;return referenceLocalFetch(context)};window.fetchSemanticCards=fetchSemanticCards;
+const referenceLocalShow=showSidePanel;
+showSidePanel=function(title,html,options={}){
+ if(referenceRoute('panel',{title,html,options:{bookPanel:options.bookPanel,keepScroll:options.keepScroll,keepZoom:options.keepZoom}}))return;
+ const alreadyOpen=!$('#side-panel').hidden,mainY=window.scrollY;
+ const sameRapid=alreadyOpen&&$('#rapid-card')&&String(html).includes('id="rapid-card"');
+ const result=referenceLocalShow(title,html,{...options,keepScroll:options.keepScroll??!!sameRapid});
+ if(referenceTermContext!==String(title)){referenceLastTerm='';referenceTermContext=String(title)}
+ window.refreshReferenceSearchControls?.(window.referencePanelSearchContext?.());
+ referenceApplySize();
+ if(alreadyOpen&&!referenceOnly)requestAnimationFrame(()=>{if(Math.abs(window.scrollY-mainY)>1)window.scrollTo({top:mainY,behavior:'instant'})});
+ return result;
+};
+function referenceRailWidth(){return window.innerWidth<=700?72:96}
+function referenceApplySize(){
+ const header=document.querySelector('body>header');if(header&&!referenceOnly)document.documentElement.style.setProperty('--study-header-height',header.getBoundingClientRect().height+'px');
+ if(referenceOnly)return;
+ const available=Math.max(240,window.innerWidth-referenceRailWidth()),ratio=Math.max(.3,Math.min(.75,Number(state.referencePaneRatio)||.5));
+ document.documentElement.style.setProperty('--reference-width',Math.round(available*ratio)+'px');
+ const divider=$('#reference-divider');if(divider)divider.setAttribute('aria-valuenow',String(Math.round(ratio*100)));
+}
+function referenceSetRatio(ratio){state.referencePaneRatio=Math.max(.3,Math.min(.75,ratio));referenceApplySize()}
+function openReferenceWorkspace(){
+ if(referenceRoute('empty',{}))return;
+ const documents=(DATA.source_catalog?.documents||[]).filter(doc=>['First Aid','Pathoma'].includes(doc.id)||doc.kind==='supplement'),hasCards=(ankiLibrary.notes||[]).length>0;
+ const message=documents.length||hasCards?'Search your cards, books, lecture slides and notes. Choose a match to open its exact page.':'This public edition has no linked Anki cards or source PDFs. Add a private Anki export or source pack to enable local matches.';
+ showSidePanel('References',`<section class="reference-empty"><h3>Look up a term or sentence</h3><p>${message}</p><div class="reference-library">${documents.map(doc=>`<button data-reference-library="${esc(doc.id)}">${esc(doc.title)} · ${doc.page_count} pages</button>`).join('')}</div></section>`);
+}
+function detachReferenceWorkspace(){
+ if(referenceOnly)return;
+ if(referenceChild&&!referenceChild.closed){referenceChild.focus();return}
+ referenceSession=crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2);
+ const url=new URL(location.href);url.searchParams.set('reference','1');url.searchParams.set('referenceSession',referenceSession);url.hash='';
+ referenceChild=window.open(url.href,'llu-reference-'+referenceSession);
+ if(!referenceChild){$('#reference-listen-status').textContent='Allow this app to open its reference tab, or keep using the split view.';return}
+ referenceChildReady=false;referenceDetached=true;document.body.classList.add('reference-detached');
+ referencePending=referenceLastRequest||(sourceViewerActive?{type:'request',kind:'source',payload:{doc:sourceViewerActive.document,page:Number(sourceViewerActive.result.page),linkedPage:sourceViewerActive.linkedPage,query:sourceViewerActive.query,forcePage:true}}:ankiContext?{type:'request',kind:'anki',payload:{kind:ankiContext.kind,text:ankiContext.text,topic:ankiContext.topic,topics:ankiContext.topics,title:ankiContext.title,view:ankiReferenceMode,searchQuery:ankiContext.searchQuery,searchScope:ankiContext.searchScope}}:{type:'request',kind:'empty',payload:{}});
+ referencePending=referenceSafePayload(referencePending);
+ $('#side-panel').hidden=true;document.body.classList.remove('with-panel');
+ const button=$('#references-button');button.textContent='References ↗';button.title='Send lookups to your reference tab';
+}
+function dockReferenceWorkspace(){
+ if(referenceOnly){referencePeerMessage({type:'dock',request:referenceLastRequest});return}
+ referenceDetached=false;referenceChildReady=false;document.body.classList.remove('reference-detached');
+ if(referenceChild&&!referenceChild.closed)referenceChild.close();referenceChild=null;
+ $('#references-button').textContent='References';
+ if(referenceLastRequest)referenceHandleRequest(referenceLastRequest);else openReferenceWorkspace();
+}
+function referenceSpeakText(value){
+ const term=String(value||'').replace(/\s+/g,' ').trim();
+ if(!term||term.length>180||term.split(' ').length>24){$('#reference-listen-status').textContent='Select a medical term or short phrase to hear it.';return}
+ const synthesis=window.speechSynthesis;
+ const nativeSpeech=window.webkit?.messageHandlers?.nativeSpeak;
+ if(nativeSpeech){
+  if(referenceSpeech){nativeSpeech.postMessage({stop:true});referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Stopped.';return}
+  referenceSpeech={native:true};referenceLastTerm=term;referenceUpdateSpeechControls(true);$('#reference-listen-status').textContent='Listening: '+term;nativeSpeech.postMessage({text:term});return;
+ }
+ if(!synthesis||typeof SpeechSynthesisUtterance==='undefined'){$('#reference-listen-status').textContent='Speech is unavailable in this browser.';return}
+ if(referenceSpeech){synthesis.cancel();referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Stopped.';return}
+ const voices=synthesis.getVoices(),voice=voices.find(v=>v.localService&&/^en[-_]/i.test(v.lang))||voices.find(v=>v.localService&&v.lang==='en');
+ if(!voice){$('#reference-listen-status').textContent='No installed English voice is available yet. Try Listen again once voices load.';return}
+ referenceLastTerm=term;
+ const spoken=term.replace(/\bIFN\s*[-–]?\s*(?:beta|β)(?!\w)/gi,'interferon beta');
+ const utterance=new SpeechSynthesisUtterance(spoken);utterance.voice=voice;utterance.lang=voice.lang;utterance.rate=.86;
+ referenceSpeech=utterance;referenceUpdateSpeechControls(true);
+ $('#reference-listen-status').textContent='Listening: '+term;
+ utterance.onend=()=>{referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Pronunciation · '+term};
+ utterance.onerror=()=>{referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Could not play this term. Try Listen again.'};
+ synthesis.cancel();synthesis.speak(utterance);
+}
+window.referenceNativeSpeechEnded=function(){referenceSpeech=null;referenceUpdateSpeechControls(false);$('#reference-listen-status').textContent='Pronunciation · '+referenceLastTerm};
+function referenceUpdateSpeechControls(speaking){document.querySelectorAll('[data-reference-listen],[data-selection-listen]').forEach(button=>{button.textContent=speaking?'■ Stop':'🔊 Listen';button.setAttribute('aria-pressed',String(speaking))})}
+function referenceListenTerm(){const title=$('#side-title')?.textContent||'';return (window.getSelection()?.toString().trim()||(referenceTermContext===title?referenceLastTerm:'')||($('#side-content .background-reference')?title:'')||sourceViewerActive?.query||ankiContext?.topic||ankiContext?.searchQuery||ankiContext?.text||title).replace(/^source:/,'')}
+function referenceSetupControls(){
+ // Asking for voices during startup lets the browser load its installed list
+ // before the first Listen click, without speaking anything automatically.
+ window.speechSynthesis?.getVoices();
+ const panel=$('#side-panel'),head=panel.querySelector('.side-panel-head');
+ const actions=document.createElement('div');actions.className='reference-workspace-actions';actions.innerHTML='<button data-reference-listen aria-pressed="false" title="Hear the selected term or reference heading">🔊 Listen</button><button data-reference-detach title="Send lookups to a separate tab">Open reference tab ↗</button><button data-reference-dock>Dock beside guide</button>';head.insertBefore(actions,$('#close-side'));
+ const status=document.createElement('p');status.id='reference-listen-status';status.className='reference-listen-status';status.setAttribute('role','status');head.after(status);
+ const host=document.createElement('div');host.id='reference-search-host';status.after(host);
+ const divider=document.createElement('div');divider.id='reference-divider';divider.className='reference-divider';divider.setAttribute('role','separator');divider.setAttribute('aria-orientation','vertical');divider.setAttribute('aria-label','Resize study and reference panes');divider.setAttribute('aria-valuemin','30');divider.setAttribute('aria-valuemax','75');divider.tabIndex=0;document.body.append(divider);
+ let resizing=false;
+ divider.addEventListener('pointerdown',event=>{event.preventDefault();resizing=true;divider.setPointerCapture(event.pointerId);document.body.classList.add('reference-resizing')});
+ divider.addEventListener('pointermove',event=>{if(resizing)referenceSetRatio((window.innerWidth-event.clientX)/(window.innerWidth-referenceRailWidth()))});
+ const finishResize=()=>{if(!resizing)return;resizing=false;document.body.classList.remove('reference-resizing');save()};divider.addEventListener('pointerup',finishResize);divider.addEventListener('pointercancel',finishResize);
+ divider.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home'].includes(event.key))return;event.preventDefault();referenceSetRatio(event.key==='Home'?.5:(Number(state.referencePaneRatio)||.5)+(event.key==='ArrowLeft'?.025:-.025));save()});
+ const button=document.createElement('button');button.id='references-button';button.textContent='References';button.onclick=openReferenceWorkspace;document.querySelector('.toolbar').insertBefore(button,$('#rapid-button'));
+ window.addEventListener('resize',referenceApplySize);referenceApplySize();
+ document.addEventListener('selectionchange',()=>{const text=window.getSelection()?.toString().replace(/\s+/g,' ').trim();if(text&&text.length<=180&&text.split(' ').length<=24){referenceLastTerm=text;referenceTermContext=$('#side-title')?.textContent||''}});
+ const addListen=()=>{document.querySelectorAll('.selection-tools').forEach(tools=>{if(tools.querySelector('[data-selection-listen]'))return;const button=document.createElement('button');button.type='button';button.dataset.selectionListen='';button.textContent='🔊 Listen';button.title='Hear this term';tools.append(button)})};
+ new MutationObserver(addListen).observe(document.body,{childList:true,subtree:true});addListen();
+ document.addEventListener('click',event=>{
+  if(event.target.closest('[data-reference-listen],[data-selection-listen]')){event.preventDefault();referenceSpeakText(referenceListenTerm());return}
+  if(event.target.closest('[data-reference-detach]')){detachReferenceWorkspace();return}
+  if(event.target.closest('[data-reference-dock]')){dockReferenceWorkspace();return}
+  const library=event.target.closest('[data-reference-library]');if(library){window.openSourceDocumentById(library.dataset.referenceLibrary,1,'');return}
+  const background=event.target.closest('[data-open-background-result]');if(background){const entry=ankiContext?.backgroundMatches?.[Number(background.dataset.openBackgroundResult)];if(!entry)return;const url=entry.url&&/^https?:\/\//.test(entry.url)?entry.url:'';referenceLastTerm=entry.title;showSidePanel(entry.title,`<article class="background-reference"><div class="eyebrow">BACKGROUND REFERENCE</div><h3>${esc(entry.title)}</h3><div class="reference-definition">${esc(entry.summary||entry.excerpt||'')}</div><p class="source-links">${url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(entry.source||'Source')}</a>`:esc(entry.source||'')}${entry.source_updated?' · Updated '+esc(entry.source_updated):''}${entry.fetched_at?' · Local copy '+esc(entry.fetched_at):''}${entry.license?'<br>'+esc(entry.license):''}</p><button data-background-return>← Search results</button></article>`);return}
+  if(event.target.closest('[data-background-return]'))renderAnkiReference({keepScroll:true});
+ });
+ if(referenceOnly){document.body.classList.add('reference-only');openReferenceWorkspace();referencePeerMessage({type:'ready'})}
+}
+referenceSetupControls();
+
+/* The app keeps personal state in SQLite. Anki alone schedules real reviews. */
+const studyAppConfig=window.STUDY_APP_CONFIG||null;
+let studyAppReady=false,studyAppRevision=0,studyAppBaseline={},studyAppSaving=false,studyAppTimer=null,studyAppConnection=null;
+let studyAppAnkiSession=null,studyAppReviewPending=false,studyAppReviewMessage='',studyAppCoverage={summary:{},cards:{}};
+const studyAppBrowserSave=save;
+function studyAppCopy(value){return JSON.parse(JSON.stringify(value))}
+function studyAppDiff(before,after){
+ if(referenceEqual(before,after))return undefined;
+ if(referenceObject(before)&&referenceObject(after)){
+  const patch={};for(const key of new Set([...Object.keys(before),...Object.keys(after)])){
+   if(!(key in after))patch[key]=null;else{const part=studyAppDiff(before[key],after[key]);if(part!==undefined)patch[key]=part}
+  }return Object.keys(patch).length?patch:undefined;
+ }
+ if(Array.isArray(before)&&Array.isArray(after)&&[...before,...after].every(item=>referenceObject(item)&&item.id)){
+  const previous=new Map(before.map(item=>[String(item.id),item])),next=new Map(after.map(item=>[String(item.id),item]));
+  const remove=[...previous.keys()].filter(id=>!next.has(id)),upsert=after.filter(item=>!referenceEqual(previous.get(String(item.id)),item));
+  return remove.length||upsert.length?{__llu_array_delta__:{remove,upsert}}:undefined;
+ }
+ return studyAppCopy(after);
+}
+function studyAppStatus(message){const target=$('#save-status');if(target)target.textContent=message}
+async function studyAppRequest(route,body){
+ const options={cache:'no-store',headers:{'X-LLU-App-Token':studyAppConfig.token}};
+ if(body!==undefined){options.method='POST';options.headers['Content-Type']='application/json';options.body=JSON.stringify(body)}
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),route==='/anki/sync'?120000:20000);options.signal=controller.signal;
+ try{const response=await fetch(studyAppConfig.apiBase+route,options),value=await response.json();if(!response.ok)throw Error(value.error||value.detail||'The app service could not complete this request.');return value}finally{clearTimeout(timer)}
+}
+save=function(){
+ studyAppBrowserSave();if(!studyAppConfig)return;
+ if(!studyAppReady){studyAppStatus('Loading saved progress…');return}
+ if(studyAppDiff(studyAppBaseline,state)===undefined){studyAppStatus('Saved to app');return}
+ studyAppStatus('Saving to app…');clearTimeout(studyAppTimer);studyAppTimer=setTimeout(studyAppFlush,250);
+};
+async function studyAppFlush(){
+ if(!studyAppReady||studyAppSaving)return;studyAppSaving=true;
+ try{
+  while(true){const sent=studyAppCopy(state),patch=studyAppDiff(studyAppBaseline,sent);if(patch===undefined)break;
+   const result=await studyAppRequest('/progress',{patch,base_revision:studyAppRevision});
+   state={...state,...referenceMergeDelta(sent,state,result.state)};studyAppBaseline=studyAppCopy(result.state);studyAppRevision=result.revision;studyAppBrowserSave();
+  }studyAppStatus('Saved to app');
+ }catch{studyAppStatus('Saved in this window · app save needs retry');clearTimeout(studyAppTimer);studyAppTimer=setTimeout(studyAppFlush,5000)}finally{studyAppSaving=false}
+}
+async function studyAppRefresh(){
+ if(!studyAppReady||studyAppSaving||studyAppDiff(studyAppBaseline,state)!==undefined)return;
+ const revision=studyAppRevision,baseline=studyAppCopy(studyAppBaseline);
+ try{const result=await studyAppRequest('/progress');
+  if(studyAppSaving||studyAppRevision!==revision||studyAppDiff(baseline,state)!==undefined)return;
+  if(result.revision!==studyAppRevision){state={...state,...referenceMergeDelta(baseline,state,result.state)};studyAppBaseline=studyAppCopy(result.state);studyAppRevision=result.revision;studyAppBrowserSave()}
+  studyAppStatus('Saved to app');
+ }catch{}
+}
+function studyAppProgressNotice(){
+ if($('#study-app-import-notice'))return;const notice=document.createElement('aside');notice.id='study-app-import-notice';notice.className='study-app-import-notice';notice.innerHTML='<span>Your earlier browser progress can be brought into the app. In the old guide, choose <b>Export progress</b>; here, choose <b>Import progress</b>.</span><button data-app-dismiss-import aria-label="Dismiss progress import reminder">×</button>';document.querySelector('.shell').prepend(notice);
+}
+function studyAppDialog(){
+ let dialog=$('#study-app-settings');if(dialog)return dialog;
+ dialog=document.createElement('dialog');dialog.id='study-app-settings';dialog.innerHTML='<div class="app-dialog-head"><h2>Study app</h2><button data-app-close aria-label="Close app status">×</button></div><p data-app-state-status>Progress is saved on this Mac, with automatic backups.</p><div data-app-anki-status></div><button data-app-anki-sync>Sync Anki reviews</button><p data-app-anki-sync-status role="status"></p><p class="app-help">Anki owns scheduling. Reading, revealing answers, and marking a section learned do not record an Anki review. Use <b>Review in Anki</b> on a card, reveal its answer, then choose a rating.</p>';document.body.append(dialog);return dialog;
+}
+function studyAppSummaryMarkup(){
+ const summary=studyAppCoverage.summary||{},cards=Object.values(studyAppCoverage.cards||{}),reviewed=cards.filter(card=>card.reviewed||card.review_count>0).length;
+ const connected=!!studyAppConnection?.available,scoped=Number(studyAppConnection?.allowed_card_count||0)>0;
+ return `<p><b>${connected?(scoped?'Anki connected':'Anki connected · no card scope imported'):'Anki is not connected'}</b>${studyAppConnection?.anki_connect_version?' · AnkiConnect '+esc(studyAppConnection.anki_connect_version):''}</p><p>${reviewed.toLocaleString()} linked cards reviewed${summary.review_count?' · '+Number(summary.review_count).toLocaleString()+' recorded reviews':''}${summary.synced_at?' · Last synced '+esc(new Date(summary.synced_at).toLocaleString()):''}</p>`;
+}
+async function studyAppLoadAnki(){
+ try{studyAppConnection=await studyAppRequest('/anki/status');studyAppCoverage=studyAppConnection.coverage||await studyAppRequest('/anki/coverage')}catch{studyAppConnection={available:false}}
+ const button=$('#study-app-button');if(button)button.textContent=studyAppConnection?.available?(Number(studyAppConnection.allowed_card_count||0)>0?'App · Anki connected':'App · Anki scope needed'):'App · connect Anki';
+ const target=$('[data-app-anki-status]');if(target)target.innerHTML=studyAppSummaryMarkup();
+}
+async function studyAppSync(){
+ const target=$('[data-app-anki-sync-status]'),button=$('[data-app-anki-sync]');if(button)button.disabled=true;if(target)target.textContent='Reading your Anki review history…';
+ try{if(!studyAppConnection?.available){if(target)target.textContent='AnkiConnect is not available.';return}if(!Number(studyAppConnection.allowed_card_count||0)){if(target)target.textContent='No Anki card scope has been imported.';return}studyAppCoverage=await studyAppRequest('/anki/sync',{});await studyAppLoadAnki();if(target)target.textContent='Review history synced. Your learned sections stay as you marked them.';studyAppRefreshReviewControls()}
+ catch(error){if(target)target.textContent=error.message}finally{if(button)button.disabled=false}
+}
+function studyAppTopicCoverage(){
+ const config=ankiTopicMap[ankiContext?.topic],noteIds=new Set((config?.noteIds||[]).map(Number));if(!noteIds.size)return '';
+ const linked=ankiLibrary.cards.filter(card=>noteIds.has(Number(card.note))),reviewed=linked.filter(card=>studyAppCoverage.cards?.[String(card.id)]?.review_count>0).length;
+ return `<p class="app-topic-coverage">Anki practice: ${reviewed} / ${linked.length} linked cards reviewed</p>`;
+}
+function studyAppIsBrandingImage(node,src){
+ const label=[src,node.getAttribute('alt')||'',node.getAttribute('title')||''].join(' ');
+ return /anking[^/\\]*logo|logo[^/\\]*anking|anki[^/\\]*logo|logo[^/\\]*anki/i.test(label);
+}
+function studyAppLiveHTML(html,noteId,liveMedia={}){
+ const template=document.createElement('template');template.innerHTML=String(html||'');
+ template.content.querySelectorAll('script,iframe,object,embed,style,link,base,meta,form').forEach(node=>node.remove());
+ const media=new Map((ankiNotes.get(Number(noteId))?.images||[]).map(image=>[image.file,image.src]));for(const [file,src]of Object.entries(liveMedia||{}))if(typeof src==='string'&&/^data:image\/(?:png|jpeg|gif|webp|bmp|svg\+xml);base64,/i.test(src))media.set(file,src);
+ for(const node of template.content.querySelectorAll('*')){
+  for(const attribute of [...node.attributes])if(/^on/i.test(attribute.name)||['srcdoc','formaction','srcset'].includes(attribute.name)||(attribute.name==='style'&&/url\s*\(|@import|expression\s*\(/i.test(attribute.value)))node.removeAttribute(attribute.name);
+  for(const key of ['href','src']){const value=node.getAttribute(key);if(!value)continue;
+   if(key==='src'){const name=value.split('/').pop();let decoded=name;try{decoded=decodeURIComponent(name)}catch{}const local=media.get(decoded);if(local)node.setAttribute('src',local);else if(!/^(?:data:image\/|blob:)/i.test(value)){if(studyAppIsBrandingImage(node,value)){node.remove();break}node.removeAttribute('src');node.setAttribute('alt','Image available in Anki');node.dataset.appMediaMissing='true'}}
+   else if(!/^https?:\/\//i.test(value)&&!value.startsWith('#'))node.removeAttribute('href');else{node.setAttribute('target','_blank');node.setAttribute('rel','noopener')}
+  }
+ }return template.innerHTML;
+}
+function studyAppReviewMarkup(){
+ if(!studyAppConfig||!ankiCurrentCard)return '';
+ const session=studyAppAnkiSession&&Number(studyAppAnkiSession.card?.cardId)===Number(ankiCurrentCard)?studyAppAnkiSession:null;
+ const record=studyAppCoverage.cards?.[String(ankiCurrentCard)],count=Number(record?.review_count||0);
+ if(!session)return `<div class="app-anki-review" data-app-review-card="${ankiCurrentCard}"><button data-app-begin-review ${studyAppReviewPending?'disabled':''}>${studyAppReviewPending?'Connecting…':'Review in Anki'}</button><small>${count?count+' Anki reviews':'No synced review yet'}</small>${studyAppReviewMessage?`<p role="status">${esc(studyAppReviewMessage)}</p>`:''}${studyAppTopicCoverage()}</div>`;
+ const card=session.card,labels=['Again','Hard','Good','Easy'],next=card.nextReviews||[];
+ return `<div class="app-anki-review is-live" data-app-review-card="${ankiCurrentCard}"><b>Live Anki review</b><small>${esc(card.deckName||'')}${card.isNew?' · New card':card.isDue===false?' · Before due date':''}</small><p class="app-help">${session.missingMedia?'This card has an image unavailable here. Review it in Anki until the local image library is refreshed.':ankiCardRevealed?'Choose a rating to record this answer in Anki.':'Reveal the answer, then rate it. Anki chooses the next review date.'}</p>${ankiCardRevealed?`<div class="app-anki-ratings" role="group" aria-label="Record review in Anki">${labels.map((label,index)=>`<button data-app-rate="${index+1}" ${studyAppReviewPending||session.missingMedia?'disabled':''}>${label}${next[index]?`<small>${esc(next[index])}</small>`:''}</button>`).join('')}</div>`:''}<button data-app-cancel-review ${studyAppReviewPending?'disabled':''}>Return to practice</button>${studyAppReviewMessage?`<p role="status">${esc(studyAppReviewMessage)}</p>`:''}</div>`;
+}
+function studyAppRefreshReviewControls(){
+ if(!studyAppConfig||!$('#side-content .anki-card-navigation'))return;
+ let target=$('#side-content .app-anki-review');
+ const session=studyAppAnkiSession;if(session&&Number(session.card?.cardId)===Number(ankiCurrentCard)){
+  const content=$('#side-content .anki-card-content');if(content){
+   content.replaceChildren();const shadow=content.shadowRoot||content.attachShadow({mode:'open'});
+   const css=String(session.card.css||'').replace(/@import[^;]*;?/gi,'').replace(/url\s*\([^)]*\)/gi,'none').replace(/expression\s*\([^)]*\)/gi,'').replace(/<\/?style/gi,'');
+   shadow.innerHTML=`<style>:host{display:block}.card{font:18px/1.5 system-ui;color:#193345;text-align:left}${css}</style><div class="card">${studyAppLiveHTML(ankiCardRevealed?session.card.answer:session.card.question,session.card.noteId,session.card.media)}</div>`;
+   session.missingMedia=!!shadow.querySelector('[data-app-media-missing]');
+   shadow.querySelectorAll('img[src]').forEach(img=>img.addEventListener('error',()=>{if(studyAppAnkiSession!==session)return;session.missingMedia=true;const controls=$('#side-content .app-anki-review');if(controls)controls.outerHTML=studyAppReviewMarkup()},{once:true}));
+  }
+ }
+ const markup=studyAppReviewMarkup();if(target)target.outerHTML=markup;else $('#side-content .anki-card-navigation').insertAdjacentHTML('afterend',markup);
+}
+async function studyAppBeginReview(){
+ const cardId=Number(ankiCurrentCard);studyAppReviewPending=true;studyAppReviewMessage='';studyAppRefreshReviewControls();
+ try{const session=await studyAppRequest('/anki/begin',{cardId});if(cardId!==Number(ankiCurrentCard))return;studyAppAnkiSession=session;ankiCardRevealed=false;renderAnkiReference({keepScroll:true})}
+ catch(error){studyAppReviewMessage=error.message}finally{studyAppReviewPending=false;studyAppRefreshReviewControls()}
+}
+async function studyAppRate(ease){
+ const session=studyAppAnkiSession;if(studyAppReviewPending||!session||session.missingMedia||!ankiCardRevealed||Number(session.card?.cardId)!==Number(ankiCurrentCard))return;
+ studyAppReviewPending=true;studyAppReviewMessage='Recording in Anki…';studyAppRefreshReviewControls();
+ session.requestId||=crypto.randomUUID();const cardId=Number(ankiCurrentCard);
+ try{const result=await studyAppRequest('/anki/review',{token:session.token,ease,request_id:session.requestId});
+  if(!result.confirmed){studyAppReviewMessage=result.detail||'Anki has not confirmed this review. Check Anki before trying again.';return}
+  studyAppAnkiSession=null;studyAppReviewMessage='Saved in Anki.';
+  const old=studyAppCoverage.cards[String(cardId)]||{};studyAppCoverage.cards[String(cardId)]={...old,reviewed:true,review_count:Number(old.review_count||0)+1,last_review:result.review||{id:result.reviewId,ease}};
+  studyAppReviewPending=false;if(cardId===Number(ankiCurrentCard))ankiStepCard(1);
+ }catch(error){studyAppReviewMessage=error.message+' This rating was not confirmed; it will not be sent again automatically.'}
+ finally{studyAppReviewPending=false;studyAppRefreshReviewControls()}
+}
+async function startStudyApp(){
+ if(!studyAppConfig)return;
+ document.body.classList.add('study-app-loading');studyAppStatus('Loading saved progress…');
+ const local=studyAppCopy(state);let result;
+ try{
+  result=await studyAppRequest('/progress');
+  if(result.exists){state={...state,...result.state};studyAppBaseline=studyAppCopy(result.state)}
+  else{studyAppBaseline={};if(Object.values(local.notes||{}).some(Boolean)||Object.values(local.good||{}).some(Boolean))result=await studyAppRequest('/progress/import',{state:local});else studyAppProgressNotice()}
+  studyAppRevision=result.revision||0;studyAppReady=true;
+  localStorage.setItem(KEY,JSON.stringify(state));referenceStateSnapshot=studyAppCopy(state);
+  currentView=location.hash.slice(1)||state.view||'guide';if(!['guide','objectives','questions','pathology','drugs','bugs'].includes(currentView))currentView='guide';ensureScopePage();render();save();
+ }catch{render();studyAppStatus('App service unavailable · progress stays in this window')}
+ finally{document.body.classList.remove('study-app-loading')}
+ const button=document.createElement('button');button.id='study-app-button';button.textContent='App · Anki';button.onclick=async()=>{studyAppDialog().showModal();await studyAppLoadAnki()};document.querySelector('.toolbar').insertBefore(button,$('#export'));
+ const originalRenderAnki=renderAnkiReference;renderAnkiReference=function(options){const result=originalRenderAnki(options);studyAppRefreshReviewControls();return result};
+ const originalStep=ankiStepCard;ankiStepCard=function(delta){if(studyAppReviewPending)return;studyAppAnkiSession=null;studyAppReviewMessage='';return originalStep(delta)};
+ const importControl=$('#import');importControl.onchange=async event=>{try{const value=JSON.parse(await event.target.files[0].text());if(value.format!==KEY||!referenceObject(value.state))throw Error('wrong format');const imported=await studyAppRequest('/progress/import',{state:value.state});state={...state,...imported.state};studyAppBaseline=studyAppCopy(imported.state);studyAppRevision=imported.revision;referenceStateSnapshot=studyAppCopy(state);ensureScopePage();studyAppBrowserSave();render();studyAppStatus('Progress imported · saved to app');$('#study-app-import-notice')?.remove()}catch{studyAppStatus('Could not import this progress file')}event.target.value=''};
+ document.addEventListener('click',event=>{
+  if(event.target.closest('[data-app-close]'))studyAppDialog().close();
+  if(event.target.closest('[data-app-dismiss-import]'))$('#study-app-import-notice')?.remove();
+  if(event.target.closest('[data-app-anki-sync]'))studyAppSync();
+  if(event.target.closest('[data-app-begin-review]'))studyAppBeginReview();
+  if(event.target.closest('[data-app-cancel-review]')){studyAppAnkiSession=null;studyAppReviewMessage='';renderAnkiReference({keepScroll:true})}
+  const rating=event.target.closest('[data-app-rate]');if(rating)studyAppRate(Number(rating.dataset.appRate));
+ });
+ window.addEventListener('pagehide',()=>{if(studyAppReady&&studyAppDiff(studyAppBaseline,state)!==undefined){const patch=studyAppDiff(studyAppBaseline,state);fetch(studyAppConfig.apiBase+'/progress',{method:'POST',headers:{'Content-Type':'application/json','X-LLU-App-Token':studyAppConfig.token},body:JSON.stringify({patch,base_revision:studyAppRevision}),keepalive:true}).catch(()=>{})}});
+ setInterval(studyAppRefresh,12000);await studyAppLoadAnki();
+ if(studyAppConnection?.available&&!studyAppCoverage.summary?.synced_at)studyAppSync();
+}
+
+initReadingTools();render();save();startStudyApp();</script></body></html>

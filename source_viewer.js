@@ -63,7 +63,7 @@ async function openExactSource(doc,page,query,node,linkedPage=page){
   const result=await fetchSourcePage(doc.id,target,query);if(serial!==sourceViewerSerial||$('#side-panel').hidden)return;
   installSourcePage(result,topic);sourceViewerActive={document:doc,result,query,node,topic,linkedPage};bookMarkMode=false;
   state.sourcePageView[topic]={page:target,linkedPage};renderSourceViewer();requestAnimationFrame(scrollToLinkedPassage);save();
- }catch(error){if(serial!==sourceViewerSerial)return;showSidePanel(doc.title,`<p>The local source viewer is offline or this PDF is unavailable.</p><p>Run <strong>Start Study Guide.command</strong> and retry this source link. Your notes and highlights are saved.</p><p class="source-view-error">${esc(error.message)}</p>`,{anchor:node})}
+ }catch(error){if(serial!==sourceViewerSerial)return;showSidePanel(doc.title,`<p>The local source index or this PDF is not installed for this source.</p><p>Add the PDF to a private source pack and prepare its local page index before retrying. Your notes and highlights are saved.</p><p class="source-view-error">${esc(error.message)}</p>`,{anchor:node})}
 }
 function bookSearchMatchesMarkup(context){
  const books=context?.bookMatches;if(!books)return '';

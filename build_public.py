@@ -31,14 +31,14 @@ CSS = [
     'continuous_style.css', 'workspace_style.css', 'book_highlights.css',
     'freehand.css', 'study_practice.css', 'anki_context.css',
     'objective_compact.css', 'week8_style.css', 'image_navigation.css',
-    'semantic_search.css', 'source_viewer.css',
+    'semantic_search.css', 'source_viewer.css', 'reference_workspace.css', 'StudyApp/study_app.css',
 ]
 JS = [
     'guide_app.js', 'study_scope.js', 'reference_panel.js',
     'image_navigation.js', 'book_highlights.js', 'objective_ui.js',
     'workspace_views.js', 'reading_tools.js', 'freehand.js',
     'study_practice.js', 'guide_skim.js', 'anki_context.js',
-    'semantic_search.js', 'source_viewer.js',
+    'semantic_search.js', 'source_viewer.js', 'reference_workspace.js', 'StudyApp/study_app.js',
 ]
 
 
@@ -263,7 +263,7 @@ def sanitize(data: dict) -> dict:
 def build(data: dict, output: Path) -> None:
     template=(ROOT/'guide_template.html').read_text()
     css='\n'.join((ROOT/f).read_text() for f in CSS)
-    js='\n'.join((ROOT/f).read_text() for f in JS)+'\ninitReadingTools();render();save();'
+    js='\n'.join((ROOT/f).read_text() for f in JS)+'\ninitReadingTools();render();save();startStudyApp();'
     payload=json.dumps(data,ensure_ascii=False,separators=(',',':')).replace('</','<\\/')
     output.write_text(template.replace('__CSS__',css).replace('__DATA__',payload).replace('__JS__',js))
 

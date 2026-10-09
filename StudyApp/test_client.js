@@ -1,0 +1,64 @@
+// Regression tests for the public app's real merge, diff, and flush functions.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const workspace = fs.readFileSync(path.join(__dirname, '..', 'reference_workspace.js'), 'utf8');
+const app = fs.readFileSync(path.join(__dirname, 'study_app.js'), 'utf8');
+function between(source, startMarker, endMarker) {
+  const start = source.indexOf(startMarker), end = source.indexOf(endMarker, start);
+  assert.ok(start >= 0 && end > start, `expected source region ${startMarker}`);
+  return source.slice(start, end);
+}
+const mergeFunctions = between(workspace, 'function referenceClone(', '\nlet referenceStateSnapshot=');
+const diffFunction = between(app, 'function studyAppCopy(', '\nfunction studyAppStatus(');
+const flushFunction = between(app, 'async function studyAppFlush(){', '\nasync function studyAppRefresh(');
+
+const shared = vm.createContext({ JSON, Object, Array, Map, Set, Promise, Error, String, clearTimeout() {}, setTimeout() { return 0; } });
+vm.runInContext(`${mergeFunctions}\n${diffFunction}`, shared);
+assert.equal(vm.runInContext("referenceEqual({a:1,b:{x:2}},{b:{x:2},a:1})", shared), true,
+  'object insertion order does not create a semantic difference');
+assert.equal(vm.runInContext("referenceEqual([{id:'a'},{id:'b'}],[{id:'b'},{id:'a'}])", shared), false,
+  'array order remains meaningful');
+assert.equal(vm.runInContext("studyAppDiff({good:{},items:[{id:'x',a:1,b:2}]},{good:{},items:[{b:2,id:'x',a:1}]})", shared), undefined,
+  'server key sorting within stable-ID array items produces no patch');
+assert.equal(vm.runInContext("studyAppDiff({items:[{id:'x'},{id:'y'}]},{items:[{id:'y'},{id:'x'}]})", shared), undefined,
+  'stable-ID array order alone does not emit a useless empty delta');
+assert.deepEqual(JSON.parse(vm.runInContext("JSON.stringify(studyAppDiff({items:[{id:'x',a:1}]},{items:[{id:'x',a:2},{id:'y'}]}))", shared)), {
+  items: { __llu_array_delta__: { remove: [], upsert: [{ id: 'x', a: 2 }, { id: 'y' }] } },
+}, 'meaningful stable-ID edits still produce compact array deltas');
+
+async function runFlush(initialState, mutate, expectedPosts) {
+  const counters = { posts: 0, status: '' };
+  const sortKeys = value => Array.isArray(value) ? value.map(sortKeys) : value && typeof value === 'object'
+    ? Object.fromEntries(Object.keys(value).sort().map(key => [key, sortKeys(value[key])])) : value;
+  let harness;
+  harness = vm.createContext({
+    JSON, Object, Array, Map, Set, Promise, Error, String, sortKeys,
+    state: JSON.parse(JSON.stringify(initialState)),
+    studyAppBaseline: JSON.parse(JSON.stringify(initialState)),
+    studyAppReady: true, studyAppSaving: false, studyAppRevision: 7, studyAppTimer: null,
+    studyAppCopy(value) { return JSON.parse(JSON.stringify(value)); },
+    studyAppBrowserSave() {},
+    studyAppStatus(value) { counters.status = value; },
+    clearTimeout() {}, setTimeout() { return 0; },
+    async studyAppRequest(_route, body) {
+      counters.posts++;
+      assert.ok(body.patch && Object.keys(body.patch).length, 'flush never submits an empty patch');
+      return { state: sortKeys(vm.runInContext('state', harness)), revision: 8 };
+    },
+  });
+  vm.runInContext(`${mergeFunctions}\n${diffFunction}\n${flushFunction}`, harness);
+  if (mutate) vm.runInContext(mutate, harness);
+  await vm.runInContext('studyAppFlush()', harness);
+  assert.equal(counters.posts, expectedPosts, 'flush stops after semantic state matches the sorted server response');
+  assert.equal(counters.status, 'Saved to app');
+}
+
+(async () => {
+  const initial = { good: {}, notes: {}, annotations: [{ id: 'h1', text: 'x', color: 'yellow' }] };
+  await runFlush(initial, "state={annotations:[{color:'yellow',id:'h1',text:'x'}],notes:{},good:{}}", 0);
+  await runFlush(initial, "state.good['section-1']=true", 1);
+  console.log('Public study app client merge/flush tests passed.');
+})().catch(error => { console.error(error); process.exitCode = 1; });

@@ -38,6 +38,30 @@ python3 -m http.server 8767 --bind 127.0.0.1
 
 Open <http://localhost:8767>. The browser app supports search, learned-section compaction, skim reading, editing, comparison sheets, pathology practice, saved progress export/import, and local browser storage. No package installation or network connection is needed for the static guide.
 
+## Run the private local app
+
+The local app adds per-user SQLite progress and optional AnkiConnect review support without changing the public data. Its service binds only to `127.0.0.1:8770`; progress databases and Anki review ledgers live in the operating system's per-user app-data folder, outside this checkout. Start it from this folder with:
+
+```sh
+python3 study_app_server.py
+```
+
+Open <http://127.0.0.1:8770>. To build the native macOS wrapper on a Mac with Xcode command-line tools:
+
+```sh
+python3 StudyApp/native/build_app.py
+```
+
+The generated app is placed under the ignored `local-private/` directory. To move existing browser progress, use **Export progress** in the static guide, then **Import progress** in the local app. The local app keeps its own SQLite copy after import.
+
+AnkiConnect is optional. This public edition ships with no linked Anki card library, so it reports an empty scope and cannot write ratings by default. The owner may import their own context export to store only card/note IDs and ordinals in private app data; this does not add card text or media to the guide. For example:
+
+```sh
+python3 StudyApp/import_anki_scope.py /path/to/your/anki_context_data.js
+```
+
+Restart the local app service after importing. Review writes remain limited to a matching live new or due card opened from a linked card library, with an explicit Again/Hard/Good/Easy choice. Viewing or revealing content does not schedule a review. The service does not start Anki or AnkiConnect automatically.
+
 ## Build a private local edition
 
 Private imports are parsed as data and assembled into the same full app. They stay under the Git-ignored `local-private/` directory. The build copies referenced local source images and PDFs into `local-private/runtime/imported-sources/`, rewrites paths, and embeds imported objectives, question records, references, book page data, and Anki context into the local runtime. It also copies the exact-source and semantic-search backend modules and prepares safe defaults for the private indexes. The builder does not publish or upload those files.

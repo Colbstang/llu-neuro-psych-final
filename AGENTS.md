@@ -15,6 +15,8 @@
 ## Scope and privacy
 
 - Treat this folder as a public GitHub candidate. Never copy private professor-review or lecture PDFs/screenshots, book excerpts or page layers, question-bank screenshots, verbatim learning objectives, licensed Anki exports/media, personal progress, absolute workstation paths, or private URLs into tracked files.
+- The portable local app lives in `StudyApp/` and `study_app_server.py`; build public HTML only from `data/public-study-guide.json`. The service binds to loopback port 8770, and progress/Anki ledgers belong in the user's per-user app-data directory, never in this checkout.
+- Keep the public Anki library empty unless public-use rights are verified. A user may explicitly import a local Anki export with `StudyApp/import_anki_scope.py`; the allowlist is private and contains only card/note identity fields. Anki is optional, reviews require a live due/new card and an explicit rating, and no progress flag may schedule or submit a review.
 - Keep personal source packs, imported assets, runtime bundles, semantic indexes, and downloaded models under `local-private/` or another Git-ignored location. Do not weaken the ignore rules to make private files easier to commit.
 - Preserve the real app behavior and use `build_public.py` to rebuild `index.html` from the reviewed public dataset. Private material belongs in the local `build_local.py` workflow; never place private content in public data or runtime builds.
 - Imported HTML and JavaScript are untrusted. Extract only JSON assignments; never execute imported scripts or render raw imported HTML.

@@ -16,7 +16,7 @@ ankiCardResults=function(context=ankiContext){
 ankiContextMarkup=function(){
  const content=legacyContextMarkup(),context=ankiContext;if(!context?.retrieval)return content;
  const messages={loading:'Finding the closest cards…',semantic:`Local sentence search · ${context.semanticCardIds.length} close cards · allowed tags only`,fallback:'Text matches · local sentence search is offline',empty:'No close sentence match in the allowed tags'};
- return `${content}<div class="semantic-search-status" role="status"><span>${esc(messages[context.retrieval]||'')}</span>${context.retrieval==='fallback'?'<small>Run Start Study Guide.command to enable local embeddings.</small><button data-semantic-retry>Retry sentence search</button>':''}${['semantic','empty'].includes(context.retrieval)?'<button data-semantic-broaden>Broaden text matches</button>':''}</div>`;
+ return `${content}<div class="semantic-search-status" role="status"><span>${esc(messages[context.retrieval]||'')}</span>${context.retrieval==='fallback'?'<small>Install a local source index and sentence-search models to enable semantic search.</small><button data-semantic-retry>Retry sentence search</button>':''}${['semantic','empty'].includes(context.retrieval)?'<button data-semantic-broaden>Broaden text matches</button>':''}</div>`;
 };
 function narrowLexicalContext(context){
  context.matches=ankiMatchContext(context);
