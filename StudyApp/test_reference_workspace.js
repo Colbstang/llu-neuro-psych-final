@@ -36,3 +36,21 @@ assert.deepEqual(JSON.parse(vm.runInContext('JSON.stringify(referenceStateSnapsh
   highlights: [{ id: 'h1', text: 'first' }, { id: 'h3', text: 'server' }],
 }, 'workspace advances its remote baseline after merging');
 console.log('Public reference workspace merge tests passed.');
+
+const listenStart=source.indexOf('function referenceListenTerm(){');
+const listenEnd=source.indexOf('\nfunction referenceSetupControls',listenStart);
+assert.ok(listenStart>=0&&listenEnd>listenStart,'real speech query helper is present');
+let selection='',query='myasthenia gravis';
+const speech=vm.createContext({
+  referenceTermContext:'References',referenceLastTerm:'References',sourceViewerActive:null,ankiContext:null,
+  window:{getSelection:()=>({toString:()=>selection})},
+  $:selector=>selector==='#side-title'?{textContent:'References'}:
+    selector==='#reference-search-host [data-reference-search-query]'?{value:query}:null,
+});
+vm.runInContext(source.slice(listenStart,listenEnd),speech);
+assert.equal(vm.runInContext('referenceListenTerm()',speech),'myasthenia gravis','Listen uses the typed term, not the References heading');
+selection='dysmetria';
+assert.equal(vm.runInContext('referenceListenTerm()',speech),'dysmetria','an explicit selection wins over a broader query');
+selection='';query='';
+assert.equal(vm.runInContext('referenceListenTerm()',speech),'','the empty reference library does not pronounce UI chrome');
+console.log('Reference speech term selection tests passed.');

@@ -2140,8 +2140,8 @@ function referenceStopSpeech(message='Stopped.'){
 }
 async function referenceSpeakText(value){
  const term=String(value||'').replace(/\s+/g,' ').trim(),status=$('#reference-listen-status');
- if(!term||term.length>180||term.split(' ').length>24){status.textContent='Select a medical term or short phrase to hear it.';return}
  if(referenceSpeech){referenceStopSpeech();return}
+ if(!term||term.length>180||term.split(' ').length>24){status.textContent='Select a medical term or short phrase to hear it.';return}
  const controller=new AbortController(),request={controller};referenceSpeech=request;referenceLastTerm=term;referenceUpdateSpeechControls(true);
  status.textContent='Preparing local neural voice…';
  const spoken=term.replace(/\bIFN\s*[-–]?\s*(?:beta|β)(?!\w)/gi,'interferon beta');
@@ -2158,7 +2158,11 @@ async function referenceSpeakText(value){
  finally{clearTimeout(timer)}
 }
 function referenceUpdateSpeechControls(speaking){document.querySelectorAll('[data-reference-listen],[data-selection-listen]').forEach(button=>{button.textContent=speaking?'■ Stop':'🔊 Listen';button.setAttribute('aria-pressed',String(speaking))})}
-function referenceListenTerm(){const title=$('#side-title')?.textContent||'';return (window.getSelection()?.toString().trim()||(referenceTermContext===title?referenceLastTerm:'')||($('#side-content .background-reference')?title:'')||sourceViewerActive?.query||ankiContext?.topic||ankiContext?.searchQuery||ankiContext?.text||title).replace(/^source:/,'')}
+function referenceListenTerm(){
+ const title=$('#side-title')?.textContent||'',typed=$('#reference-search-host [data-reference-search-query]')?.value?.trim()||'';
+ const remembered=referenceTermContext===title&&referenceLastTerm!=='References'?referenceLastTerm:'';
+ return (window.getSelection()?.toString().trim()||typed||remembered||($('#side-content .background-reference')?title:'')||sourceViewerActive?.query||ankiContext?.topic||ankiContext?.searchQuery||ankiContext?.text||(title==='References'?'':title)).replace(/^source:/,'');
+}
 function referenceSetupControls(){
  const panel=$('#side-panel'),head=panel.querySelector('.side-panel-head');
  const actions=document.createElement('div');actions.className='reference-workspace-actions';actions.innerHTML=`<button data-reference-listen aria-pressed="false" title="Hear the selected term or reference heading">🔊 Listen</button><select aria-label="Local neural voice" data-reference-voice>${['Bella','Jasper','Luna','Bruno','Rosie','Hugo','Kiki','Leo'].map(voice=>`<option ${voice===(state.referenceVoice||'Bella')?'selected':''}>${voice}</option>`).join('')}</select><button data-reference-detach title="Send lookups to a separate tab">Open reference tab ↗</button><button data-reference-dock>Dock beside guide</button>`;head.insertBefore(actions,$('#close-side'));
