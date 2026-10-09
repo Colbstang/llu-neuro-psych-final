@@ -15,10 +15,43 @@ const guideSkimPoints={
  'ibm-dmd-block-2':['DMD: young boys; X-linked recessive; severe proximal weakness and very high CK.','Gowers’ sign, calf pseudohypertrophy, and absent dystrophin fit the pattern.'],
  'ibm-dmd-block-3':['IBM: older age, selective finger-flexor/quadriceps weakness, slow course, rimmed vacuoles.','DMD: childhood onset, proximal weakness, X-linked inheritance, absent dystrophin.']
 };
-function blockSkimHtml(block){const key=block.id.replace(/^guide-v2-/,''),items=block.skim||guideSkimPoints[key]||[block.summary];return state.edits['skim-'+block.id]||`<ul>${items.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`}
+function blockSkimHtml(block){const key=block.id.replace(/^guide-v2-/,''),items=block.skim||guideSkimPoints[key]||[block.summary];return state.edits['skim-'+block.id]||block.skim_html||`<ul>${items.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`}
 function blockSkimMarkup(block){return `<div class="editable" data-edit="skim-${block.id}" contenteditable="${editing}" aria-label="Edit morning skim for ${esc(block.title)}">${editing?blockSkimHtml(block):decorateReading('skim-'+block.id,keywordify(blockSkimHtml(block)))}</div>`}
-function guideTextWords(text){const t=document.createElement('template');t.innerHTML=text;return (t.content.textContent.match(/[\p{L}\p{N}’]+/gu)||[]).length}
-function guideReadingCounts(blocks){let full=0,current=0,skim=0;for(const b of blocks){const expanded=guideTextWords(state.edits[b.id]||b.html),brief=guideTextWords(blockSkimHtml(b));full+=expanded;skim+=brief;current+=state.good[b.id]?brief:expanded}return {full,current,skim}}
+function guideTextWords(text){const t=document.createElement('template');t.innerHTML=String(text||'').replace(/<[^>]*>/g,' ');return (t.content.textContent.match(/[\p{L}\p{N}_’]+/gu)||[]).length}
+function guideReadingCounts(blocks){
+ let full=0,current=0,skim=0;
+ for(const b of blocks){
+  const heading=guideTextWords(b.title),captions=(b.figures||[]).reduce((n,f)=>n+guideTextWords(f.caption),0);
+  const expanded=heading+guideTextWords(state.edits[b.id]||b.html)+captions,brief=heading+guideTextWords(blockSkimHtml(b));
+  full+=expanded;skim+=brief;current+=state.good[b.id]?brief:expanded;
+ }
+ return {full,current,skim};
+}
+function guideLengthCounts(){
+ const entries=scopePageEntries(),counts=guideReadingCounts(entries.flatMap(({p})=>p.blocks));
+ const headings=entries.reduce((n,{p})=>n+guideTextWords(p.title)+guideTextWords(p.subtitle),0)+scopeTopicGroups().reduce((n,g)=>n+guideTextWords(g.title),0);
+ for(const key of ['full','current','skim'])counts[key]+=headings;
+ counts.objectives=scopeObjectives().reduce((n,o)=>{
+  const a=DATA.objective_answers[o.id]||{};
+  return n+guideTextWords(o.text)+guideTextWords(a.html)+(a.figures||[]).reduce((v,f)=>v+guideTextWords(f.caption),0);
+ },0);
+ counts.unit=DATA.word_budget?.words_per_page_equivalent||700;
+ return counts;
+}
+function guideLengthMarkup(){
+ return `<div class="guide-length" data-guide-length aria-live="polite"></div>`;
+}
+function refreshGuideLength(){
+ const c=guideLengthCounts(),eq=n=>(n/c.unit).toFixed(1),format=n=>n.toLocaleString();
+ const markup=`<div class="length-metrics"><span><small>READ NOW</small><strong>${eq(c.current)} page eq.</strong><small>${format(c.current)} words</small></span><span><small>READ EXPANDED</small><strong>${eq(c.full)} page eq.</strong></span><span><small>ALL LEARNED · SKIM</small><strong>${eq(c.skim)} page eq.</strong></span></div><p class="length-reference">LO reference: ${eq(c.objectives)} eq. separately · All study content expanded: <strong>${((c.full+c.objectives)/c.unit).toFixed(2)} eq.</strong></p><details class="length-explanation"><summary>How length is counted</summary><p>One page equivalent is about ${c.unit} words. Read now replaces each learned section’s explanation and image captions with its retained skim. Headings, tables, and your edits count. The separate LO reference includes the verbatim prompts, answers, and image captions. Questions, comparison sheets, personal notes, and image area are excluded.</p></details>`;
+ document.querySelectorAll('[data-guide-length]').forEach(el=>{el.innerHTML=markup});
+ const budget=$('#word-budget');
+ if(budget){
+  budget.innerHTML=`Read now<br><strong>${eq(c.current)} page eq.</strong><span class="skim-budget">${format(c.current)} words</span><span class="skim-budget">All learned: ${eq(c.skim)} eq.</span>`;
+  budget.title=`Current reading: ${format(c.current)} words. Expanded reading: ${format(c.full)} words. All learned skim: ${format(c.skim)} words. LO reference is separate: ${format(c.objectives)} words. ${c.unit} words per page equivalent.`;
+ }
+}
+document.addEventListener('input',e=>{if(e.target.matches('[data-edit]'))refreshGuideLength()});
 function missedQuestionsMarkup(id){
  const qs=DATA.questions.filter(q=>/wrong/i.test(q.source_status||'')&&(qRecord(q.id).sections.includes(id)||(DATA.question_annotations||[]).some(a=>a.block_id===id&&a.question_id===q.id)));
  if(!qs.length)return '';

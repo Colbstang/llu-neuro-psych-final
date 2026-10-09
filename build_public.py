@@ -106,6 +106,13 @@ class PublicHTML(HTMLParser):
 
 
 def sanitize_html(value: str) -> str:
+    # Remove paragraphs that cite a user's saved commercial-bank records.
+    # These can appear inside otherwise useful explanations, so filtering only
+    # the question registry is not enough for the public copy.
+    value = re.sub(
+        r'<p\b[^>]*>(?:(?!</p>).)*(?:saved\s+)?(?:AMBOSS|UWorld)\b(?:(?!</p>).)*</p>',
+        '', str(value or ''), flags=re.I | re.S,
+    )
     value = re.sub(
         r'<p\b[^>]*>(?:(?!</p>).)*(?:question[- ]bank|question appendix|original question|question stem|banked question|saved-bank application|captured question|specific tested question|(?:saved\s+)?(?:AMBOSS|UWorld)\s+Q\d+)(?:(?!</p>).)*</p>',
         '', str(value or ''), flags=re.I | re.S,
@@ -154,6 +161,10 @@ def sanitize(data: dict) -> dict:
         clean_blocks = []
         for block in page.get('blocks', []):
             b = {k: block[k] for k in ('id','title','summary','skim','html','figures') if k in block}
+            if isinstance(b.get('summary'), str):
+                b['summary'] = sanitize_html(b['summary'])
+            if isinstance(b.get('skim'), list):
+                b['skim'] = [sanitize_html(x) for x in b['skim'] if isinstance(x, str)]
             b['professor_pages'] = []
             b['lecture_sources'] = []
             b['lo_ids'] = []
@@ -175,7 +186,9 @@ def sanitize(data: dict) -> dict:
     out['questions'] = []
     out['question_annotations'] = []
     out['question_auto_links'] = []
+    out['question_link_corrections'] = []
     out['references'] = {}
+    out['reference_aliases'] = {}
     out['book_pages'] = {'books':{'First Aid':{'label':'First Aid','url':'','images':{}},'Pathoma':{'label':'Pathoma','url':'','images':{}}},'keywords':{}}
     out['book_link_focus'] = {'topics':{}}
     out['book_text_layers'] = {'books':{}}
@@ -198,12 +211,30 @@ def sanitize(data: dict) -> dict:
     # Drop course and private filesystem citations while retaining the public
     # Quiz 7 / Week 8 scope and priority labels used by the runtime.
     week8 = out.get('week8', {})
-    out['week8'] = {k:v for k,v in week8.items() if k in {'enabled','priority_quiz','priority_week','label','scope_label','scope_rows'}}
+    out['week8'] = {k:v for k,v in week8.items() if k in {'enabled','priority_quiz','priority_week','label','scope_label','scope_rows','include_page_ids'}}
     out['week8'].update({'objective_ids':[],'supporting_objective_ids':[],'question_ids':[],'source_gaps':[]})
     final = out.get('final', {})
     out['final'] = {k:v for k,v in final.items() if k in {'enabled','priority_week','priority_quiz'}}
     out['word_budget_note'] = 'Detailed guide: no page cap. Use learned-section compaction and skim mode for rapid review.'
     out['word_budget'] = {'words_per_page_equivalent':700,'total_limit':None,'skim_target_page_equivalents':80,'comparison_sheets_excluded':True}
+    # The topic map contains only public chapter IDs and labels; it drives the
+    # public navigation and preserves the original chapter/block IDs.
+    if isinstance(out.get('topic_groups'), dict):
+        valid_page_ids = {p['id'] for p in pages}
+        out['topic_groups'] = {
+            'schema_version': out['topic_groups'].get('schema_version', 1),
+            'groups': [
+                {k: v for k, v in group.items() if k in {'id','title','short_title'}}
+                | {'page_ids': [pid for pid in group.get('page_ids', []) if pid in valid_page_ids]}
+                for group in out['topic_groups'].get('groups', [])
+                if isinstance(group, dict)
+            ],
+        }
+    else:
+        out.pop('topic_groups', None)
+    # Keep source audit details local because they can expose private source
+    # locations and restricted course materials.
+    out.pop('course_audit', None)
     # Keep only stable public content in comparison sheets and preserve row order.
     sheets=[]
     for sheet in out.get('comparison_sheets',[]):
@@ -240,10 +271,23 @@ def build(data: dict, output: Path) -> None:
 def main() -> None:
     parser=argparse.ArgumentParser()
     parser.add_argument('--data',type=Path,default=ROOT/'data/public-study-guide.json')
+    parser.add_argument('--bundle',type=Path,help='Extract the DATA JSON assignment from a private local guide HTML file; scripts are never executed.')
     parser.add_argument('--output',type=Path,default=ROOT/'index.html')
     parser.add_argument('--sanitize',action='store_true',help='Sanitize a copy of the selected JSON before building.')
     args=parser.parse_args()
-    data=json.loads(args.data.read_text())
+    if args.bundle:
+        bundle=args.bundle.read_text()
+        marker='const DATA='
+        start=bundle.find(marker)
+        if start < 0:
+            raise SystemExit(f'No {marker!r} assignment found in {args.bundle}')
+        start += len(marker)
+        end=bundle.find(';</script>', start)
+        if end < 0:
+            raise SystemExit(f'No DATA script terminator found in {args.bundle}')
+        data=json.loads(bundle[start:end])
+    else:
+        data=json.loads(args.data.read_text())
     if args.sanitize:
         data=sanitize(data)
         args.data.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')

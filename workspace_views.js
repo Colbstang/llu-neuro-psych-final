@@ -20,24 +20,26 @@ renderNav=function(){
  const views=[['guide','Read'],['objectives','LOs'],['questions','Questions'],['pathology','Pathology'],['drugs','Drugs'],['bugs','Bugs']];
  const item=({p,i})=>`<button class="nav-item ${i===state.page?'active':''}" data-page="${i}" title="${esc(p.title)}">${esc(p.short_title||short[i]||p.title)}</button>`;
  const entries=scopePageEntries();state.navGroups||={};
- const groups=[['priority','Quiz 7 · Fri',entries.filter(x=>x.p.week===8)],['early','Neuro basics',entries.filter(x=>x.p.week!==8&&!x.p.id.startsWith('final-late-')&&!x.p.id.startsWith('final-psych-'))],['late','Neuro systems',entries.filter(x=>x.p.id.startsWith('final-late-'))],['psych','Psych / pharm',entries.filter(x=>x.p.id.startsWith('final-psych-'))]];
- const chapters=week8Scope()?entries.map(item).join(''):groups.filter(g=>g[2].length).map(([id,title,items])=>`<details class="nav-group" data-nav-group="${id}" ${state.navGroups[id]??items.some(x=>x.i===state.page)?'open':''}><summary>${title}<small>${items.length}</small></summary>${items.map(item).join('')}</details>`).join('');
+ const groups=scopeTopicGroups();
+ const chapters=groups.map(g=>`<details class="nav-group" data-nav-group="${g.id}" ${state.navGroups[g.id]??g.entries.some(x=>x.i===state.page)?'open':''}><summary title="${esc(g.title)}">${esc(g.short_title||g.title)}<small>${g.entries.length}</small></summary>${g.entries.map(item).join('')}</details>`).join('');
  $('#nav').innerHTML=scopeSelectorMarkup()+views.map(([id,label])=>`<button class="nav-view ${currentView===id?'active':''}" data-view="${id}">${label}</button>`).join('')+(currentView==='guide'?'<div class="nav-divider"></div>'+chapters:'');
  const visiblePages=scopePageEntries().map(x=>x.p),total=visiblePages.flatMap(p=>p.blocks).length,done=visiblePages.flatMap(p=>p.blocks).filter(b=>state.good[b.id]).length;
  $('#progress-text').textContent=`${done}/${total} learned`;$('#progress-bar').style.width=`${done/total*100}%`;
- const counts=guideReadingCounts(visiblePages.flatMap(p=>p.blocks)),unit=DATA.word_budget.words_per_page_equivalent||700;
- $('#word-budget').innerHTML=`Reading ≈ ${Math.ceil(counts.current/unit)} page eq.<span class="skim-budget">All learned ≈ ${Math.ceil(counts.skim/unit)} eq.</span>`;$('#word-budget').title=`${counts.full.toLocaleString()} detailed words; ${counts.current.toLocaleString()} currently expanded/skim words. About ${unit} words per page equivalent. Detailed guide has no page cap; morning skim target is 80 or fewer. Separate objectives and comparison sheets excluded.`;document.querySelector('.brand small').textContent=week8Scope()?'Study guide · Quiz 7 / Week 8':'Study guide · Full final';
+ refreshGuideLength();
+ document.querySelector('.brand small').textContent=week8Scope()?'Study guide · Week 8 / Quiz 7':'Study guide · Full course by topic';
 };
 $('#questions-button').onclick=()=>navigateView('questions');$('#objectives-button').onclick=()=>navigateView('objectives');
 document.addEventListener('click',e=>{
  const image=e.target.closest('[data-source-image]');if(image)showSidePanel('Question image',`<p>${esc(image.dataset.imageCaption)}</p><div class="panel-zoom"><button data-panel-zoom="-">−</button><span>Image zoom</span><button data-panel-zoom="+">+</button></div><div class="panel-media"><img src="${image.dataset.sourceImage}" alt="${esc(image.dataset.imageCaption)}"></div>`);
  const view=e.target.closest('[data-view]');if(view)navigateView(view.dataset.view);
  const objective=e.target.closest('[data-objective-section]');if(objective)navigateView('objectives',{section:objective.dataset.objectiveSection});
- const jump=e.target.closest('[data-jump-section]');if(jump){const section=questionSections.find(s=>s.id===jump.dataset.jumpSection);if(section){state.page=section.pageIndex;state.studyScope=pages[section.pageIndex].week===8?'week8':'all';navigateView('guide');document.querySelector(`[data-block="${section.id}"]`).scrollIntoView({block:'start'})}}
+ const jump=e.target.closest('[data-jump-section]');if(jump){const section=questionSections.find(s=>s.id===jump.dataset.jumpSection);if(section){state.page=section.pageIndex;state.studyScope=scopePageSelected(pages[section.pageIndex])?'week8':'all';navigateView('guide');document.querySelector(`[data-block="${section.id}"]`).scrollIntoView({block:'start'})}}
 });
 // Apply source-backed classifications once. Personal notes and review status survive.
 for(const q of DATA.questions){
  const mapped=(DATA.question_auto_links||[]).find(x=>x.question_id===q.id),r=qWrite(q.id);
+ const corrected=(DATA.question_link_corrections||[]).filter(x=>x.question_id===q.id).map(x=>x.old_section);
+ if(corrected.length)r.sections=r.sections.filter(section=>!corrected.includes(section));
  if(mapped){r.sections=[...new Set([...r.sections,...mapped.sections])];r.tags=[...new Set([...r.tags,...mapped.tags])];q.auto_rationale=mapped.rationale}
  else if(!r.tags.length){r.tags=[q.title.replace(/^(AMBOSS|UWorld)\s*[-–]\s*/,'').replace(/^Test \d+, Question \d+:\s*/,'')]}
 }

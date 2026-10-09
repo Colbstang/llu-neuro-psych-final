@@ -1,0 +1,117 @@
+{
+  "schema": "llu-neuro-release-audit-v1",
+  "date": "2026-10-09",
+  "verification_scope": "Source inventory, locator integrity, public/private separation, course-wide LO catalog and bounded source-gap recheck. These checks do not establish exhaustive medical or exam completeness.",
+  "public_edition": {
+    "chapters": 53,
+    "reading_sections": 159,
+    "topics": 13,
+    "stable_prior_chapter_ids_retained": 52,
+    "stable_prior_section_ids_retained": 156,
+    "week8_chapters": 15,
+    "verbatim_objectives": 0,
+    "personal_questions": 0,
+    "licensed_anki_records": 0,
+    "embedded_book_pages": 0,
+    "generated_diagram_files": 7,
+    "comparison_rows": 214
+  },
+  "source_collection": {
+    "catalog_records": 202,
+    "current_local_ids_covered": 195,
+    "unique_archived_pdfs": 177,
+    "categories": {
+      "book": 2,
+      "lecture": 147,
+      "notes": 21,
+      "other": 5,
+      "review": 2
+    },
+    "total_uncompressed_bytes": 1893218262,
+    "archives": 7,
+    "new_pdf_uploads_needed": 0,
+    "catalog_pack_consistent": true,
+    "all_catalog_paths_and_page_counts_match_manifest": true,
+    "latest_metadata": "data/source-catalog.json and data/source-import-pack.json"
+  },
+  "drive": {
+    "location": "Personal COTR.group My Drive",
+    "pdf_archives_url": "https://drive.google.com/drive/folders/1L6wViXDyns_N5mSrKBG3GLscBHiPp-i_",
+    "access": "Anyone with the link — Viewer",
+    "verification": "Owner sharing dialog saved and verified; independent connected account can list all seven ZIP archives and their four metadata files."
+  },
+  "protected_local_edition": {
+    "learning_objectives": 686,
+    "answers": 686,
+    "represented_weeks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "week8_objectives": 135,
+    "week8_primary_objectives": 123,
+    "week8_supporting_objectives": 12,
+    "local_reference_catalog_staged": true,
+    "exact_pdf_prompts": 655,
+    "transcription_backed_prompts": 30,
+    "visually_verified_page_break_repairs": 1,
+    "unique_pdf_references_checked": 2587,
+    "unresolved_pdf_references": 0,
+    "out_of_range_references": 0,
+    "guide_file_content_and_mtime_unchanged": true,
+    "public_metadata_pack_contains_objective_records": false
+  },
+  "fragile_x": {
+    "first_aid_edition": 2024,
+    "physical_pdf_page": 79,
+    "printed_page": 60,
+    "direct_entry_and_focus_spans_verified": true,
+    "pathoma_edition": 2021,
+    "pathoma_total_physical_pages": 234,
+    "pathoma_full_text_matches": 0,
+    "pathoma_visual_index_entry_present": false,
+    "pathoma_fabricated_page_link": false,
+    "mapping_patch_needed": false
+  },
+  "source_gaps": [
+    {
+      "source": "2026 NPS 98 psychiatric case-review packet",
+      "status": "Canvas upload placeholder remained on October 9. Linked recording is dated October 13, 2025."
+    },
+    {
+      "source": "Neuroradiology 1 numbered case scans",
+      "cases": 9,
+      "scan_references": 16,
+      "status": "Handout has no embedded images; all 56 slide pages checked. Generic examples lack the numbered case evidence needed for a reliable mapping."
+    },
+    {
+      "source": "CNS infection case 8 serology",
+      "status": "No specific serology result is supplied; causative agent remains uncertain."
+    }
+  ],
+  "browser_checks": {
+    "isolated_preview_origin": true,
+    "full_course_chapters": 53,
+    "week8_chapters": 15,
+    "expanded_reading_words": 59044,
+    "all_learned_skim_words": 8099,
+    "words_per_page_equivalent": 700,
+    "week8_expanded_reading_words": 12169,
+    "single_section_collapse_reduced_words_by": 248,
+    "skim_remains_visible": true,
+    "collapse_and_scope_persist_after_reload": true,
+    "broken_loaded_main_images": 0,
+    "active_study_file_tab_touched": false
+  },
+  "independent_review": "Data consistency, stable IDs, topic assignment, generated asset references and private import schema verified by a separate lower-cost reviewer. Current documentation counts refreshed; October 8 audit retained as a labeled historical snapshot.",
+  "limitations": [
+    "Public metadata imports sources only; the 686-objective library remains in the personal local guide.",
+    "Page equivalents count words; image area, questions and comparison appendices are excluded.",
+    "Missing course assets prevent a guarantee of exam completeness."
+  ]
+}

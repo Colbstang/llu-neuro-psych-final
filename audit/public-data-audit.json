@@ -1,10 +1,10 @@
 {
-  "edition": "portable sanitized study-guide candidate",
-  "chapter_count": 52,
-  "explanatory_block_count": 156,
-  "stable_chapter_id_count": 52,
-  "stable_block_id_count": 156,
-  "blocks_with_existing_skim": 141,
+  "edition": "portable sanitized study-guide release",
+  "chapter_count": 53,
+  "explanatory_block_count": 159,
+  "stable_chapter_id_count": 53,
+  "stable_block_id_count": 159,
+  "blocks_with_existing_skim": 144,
   "comparison_sheet_count": 3,
   "comparison_rows_by_sheet": {
     "drugs": 53,
@@ -36,7 +36,6 @@
   "generated_pathology_image_placements": 7,
   "pathology_rows_with_generated_diagrams": 7,
   "pathology_comparison_rows": 133,
-  "question_specific_passages_removed": 24,
   "non_generated_source_figures_removed": true,
   "data_payload_privacy_scan_match_counts": {
     "absolute_user_paths": 0,
@@ -47,10 +46,14 @@
     "private_source_paths": 0
   },
   "provenance_note": "Chapter and comparison explanations were extracted from compiled study-guide DATA and retained as supplied, apart from HTML sanitization, generalized personal/course-source naming, and removal of question-bank-specific passages. Source citations, private assets, personal data, and licensed exports were excluded. Claims have not been independently verified against exact course pages in this public-build pass; use actual course notes and source pages to verify future changes.",
-  "main_text_generated_diagram_count": 7,
+  "main_text_generated_diagram_count": 1,
   "public_game_cases": {
     "bugs": 28,
     "drugs": 53
   },
-  "generated_asset_validation": "Embedded asset bytes matched against reviewed original files; no licensed embedded media retained."
+  "generated_asset_validation": "Embedded asset bytes matched against reviewed original files; no licensed embedded media retained.",
+  "date": "2026-10-09",
+  "topic_group_count": 13,
+  "public_source_catalog_metadata_records": 202,
+  "current_verification": "audit/release-audit.json"
 }

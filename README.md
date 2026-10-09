@@ -1,24 +1,31 @@
 # LLU Neuro/Psych Final Study Guide
 
-This is a portable edition of the local-first study guide. It keeps the original 52 chapters, 156 explanatory blocks, skim mode, comparison tables, pathology practice, objectives, questions, Anki context, source viewer, book highlights, quick drawing, and saved progress features. Chapter, block, and comparison IDs remain stable so local progress can move between builds.
+This is the portable public edition of the study guide: **53 chapters, 159 reading sections, and 13 topic groups**, with a separate **Week 8 / Quiz 7** selector. Marking a section learned keeps its essential skim visible and updates the reading-length counter. Existing chapter, block, comparison and progress IDs remain stable.
 
-The public dataset contains original explanatory text and seven generated conceptual diagrams, including four pathology illustrations. It excludes private learning-objective wording, question-bank records and screenshots, licensed Anki exports/media, book excerpts and PDF layers, course/lecture screenshots, personal URLs and paths, and saved progress. The optional objectives, questions, source references, book pages, and Anki data fields remain available to a private local build.
+The public dataset contains original explanations, comparison tables, drug/bug practice and seven generated conceptual diagrams. Personal question-bank records, screenshots and progress are excluded. Verbatim course objectives, source page images, First Aid/Pathoma page layers and Anki records are optional local imports; they are not embedded in the public HTML. The author's protected local guide contains 686 answered and illustrated objectives across all eight course weeks. A metadata-only source import does not add those objective records.
+
+Length is reported at 700 words per page equivalent, with the separate LO library counted separately when imported. Figures occupy additional visual space; these are word-based equivalents, not a print-page promise. The local Week 8 guide is 39.86 equivalents with all reading and LO answers expanded. Public text has a different count because its private source material is omitted. The live counter reflects the edition and scope actually open, including collapsed sections and saved text edits.
 
 ## Course PDF collection
 
-The [public Drive catalog](https://drive.google.com/drive/folders/1Kquft1oLerZXM3_Y-u1yrKDYfqbTNWe7) contains the source inventory, file hashes, portable catalog, and JSON import pack. It is viewable by anyone with the link. The inventory is also available at [data/source-manifest.json](data/source-manifest.json).
+The [Drive catalog](https://drive.google.com/drive/folders/1Kquft1oLerZXM3_Y-u1yrKDYfqbTNWe7) contains the original inventory and import metadata. Use the refreshed [source catalog](data/source-catalog.json) and [source import pack](data/source-import-pack.json) in this repository for the current guide. They preserve 202 stable catalog IDs, including all 195 IDs used by the latest local guide, while resolving to the same 177 unique archived PDFs. The hash inventory is [data/source-manifest.json](data/source-manifest.json).
 
-The [complete PDF collection](https://drive.google.com/drive/folders/1L6wViXDyns_N5mSrKBG3GLscBHiPp-i_) is in the owner's personal COTR.group My Drive. Its seven archives contain 177 unique PDFs, approximately 1.9 GB before compression: 147 lectures, 21 notes, two reviews, First Aid USMLE Step 1 (2024), Pathoma (2021), and five other supporting PDFs. Twenty-five duplicate copies were omitted. Personal questions and question screenshots are excluded. The PDF archives are currently restricted pending confirmation of redistribution permission; the public catalog does not include PDF contents.
+The [source PDF collection](https://drive.google.com/drive/folders/1L6wViXDyns_N5mSrKBG3GLscBHiPp-i_) is in the owner's personal COTR.group **My Drive**, with **Anyone with the link — Viewer** access verified October 9, 2026. Its seven archives contain 177 unique PDFs, approximately 1.9 GB before compression: 147 lectures, 21 notes, two reviews, First Aid USMLE Step 1 (2024), Pathoma (2021), and five other supporting PDFs. Twenty-five duplicate copies were omitted. Every distinct PDF used by the latest guide is already in these archives; no bulk reupload was needed. Personal questions and question screenshots are excluded. Third-party material retains its original rights; the repository's MIT license covers only the code and original commentary.
 
-If you have access to the source archives, extract them together into `local-private/SourceLibrary/`, retaining their `pdfs/` paths. Put the catalog and source pack from the public folder beside that directory, verify files against `manifest.public.json`, and run:
+Extract the source archives together into `local-private/SourceLibrary/`, retaining their `pdfs/` paths. Copy the current repository metadata into that same directory, verify the PDFs against the hash inventory, and run:
 
 ```sh
+cp data/source-catalog.json local-private/SourceLibrary/source-catalog.json
+cp data/source-import-pack.json local-private/SourceLibrary/source-pack.private.json
+cp data/source-manifest.json local-private/SourceLibrary/manifest.public.json
 python3 build_local.py --pack local-private/SourceLibrary/source-pack.private.json
 ```
 
 Then follow the local search setup below to enable exact slide viewing and First Aid/Pathoma passage search. This metadata-only pack adds sources to the public guide; it does not include the personal guide's answered objectives, Anki cards, or questions. The catalog preserves existing source IDs and physical PDF page numbering (First Aid: 866 pages; Pathoma: 234 pages).
 
-The current 2026 NPS 98 review packet and nine Neuroradiology 1 case scan panels were not available in the supplied materials or current Canvas page at the October 8 review. See [audit/refinement-audit.json](audit/refinement-audit.json) for the verification scope and remaining source gaps.
+The current 2026 NPS 98 review packet remains an upload placeholder on the Canvas page checked October 9. Its linked recording is dated October 13, 2025 and is supplemental. The Neuroradiology 1 handout requests 16 scans across nine cases; none can be verified as that numbered case set in the available handout and 56-slide PDF. The specific serology result for infection case 8 is also absent. These gaps prevent a guarantee of exam completeness. See [audit/release-audit.json](audit/release-audit.json) for the current verification scope.
+
+The Fragile X link was checked against both full local PDFs and the page images: First Aid 2024 has the direct entry at physical PDF page 79 / printed page 60. Full text and visual index checks found no Fragile X entry in the supplied Pathoma 2021 edition; no Pathoma page is fabricated.
 
 ## Run the public edition
 

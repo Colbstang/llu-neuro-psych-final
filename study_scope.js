@@ -15,18 +15,45 @@ for(const [alias,canonical] of Object.entries(DATA.objective_aliases||{})){
  }
 }
 function week8Scope(){return state.studyScope==='week8'&&!!DATA.week8?.enabled}
-function scopePageEntries(){return pages.map((p,i)=>({p,i})).filter(({p})=>!week8Scope()||p.week===8)}
+function scopePageSelected(p){return !!p&&(p.week===8||(DATA.week8?.include_page_ids||[]).includes(p.id))}
+function topicForPage(page){return (DATA.topic_groups?.groups||[]).find(g=>g.page_ids.includes(page.id))}
+function scopePageEntries(){
+ const order=new Map((DATA.topic_groups?.groups||[]).flatMap(g=>g.page_ids).map((id,i)=>[id,i]));
+ return pages.map((p,i)=>({p,i})).filter(({p})=>!week8Scope()||scopePageSelected(p)).sort((a,b)=>(order.get(a.p.id)??a.i)-(order.get(b.p.id)??b.i));
+}
+function scopeTopicGroups(){
+ const entries=scopePageEntries();
+ return (DATA.topic_groups?.groups||[]).map(g=>({...g,entries:entries.filter(({p})=>g.page_ids.includes(p.id))})).filter(g=>g.entries.length);
+}
+function topicHeadingMarkup(page,index,entries){
+ const topic=topicForPage(page);
+ if(!topic||(index&&topicForPage(entries[index-1].p)?.id===topic.id))return '';
+ return `<div class="topic-heading" id="topic-${esc(topic.id)}"><p class="eyebrow">TOPIC</p><h2>${esc(topic.title)}</h2></div>`;
+}
 function scopeObjectives(){return DATA.objectives.filter(o=>!week8Scope()||[...(DATA.week8.objective_ids||[]),...(DATA.week8.supporting_objective_ids||[])].includes(o.id))}
-function scopeQuestion(q){return !week8Scope()||(DATA.week8.question_ids||[]).includes(q.id)}
+function scopeQuestion(q){
+ if(!week8Scope())return true;
+ if((DATA.week8.question_ids||[]).includes(q.id))return true;
+ const sectionIds=new Set(scopePageEntries().flatMap(({p})=>p.blocks.map(b=>b.id)));
+ const mapped=(DATA.question_auto_links||[]).find(x=>x.question_id===q.id);
+ const sections=[...(mapped?.sections||[]),...(state.questions?.[q.id]?.sections||[]),...(q.suggested_sections||[]).map(s=>s.block_id)];
+ return sections.some(id=>sectionIds.has(id));
+}
 function scopeRow(sheet,index){return !week8Scope()||(DATA.week8.scope_rows?.[sheet]||[]).includes(index)}
 function scopePathIndices(){return DATA.comparison_sheets.find(s=>s.id==='pathology').rows.map((_,i)=>i).filter(i=>scopeRow('pathology',i))}
 function scopeRapidCards(){return DATA.rapid_pathology.filter(c=>!week8Scope()||c.week===8)}
 function scopeOverviewMarkup(){
- if(!week8Scope())return DATA.final?.enabled?`<section class="week8-overview"><p class="eyebrow">FINAL STUDY GUIDE</p><h1>Neuro + Psych</h1><p>Read the full explanations now. Mark learned keeps only the key distinctions for your morning-of skim.</p><p class="week8-counts">${pages.length} chapters · ${DATA.objectives.length} learning objectives · ${DATA.questions.length} local question records</p><p><strong>Friday priority: Quiz 7 / Week 8.</strong> Use the scope selector to focus on that week.</p></section>`:'';
+ if(!week8Scope())return DATA.final?.enabled?`<section class="week8-overview"><p class="eyebrow">FULL COURSE · BY TOPIC</p><h1>Neuro + Psych</h1><p>Read the explanations by topic. Mark learned keeps the essential distinctions for your morning skim, with missed questions still within reach.</p><p class="week8-counts">${scopeTopicGroups().length} topics · ${pages.length} chapters · ${DATA.objectives.length} answered objectives</p>${guideLengthMarkup()}<p class="scope-switch-note">Choose Week 8 in the sidebar to focus on this week’s material.</p>${courseAuditMarkup()}</section>`:'';
  const w=DATA.week8;
- return `<section class="week8-overview"><p class="eyebrow">FRIDAY QUIZ · WEEK 8</p><h1>Quiz 7 study guide</h1><p>Read the explanations, test the learning objectives, then revisit the missed-question facts. Mark learned keeps the key distinctions visible.</p><p class="week8-counts">${scopePageEntries().length} chapters · ${scopeObjectives().length} learning objectives · ${(w.question_ids||[]).length} local question records</p><details class="week8-source-note"><summary>Coverage & sources</summary><p>Course review material and Week 8 lecture notes anchor this guide. It covers the whole week, including coma and sleep; exact Quiz 7 scope can be checked against private course materials when imported.</p>${(w.source_gaps||[]).map(g=>`<p>${esc(g)}</p>`).join('')}</details></section>`;
+ const timingNotes=Array.isArray(w.timing_notes)?w.timing_notes:w.timing_notes?[w.timing_notes]:[];
+ const timing=timingNotes.map(g=>`<p>${esc(g)}</p>`).join('');
+ return `<section class="week8-overview"><p class="eyebrow">WEEK 8 · BY TOPIC</p><h1>Week 8 / Quiz 7</h1><p>The same topic-based guide, filtered to this week. Mark learned keeps the key distinctions visible.</p><p class="week8-counts">${scopePageEntries().length} chapters · ${scopeObjectives().length} answered objectives · ${w.question_ids.length} relevant appendix questions</p>${guideLengthMarkup()}<details class="week8-source-note"><summary>Scope, timing & sources</summary><p>Childhood Disorders 1–3 follows Quiz 6 and is included in Quiz 7. Coma and Sleep are scheduled after Quiz 7; they remain in the full-week view and count toward its expanded budget.</p><p>Course review and the lecture notes anchor this guide. Canvas timing and Anki tags support the scope; they are not an official exam blueprint.</p>${timing}${(w.source_gaps||[]).map(g=>`<p>${esc(g)}</p>`).join('')}</details></section>`;
 }
-function scopeSelectorMarkup(){return DATA.week8?.enabled?`<label class="study-scope-label">Study scope<select id="study-scope" aria-label="Study scope"><option value="all" ${!week8Scope()?'selected':''}>Full final</option><option value="week8" ${week8Scope()?'selected':''}>Quiz 7 · W8</option></select></label>`:''}
+function courseAuditMarkup(){
+ const audit=DATA.course_audit;if(!audit)return '';
+ return `<details class="week8-source-note"><summary>Course audit & source gaps</summary><p>${esc(audit.summary||'Source audit in progress.')}</p>${(audit.source_gaps||[]).map(g=>`<p>${esc(g)}</p>`).join('')}</details>`;
+}
+function scopeSelectorMarkup(){return DATA.week8?.enabled?`<label class="study-scope-label">Study scope<select id="study-scope" aria-label="Study scope"><option value="all" ${!week8Scope()?'selected':''}>Full final</option><option value="week8" ${week8Scope()?'selected':''}>Week 8 · Quiz 7</option></select></label>`:''}
 function ensureScopePage(){const entries=scopePageEntries();if(!entries.some(x=>x.i===state.page))state.page=entries[0]?.i||0}
 ensureScopePage();
 document.addEventListener('change',e=>{
