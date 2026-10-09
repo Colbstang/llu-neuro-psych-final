@@ -103,7 +103,7 @@
   if (typeof document === 'undefined') return;
 
   const byId = id => document.getElementById(id);
-  const reading = byId('reading'); if (!reading) return;
+  const reading = byId('reading'); if (!reading || !byId('lookup-form') || !byId('auto-terms')) return;
   const panel = byId('definition'), hover = byId('term-hover');
   const STORE = 'term-cards-pilot-v1';
   const samples = {
@@ -259,6 +259,7 @@
   byId('auto-terms').onchange = event => { preference = event.target.checked; closeHover(); scanner?.setEnabled(preference); try { localStorage.setItem(STORE, JSON.stringify({automatic: preference})); } catch (_) {} };
   renderSample('renal');
   async function boot() {
+    scope.MedicalSelectionLookup?.attach(reading, query => openTerm(query));
     try {
       let result;
       try { const response = await fetch('/api/terms'); if (!response.ok) throw new Error('No local service'); result = await response.json(); if (!result.ok || !Array.isArray(result.records)) throw new Error('No lexicon'); }

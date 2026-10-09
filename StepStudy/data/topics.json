@@ -1,0 +1,464 @@
+{
+  "schema_version": 1,
+  "catalog_scope": "First Aid topic skeleton for user-selected Step study planning; not a complete Step 1 or Step 2 curriculum.",
+  "topics": [
+    {
+      "id": "general-principles",
+      "label": "General Principles",
+      "group": "General Principles",
+      "icon": "◎",
+      "keywords": [
+        "ethics",
+        "biostatistics",
+        "epidemiology",
+        "genetics",
+        "study design"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "biochemistry",
+      "label": "Biochemistry",
+      "group": "General Principles",
+      "icon": "⚗",
+      "keywords": [
+        "metabolism",
+        "enzymes",
+        "vitamins",
+        "amino acids",
+        "molecular biology"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "immunology",
+      "label": "Immunology",
+      "group": "General Principles",
+      "icon": "◇",
+      "keywords": [
+        "immunology",
+        "immune system",
+        "complement",
+        "innate immune system",
+        "adaptive immunity",
+        "hypersensitivity",
+        "immunodeficiency",
+        "cytokine",
+        "interleukin",
+        "T cell",
+        "B cell",
+        "macrophage",
+        "neutrophil",
+        "opsonization",
+        "transplant rejection",
+        "autoimmune disease",
+        "lupus",
+        "antibody",
+        "antigen",
+        "inflammation"
+      ],
+      "glossaryTitles": [
+        "Complement system",
+        "Innate immune system"
+      ],
+      "dependencies": [
+        "biochemistry"
+      ],
+      "placeholder": true,
+      "starterTermIds": [
+        "complement-system",
+        "innate-immune-system"
+      ]
+    },
+    {
+      "id": "microbiology",
+      "label": "Microbiology",
+      "group": "General Principles",
+      "icon": "◉",
+      "keywords": [
+        "bacteria",
+        "virus",
+        "fungi",
+        "parasite",
+        "antimicrobial"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [
+        "immunology"
+      ],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "pathology",
+      "label": "Pathology",
+      "group": "General Principles",
+      "icon": "▤",
+      "keywords": [
+        "cell injury",
+        "inflammation",
+        "neoplasia",
+        "hemodynamics"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "pharmacology",
+      "label": "Pharmacology",
+      "group": "General Principles",
+      "icon": "Rx",
+      "keywords": [
+        "drug mechanism",
+        "pharmacokinetics",
+        "adverse effects",
+        "toxicity"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [
+        "biochemistry"
+      ],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "public-health",
+      "label": "Public Health",
+      "group": "General Principles",
+      "icon": "＋",
+      "keywords": [
+        "epidemiology",
+        "biostatistics",
+        "screening",
+        "prevention",
+        "ethics"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [
+        "general-principles"
+      ],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "cardiovascular",
+      "label": "Cardiovascular",
+      "group": "Organ Systems",
+      "icon": "♥",
+      "keywords": [
+        "cardiovascular",
+        "cardio",
+        "heart",
+        "myocardium",
+        "coronary artery",
+        "ischemia",
+        "infarction",
+        "arrhythmia",
+        "ECG",
+        "electrocardiogram",
+        "heart failure",
+        "valve",
+        "murmur",
+        "hypertension",
+        "hypotension",
+        "vascular",
+        "aorta",
+        "pericardium",
+        "cardiomyopathy",
+        "shock"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [
+        "biochemistry",
+        "pharmacology"
+      ],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "endocrine",
+      "label": "Endocrine",
+      "group": "Organ Systems",
+      "icon": "◌",
+      "keywords": [
+        "hormone",
+        "thyroid",
+        "adrenal",
+        "diabetes",
+        "pituitary"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [
+        "biochemistry",
+        "pharmacology"
+      ],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "gastrointestinal",
+      "label": "Gastrointestinal",
+      "group": "Organ Systems",
+      "icon": "◉",
+      "keywords": [
+        "gastrointestinal",
+        "liver",
+        "pancreas",
+        "bowel",
+        "digestion"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [
+        "biochemistry",
+        "pathology"
+      ],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "hematology-oncology",
+      "label": "Hematology/Oncology",
+      "group": "Organ Systems",
+      "icon": "●",
+      "keywords": [
+        "hematology",
+        "heme onc",
+        "anemia",
+        "hemolysis",
+        "hemoglobin",
+        "coagulation",
+        "platelet",
+        "thrombosis",
+        "bleeding",
+        "leukemia",
+        "lymphoma",
+        "myeloma",
+        "neoplasm",
+        "cancer",
+        "transfusion",
+        "iron deficiency",
+        "sickle cell",
+        "neutropenia",
+        "pancytopenia",
+        "polycythemia"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [
+        "pathology",
+        "pharmacology"
+      ],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "musculoskeletal-skin",
+      "label": "Musculoskeletal/Skin",
+      "group": "Organ Systems",
+      "icon": "◇",
+      "keywords": [
+        "musculoskeletal",
+        "MSK",
+        "bone",
+        "joint",
+        "muscle",
+        "fracture",
+        "arthritis",
+        "rheumatoid arthritis",
+        "osteoarthritis",
+        "lupus",
+        "dermatology",
+        "skin",
+        "rash",
+        "eczema",
+        "psoriasis",
+        "osteoporosis",
+        "osteomyelitis",
+        "gout",
+        "connective tissue",
+        "tendon"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [
+        "pathology",
+        "immunology"
+      ],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "neuro",
+      "label": "Neurology",
+      "group": "Organ Systems",
+      "icon": "⌘",
+      "keywords": [
+        "neurology",
+        "neuroanatomy",
+        "aphasia",
+        "hemiparesis",
+        "ataxia",
+        "basal ganglia",
+        "meningitis",
+        "MCA",
+        "middle cerebral artery",
+        "stroke",
+        "seizure",
+        "epilepsy",
+        "multiple sclerosis",
+        "demyelination",
+        "delirium",
+        "cranial nerve",
+        "spinal cord",
+        "myasthenia gravis",
+        "Parkinson disease",
+        "dementia"
+      ],
+      "glossaryTitles": [
+        "Multiple sclerosis",
+        "Delirium"
+      ],
+      "dependencies": [
+        "biochemistry",
+        "pharmacology"
+      ],
+      "placeholder": false,
+      "existingModule": "neuro-psych",
+      "starterTermIds": [
+        "multiple-sclerosis",
+        "delirium"
+      ]
+    },
+    {
+      "id": "psychiatry",
+      "label": "Psychiatry",
+      "group": "Organ Systems",
+      "icon": "☯",
+      "keywords": [
+        "psychiatry",
+        "psych",
+        "depression",
+        "mania",
+        "bipolar disorder",
+        "schizophrenia",
+        "psychosis",
+        "anxiety",
+        "panic",
+        "OCD",
+        "PTSD",
+        "somatic symptom",
+        "personality disorder",
+        "substance use",
+        "delirium",
+        "dementia",
+        "sleep",
+        "eating disorder",
+        "suicide",
+        "autism"
+      ],
+      "glossaryTitles": [
+        "Delirium",
+        "Dementia"
+      ],
+      "dependencies": [
+        "neuro"
+      ],
+      "placeholder": false,
+      "existingModule": "neuro-psych",
+      "starterTermIds": [
+        "delirium",
+        "dementia"
+      ]
+    },
+    {
+      "id": "renal",
+      "label": "Renal",
+      "group": "Organ Systems",
+      "icon": "♧",
+      "keywords": [
+        "renal",
+        "kidney",
+        "AKI",
+        "acute kidney injury",
+        "glomerulonephritis",
+        "urine",
+        "dialysis",
+        "nephrotic syndrome",
+        "nephritic syndrome",
+        "creatinine",
+        "podocyte",
+        "glomerulus",
+        "proteinuria",
+        "hematuria",
+        "electrolyte",
+        "acid base",
+        "renal tubular acidosis",
+        "kidney stone",
+        "pyelonephritis",
+        "chronic kidney disease"
+      ],
+      "glossaryTitles": [
+        "Nephrotic syndrome",
+        "Glomerulus (kidney)",
+        "Nephritic syndrome"
+      ],
+      "dependencies": [
+        "biochemistry",
+        "pharmacology"
+      ],
+      "placeholder": true,
+      "starterTermIds": [
+        "nephrotic-syndrome",
+        "glomerulus-kidney",
+        "nephritic-syndrome"
+      ]
+    },
+    {
+      "id": "reproductive",
+      "label": "Reproductive",
+      "group": "Organ Systems",
+      "icon": "⚥",
+      "keywords": [
+        "reproductive",
+        "pregnancy",
+        "obstetrics",
+        "gynecology",
+        "testis",
+        "ovary"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [
+        "endocrine",
+        "pathology"
+      ],
+      "placeholder": true,
+      "starterTermIds": []
+    },
+    {
+      "id": "respiratory",
+      "label": "Respiratory",
+      "group": "Organ Systems",
+      "icon": "≈",
+      "keywords": [
+        "lung",
+        "pulmonary",
+        "ventilation",
+        "oxygenation",
+        "airway"
+      ],
+      "glossaryTitles": [],
+      "dependencies": [
+        "pathology",
+        "pharmacology"
+      ],
+      "placeholder": true,
+      "starterTermIds": []
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 # LLU Neuro/Psych Final Study Guide
 
+The broader [Step Study workspace](StepStudy/README.md) adds a First Aid topic skeleton, subject activation, a persistent review queue, source-grounded AI recall grading, local screenshot-question intake, and on-demand MDWiki definitions. Neuro/Psych remains the full course module; the other subjects currently provide placeholders and starter references.
+
 This is the portable public edition of the study guide: **53 chapters, 159 reading sections, and 13 topic groups**, with a separate **Week 8 / Quiz 7** selector. Marking a section learned keeps its essential skim visible and updates the reading-length counter. Existing chapter, block, comparison and progress IDs remain stable.
 
 The **Study** screen gives you a topic starting point with In-house, Step, or Both as the target. It shows unresolved missed questions, objectives marked bad, and actual Anki Again/Hard ratings from the last 30 days when your private data is loaded. These are separate review signals, not a mastery percentage. The current content is Neuro/Psych; expanding to the rest of Step 1 and Step 2 remains future content work.

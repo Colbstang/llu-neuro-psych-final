@@ -22,3 +22,7 @@ __pycache__/
 .DS_Store
 /StudyApp/*.sqlite3*
 /StudyApp/anki-scope.json
+/StepStudy/*.sqlite3*
+/StepStudy/question-images/
+/StepStudy/term-cache.json
+/StepStudy/anki-signals.json

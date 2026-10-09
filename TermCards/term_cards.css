@@ -3,3 +3,6 @@
 @media(min-width:1601px){.workspace{border-right:1px solid var(--line);border-left:1px solid var(--line)}}@media(max-width:900px){.workspace{grid-template-columns:minmax(0,1fr) minmax(310px,50%)}.reading-pane{padding:30px 27px}.definition-pane{padding:24px 20px}h1{font-size:32px}.reading p{font-size:17px}.definition-content h2{font-size:27px}}@media(max-width:700px){.app-header{padding:0 17px}.pilot-label{display:none}.identity{font-size:15px}.auto-toggle{font-size:11px}.workspace{display:flex;flex-direction:column}.reading-pane{padding:30px 23px}.definition-pane{border-left:0;border-top:1px solid var(--line);height:auto;position:relative;overflow:visible;padding:24px 23px 40px;min-height:400px}.empty-definition{margin-top:25px}h1{font-size:33px}.sample-tabs{margin:23px 0 26px}.reading-footer{margin-top:23px}.term-hover{max-height:75vh;overflow:auto}}
 
 .more-background{margin:20px 0}.more-background summary{cursor:pointer;color:var(--green);font-size:12px;padding:8px 0}.more-background[open] summary{margin-bottom:10px}
+/* Selection offers an explicit on-demand lookup; unknown words need no pre-tag. */
+.selection-define {position:fixed;z-index:80;border:1px solid #18634f;border-radius:6px;background:#17634f;color:#fff;padding:8px 12px;font:600 13px system-ui;box-shadow:0 3px 12px #0002;cursor:pointer}
+.selection-define[hidden] {display:none}

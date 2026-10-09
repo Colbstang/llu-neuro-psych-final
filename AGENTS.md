@@ -1,5 +1,16 @@
 # Agent instructions
 
+## Step Study workspace
+
+- The new `StepStudy/` workspace and its separate native launcher use port 8773. Keep the existing Neuro/Psych guide and LLU Study on 8770 available. The new topic catalog is a planning skeleton with starter background references, not a completed Step curriculum.
+- SQLite progress, OCR questions/images, and MDWiki/Anki caches belong in per-user app data outside the checkout. Package only the allowlisted public runtime in the native bundle; never include personal PDFs, Anki content, questions, or state.
+- Only an explicit Grade action may send one answer and its bounded reference context through the existing signed-in Codex CLI. A missing/failed assessment has no score. Recall intervals and learned flags never write Anki ratings.
+- Screenshot intake watches a chosen folder while the local service runs. OCR is local; preserve source wording and keep ambiguous detections reviewable. Do not convert all screenshots into questions or capture the desktop automatically.
+- Anki topic sync is read-only and bounded; show partial/cached results and unknown history explicitly. Test with fake transports, never real review writes.
+- Live Step card queues require reported Step/AnKing category tags and verified note/card identities. Reuse `StudyApp.anki_bridge` for explicit ratings and idempotent private ledgers; retain unknown results as unknown. Render card text safely, mask front clozes, and use only validated local media. Never publish the live card cache or ledger.
+- Read saved Neuro/Psych aggregates through `StepStudy/module_signals.py`. Stream the DATA metadata before large embedded assets; never execute imported HTML. Keep unmapped metadata and overlapping subjects explicit. Browser-only file-guide progress is not automatically migrated.
+- Run the StepStudy Python suites (store, planning, Anki signals, live cards, module signals, intake, grading, recall, server) and `node --test StepStudy/test_step.js TermCards/test_term_cards.js`, together with the existing StudyApp checks below. Verify native auxiliary-window closing and restart persistence when the Mac is available.
+
 ## Study app and recall signals
 
 - The Study screen groups the current Neuro/Psych material by topic. In-house, Step, and Both select which evidence to prioritize; they do not imply a complete Step 1 or Step 2 curriculum. Retain the separate Week 8 scope and stable content IDs.

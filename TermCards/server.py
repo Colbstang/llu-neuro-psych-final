@@ -17,7 +17,7 @@ except ImportError:  # Supports ``python TermCards/server.py``.
     from provider import MAX_QUERY_LENGTH, TermProvider
 
 
-STATIC_ALLOWLIST = frozenset({"index.html", "term_cards.js", "term_cards.css", "data/terms.json"})
+STATIC_ALLOWLIST = frozenset({"index.html", "term_cards.js", "term_cards.css", "selection_lookup.js", "data/terms.json"})
 LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "[::1]", "::1"})
 
 
