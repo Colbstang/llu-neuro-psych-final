@@ -54,3 +54,38 @@ assert.equal(vm.runInContext('referenceListenTerm()',speech),'dysmetria','an exp
 selection='';query='';
 assert.equal(vm.runInContext('referenceListenTerm()',speech),'','the empty reference library does not pronounce UI chrome');
 console.log('Reference speech term selection tests passed.');
+
+// Return from a PDF/book view without starting a new search or changing its
+// query, selected source families, or the guide's reading position.
+const returnStart=source.indexOf('function referenceShowSearchResults(){');
+const returnEnd=source.indexOf('\nfunction openReferenceWorkspace',returnStart);
+const searchContext={key:'selection:association fibers',topic:'',searchQuery:'association fibers',searchScope:'sources',referenceSearchFamilies:['in_house'],retrieval:'empty',sourceMatches:[{documentId:'lecture',page:14}]};
+const sideContent={scrollTop:1400};
+let renders=0,searches=0;
+const navigation=vm.createContext({
+  sourceViewerSerial:6,sourceViewerActive:{document:{id:'lecture'},result:{page:15}},
+  activeRef:'source:lecture',ankiReferenceMode:'books',bookMarkMode:true,
+  ankiContext:searchContext,referenceResultsPosition:{context:searchContext,scrollTop:350},
+  renderAnkiReference:options=>{assert.equal(options.keepScroll,false);renders++;sideContent.scrollTop=0;},
+  fetchSemanticCards:()=>searches++,$:()=>sideContent,
+});
+vm.runInContext(source.slice(returnStart,returnEnd),navigation);
+vm.runInContext('referenceShowSearchResults()',navigation);
+assert.equal(navigation.sourceViewerSerial,7,'Back invalidates an unfinished PDF request');
+assert.equal(navigation.sourceViewerActive,null);
+assert.equal(navigation.ankiReferenceMode,'cards','Back leaves book mode so it renders the results');
+assert.equal(navigation.activeRef,'');
+assert.equal(sideContent.scrollTop,350,'results return to their own scroll position');
+assert.equal(renders,1);
+assert.equal(searches,0,'completed results are reused without fetching again');
+assert.deepEqual(searchContext.referenceSearchFamilies,['in_house']);
+assert.equal(searchContext.searchQuery,'association fibers');
+assert.equal(searchContext.sourceMatches[0].page,14);
+navigation.ankiContext={...searchContext,key:'other',retrieval:'loading'};
+vm.runInContext('referenceShowSearchResults()',navigation);
+assert.equal(sideContent.scrollTop,0,'a different search does not inherit the prior results scroll');
+assert.equal(searches,1,'a cancelled pending search resumes on return');
+navigation.ankiContext=null;
+vm.runInContext('referenceShowSearchResults()',navigation);
+assert.equal(renders,2,'no prior search is a no-op');
+console.log('Reference return navigation tests passed.');

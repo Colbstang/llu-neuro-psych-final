@@ -56,6 +56,8 @@ def copy_allowlisted_files(project: Path, runtime: Path) -> list[str]:
             "index.html", "step.js", "step.css", "data/topics.json",
             "course_module.py", "course_reader.py", "course_embed.js",
             "course_embed.css",
+            "labs.py", "workspace_tools.js", "workspace_tools.css", "shortcuts.js",
+            "course_practice.js", "course_practice.css", "reference_service.py",
         ],
         "TermCards": [
             "__init__.py", "provider.py", "term_cards.js",
@@ -110,6 +112,8 @@ def main():
     copy_allowlisted_files(project, runtime)
     base = project / "StudyApp" / "native" / "Launcher.swift"
     source = base.read_text().replace("LLU Study", "Step Study").replace("llu-study-app", "step-study").replace("8770", "8773")
+    source = source.replace("NSApp.mainMenu = mainMenu", "installWorkspaceMenu(mainMenu)\n        NSApp.mainMenu = mainMenu")
+    source += "\n" + (project / "StepStudy" / "native" / "WorkspaceMenu.swift").read_text()
     source = source.replace("process.arguments = [serverPath]", 'process.arguments = [serverPath]\n        var environment = ProcessInfo.processInfo.environment\n        environment["PATH"] = "/opt/homebrew/bin:/usr/local/bin:" + (environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin")\n        process.environment = environment')
     with tempfile.TemporaryDirectory(prefix="step-study-launcher-") as folder:
         swift = Path(folder) / "Launcher.swift"

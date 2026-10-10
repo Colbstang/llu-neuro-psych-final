@@ -5,8 +5,11 @@
   <meta name="step-token" content="__STEP_TOKEN__">
   <title>Step Study</title>
   <link rel="stylesheet" href="/step.css">
+  <link rel="stylesheet" href="/workspace_tools.css">
   <script src="/terms/term_cards.js" defer></script>
   <script src="/terms/selection_lookup.js" defer></script>
+  <script src="/shortcuts.js" defer></script>
+  <script src="/workspace_tools.js" defer></script>
   <script src="/step.js" defer></script>
 </head>
 <body>
@@ -24,6 +27,7 @@
       <button data-view="recall">Recall</button>
       <button data-view="cards">Anki cards</button>
       <button data-view="questions">Question inbox <span id="question-badge"></span></button>
+      <button data-view="labs">Interactive labs</button>
     </nav>
     <div class="sidebar-label">IN YOUR STUDY POOL</div>
     <div id="active-topics" class="active-topics"></div>
@@ -31,7 +35,7 @@
     <div class="sidebar-bottom"><button id="settings-button">Settings &amp; backup</button><span id="save-status" role="status">Connecting…</span></div>
   </aside>
   <div class="app-body">
-    <header class="topbar"><div><span id="view-label">Today</span><small id="scope-label">Your active subjects</small></div><div class="top-actions"><label><input id="automatic-terms" type="checkbox" checked> Define terms</label><button id="open-reference">Reference ↗</button><button id="sync-anki">Sync Anki</button></div></header>
+    <header class="topbar"><div><span id="view-label">Today</span><small id="scope-label">Your active subjects</small></div><div class="top-actions"><label><input id="automatic-terms" type="checkbox" checked> Define terms</label><button id="open-reference">Reference ↗</button><button id="study-shortcuts" title="Study shortcuts · ?">Shortcuts</button><button id="capture-question" title="Capture a selected screenshot region · ⌘⇧2">Capture question</button><button id="sync-anki">Sync Anki</button></div></header>
     <div id="workspace" class="workspace">
       <main id="main-content" tabindex="-1"><p>Loading your study workspace…</p></main>
       <section id="course-host" class="course-host" aria-label="Neuro and Psychiatry study module" hidden></section>

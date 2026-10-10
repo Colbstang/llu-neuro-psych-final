@@ -3,6 +3,7 @@
 state.sourcePageView ||= {};
 let sourceViewerActive=null,sourceViewerSerial=0;
 const sourcePageCache=new Map();
+const sourcePagePending=new Map();
 const priorShowSidePanel=showSidePanel,priorRenderBookPanel=renderBookPanel;
 showSidePanel=function(title,html,opts={}){
  if(!opts.sourceViewer)sourceViewerActive=null;
@@ -27,10 +28,18 @@ function sourceDocument(value){
 async function fetchSourcePage(documentId,page,query=''){
  const key=JSON.stringify([documentId,page,query.slice(0,4000)]);
  if(sourcePageCache.has(key))return sourcePageCache.get(key);
- const response=await fetch(semanticEndpoint+'/source-page',{method:'POST',headers:semanticRequestHeaders(),body:JSON.stringify({documentId,page,query:query.slice(0,4000)}),signal:AbortSignal.timeout(45000)});
- const result=await response.json();if(!response.ok)throw Error(result.error||'Source viewer unavailable');
- if(!result.layer?.spans||!result.image)throw Error('The exact source page could not be rendered');
- sourcePageCache.set(key,result);return result;
+ if(sourcePagePending.has(key))return sourcePagePending.get(key);
+ const request=(async()=>{
+  const response=await fetch(semanticEndpoint+'/source-page',{method:'POST',headers:semanticRequestHeaders(),body:JSON.stringify({documentId,page,query:query.slice(0,4000)}),signal:AbortSignal.timeout(45000)});
+  const result=await response.json();if(!response.ok)throw Error(result.error||'Source viewer unavailable');
+  if(!result.layer?.spans||!result.image)throw Error('The exact source page could not be rendered');
+  sourcePageCache.set(key,result);while(sourcePageCache.size>12)sourcePageCache.delete(sourcePageCache.keys().next().value);return result;
+ })();sourcePagePending.set(key,request);
+ try{return await request}finally{sourcePagePending.delete(key)}
+}
+function preloadNextSourcePage(view){
+ const next=Number(view.result.page)+1,count=Number(view.result.page_count||view.document.page_count);
+ if(next<=count)fetchSourcePage(view.document.id,next,view.query).catch(()=>{});
 }
 function installSourcePage(result,topic){
  const id=result.documentId,page=Number(result.page);
@@ -62,7 +71,7 @@ async function openExactSource(doc,page,query,node,linkedPage=page,forcePage=fal
  try{
   const result=await fetchSourcePage(doc.id,target,query);if(serial!==sourceViewerSerial||$('#side-panel').hidden)return;
   installSourcePage(result,topic);sourceViewerActive={document:doc,result,query,node,topic,linkedPage};bookMarkMode=false;
-  state.sourcePageView[topic]={page:target,linkedPage};renderSourceViewer();if(target===linkedPage)requestAnimationFrame(scrollToLinkedPassage);save();
+  state.sourcePageView[topic]={page:target,linkedPage};renderSourceViewer();if(target===linkedPage)requestAnimationFrame(scrollToLinkedPassage);save();preloadNextSourcePage(sourceViewerActive);
  }catch(error){if(serial!==sourceViewerSerial)return;showSidePanel(doc.title,`<p>The local source viewer is offline or this PDF is unavailable.</p><p>Run <strong>Start Study Guide.command</strong> and retry this source link. Your notes and highlights are saved.</p><p class="source-view-error">${esc(error.message)}</p>`,{anchor:node})}
 }
 // Public entry point for semantic search results. IDs are resolved only against
@@ -95,7 +104,9 @@ referenceTabsMarkup=function(mode='books'){
   const available=book==='Both'?Object.values(ankiContext.bookMatches).some(h=>h.length):ankiContext.bookMatches[book]?.length;
   if(available)html=html.replace(`data-panel-book="${book}"`, `data-search-book="${book}"`).replace(new RegExp(`(<button data-search-book="${book}"[^>]*?) disabled`),'$1');
  }
- return html.replace(/<\/div>$/,`<button data-search-mehlman>Mehlman</button></div>`);
+ const found=(ankiContext?.mehlmanMatches||ankiContext?.bookMatches?.Mehlman||[]).length>0;
+ const reason=ankiContext?.retrieval==='loading'?'Searching Mehlman…':'No Mehlman passage matched this search. Search another term or open it from the reference library.';
+ return html.replace(/<\/div>$/,`<button data-search-mehlman ${found?'':'disabled'} title="${found?'Open the matching Mehlman passage':reason}">Mehlman</button></div>`);
 };
 async function openSearchedBook(book,hitIndex=null,pageOverride=null){
  const context=ankiContext;if(!context?.bookMatches)return;
@@ -118,7 +129,7 @@ window.openPassageSearch=function(item){
  openAnkiContext({kind:'selection',text:item.quote,blockId:item.block_id,title:'References for highlighted sentence',node});
 };
 document.addEventListener('click',e=>{
- if(e.target.closest('[data-search-mehlman]')){const context=ankiContext;if(!context)return;const hit=context.mehlmanMatches?.[0],query=context.searchQuery||context.topic||context.text;if(hit)window.openSourceDocumentById(resultDocumentId(hit),resultPage(hit),query,{node:referenceOrigin?.element});else openAnkiContext({kind:'selection',text:query,searchQuery:query,searchScope:'books',referenceSearchFamilies:['mehlman'],title:'Mehlman · '+query.slice(0,70),topics:[]});return}
+ if(e.target.closest('[data-search-mehlman]')){const context=ankiContext;if(!context)return;const hit=(context.mehlmanMatches||context.bookMatches?.Mehlman||[])[0],query=context.searchQuery||context.topic||context.text;if(hit)window.openSourceDocumentById(resultDocumentId(hit),resultPage(hit),query,{node:referenceOrigin?.element});return}
  const book=e.target.closest('[data-search-book]');if(book){e.preventDefault();e.stopImmediatePropagation();openSearchedBook(book.dataset.searchBook,book.dataset.searchBookHit===undefined?null:Number(book.dataset.searchBookHit));return}
  const sourceResult=e.target.closest('[data-open-source-result]');if(sourceResult){e.preventDefault();e.stopImmediatePropagation();window.openSourceDocumentById(sourceResult.dataset.documentId,Number(sourceResult.dataset.page||1),sourceResult.dataset.query||ankiContext?.searchQuery||ankiContext?.text||'',{node:referenceOrigin?.element});return}
  const sourceStep=e.target.closest('[data-source-step],[data-source-return]');if(sourceStep&&sourceViewerActive){e.preventDefault();e.stopImmediatePropagation();const v=sourceViewerActive,page=sourceStep.hasAttribute('data-source-return')?v.linkedPage:Number(v.result.page)+(sourceStep.dataset.sourceStep==='+'?1:-1);state.sourcePageView[v.topic]={page,linkedPage:v.linkedPage};openExactSource(v.document,page,v.query,v.node,v.linkedPage,true);return}

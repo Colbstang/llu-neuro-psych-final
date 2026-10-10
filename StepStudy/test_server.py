@@ -9,6 +9,7 @@ from StepStudy.server import Services, make_server
 from StepStudy.store import StepStudyStore
 from StepStudy.live_cards import LiveCards
 from StepStudy.test_live_cards import FakeAnki as FakeCardsAnki
+from StepStudy.test_intake import png
 
 
 class FakeSpeech:
@@ -107,6 +108,48 @@ class ServerTests(unittest.TestCase):
         result=self.request("POST","/api/watch",{"enabled":True,"folder":str(Path(self.temp.name)/"missing")})[1]
         self.assertFalse(result["watch"]["running"])
         self.assertFalse(self.services.store.snapshot()["preferences"]["watchEnabled"])
+
+    def test_explicit_capture_is_guarded_cancel_is_noop_and_context_is_validated(self):
+        calls = []
+        self.services.intake.capture = lambda path: calls.append(path) or False
+        self.assertEqual(self.request("POST", "/api/capture-region", {}, token=False)[0], 403)
+        self.assertEqual(calls, [])
+        status, result = self.request("POST", "/api/capture-region", {"context": {"subject_id": "neuro"}})
+        self.assertEqual(status, 200)
+        self.assertTrue(result["cancelled"])
+        self.assertEqual(self.services.intake.list_questions(), [])
+        self.assertEqual(self.request("POST", "/api/capture-region", {"context": {"subject_id": "invented"}})[0], 400)
+        self.assertEqual(self.request("POST", "/api/capture-region", {"context": {"command": "arbitrary"}})[0], 400)
+        def capture(path):
+            png(path)
+            return True
+        self.services.intake.capture = capture
+        self.services.intake.ocr = lambda path: "A patient has a stroke and delirium. Which diagnosis?\nA. One\nB. Two"
+        result = self.request("POST", "/api/capture-region", {"context": {"subject_id": "neuro"}})[1]
+        self.assertEqual(set(result["question"]["topic_ids"]), {"neuro", "psychiatry"})
+        self.assertFalse(result["cancelled"])
+
+    def test_lab_routes_allow_opaque_own_files_but_deny_opaque_app_data(self):
+        folder = Path(self.temp.name) / "lab"
+        folder.mkdir()
+        html = folder / "index.html"
+        html.write_text('<script src="lab.js"></script>')
+        (folder / "lab.js").write_text("window.fixture=true")
+        self.assertEqual(self.request("POST", "/api/labs/register", {"path": str(html)}, token=False)[0], 403)
+        row = self.request("POST", "/api/labs/register", {"path": str(html), "title": "Synthetic lab"})[1]["lab"]
+        self.assertNotIn("path", row)
+        self.assertEqual(self.request("GET", row["url"] + "lab.js", origin="null")[0], 200)
+        self.assertEqual(self.request("GET", "/api/workspace", origin="null")[0], 403)
+        self.assertEqual(self.request("POST", "/api/labs/remove", {"id": row["id"]}, origin="null")[0], 403)
+        self.assertEqual(self.request("GET", row["url"] + "../question-intake.sqlite3", origin="null")[0], 404)
+        self.assertEqual(self.request("GET", row["url"], origin="https://example.com")[0], 403)
+        port = self.server.server_address[1]
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=10)
+        connection.request("GET", row["url"], headers={"Host": f"127.0.0.1:{port}"})
+        response = connection.getresponse()
+        self.assertIn("sandbox allow-scripts;", response.getheader("Content-Security-Policy"))
+        self.assertEqual(response.getheader("Access-Control-Allow-Origin"), "null")
+        response.read();connection.close()
 
     def test_course_signals_are_separate_and_only_queue_active_subjects(self):
         self.services.module_reader = lambda: {"available": True, "topics": {

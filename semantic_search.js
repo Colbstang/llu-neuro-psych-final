@@ -10,6 +10,8 @@ window.referenceSearchFamiliesMarkup=function(context){const selected=new Set(se
 const referenceFamilyContainers=new WeakSet();
 window.setupReferenceSearchFamilies=function(container,contextGetter=()=>window.referencePanelSearchContext?.()){if(!container||referenceFamilyContainers.has(container))return;referenceFamilyContainers.add(container);container.addEventListener('change',event=>{if(!event.target.matches('[data-reference-family]'))return;const families=[...container.querySelectorAll('[data-reference-family]:checked')].map(input=>input.value);state.referenceSearchFamilies=referenceFamilyDefaults.filter(key=>families.includes(key));save();const context=contextGetter?.();if(context){context.referenceSearchFamilies=state.referenceSearchFamilies.slice();if(context.searchQuery||context.text)fetchSemanticCards(context)}})};
 let semanticRequestSerial=0,semanticAbort=null;
+const semanticResultCache=new Map();
+function semanticCacheKey(request){return JSON.stringify([request.query,request.kind,request.search_scope,[...request.reference_families].sort()])}
 const lexicalCardResults=ankiCardResults,legacyOpenAnkiContext=openAnkiContext,legacyContextMarkup=ankiContextMarkup;
 const legacyAnkiCardsMarkup=ankiCardsMarkup;
 ankiCardsMarkup=function(){
@@ -97,10 +99,13 @@ async function fetchSemanticCards(context){
  const timer=setTimeout(()=>controller.abort(),45000);
  try{
   const query=String(context.searchQuery??context.text??'').slice(0,4000),scope=context.searchScope||'all',referenceFamilies=selectedReferenceFamilies(context);
-  const response=await fetch(semanticEndpoint+'/search',{method:'POST',headers:semanticRequestHeaders(),body:JSON.stringify({query,kind:context.filter||'all',search_scope:scope,reference_families:referenceFamilies,limit:8,include_books:scope==='all'||scope==='books',include_sources:scope==='all'||scope==='sources',include_background:scope==='all'||scope==='background'}),signal:controller.signal});
-  if(!response.ok)throw Error('Local search unavailable');const result=await response.json();
+  const request={query,kind:context.filter||'all',search_scope:scope,reference_families:referenceFamilies,limit:8,include_books:scope==='all'||scope==='books',include_sources:scope==='all'||scope==='sources',include_background:scope==='all'||scope==='background'},key=semanticCacheKey(request),cached=semanticResultCache.get(key);
+  let result;
+  if(cached&&Date.now()-cached.at<300000)result=cached.result;
+  else{const response=await fetch(semanticEndpoint+'/search',{method:'POST',headers:semanticRequestHeaders(),body:JSON.stringify(request),signal:controller.signal});if(!response.ok)throw Error('Local search unavailable');result=await response.json();}
   if(serial!==semanticRequestSerial||ankiContext!==context)return;
   if(result.method!=='local-sentence-embeddings'||!Array.isArray(result.matches))throw Error('Unexpected local search response');
+  semanticResultCache.set(key,{at:Date.now(),result});while(semanticResultCache.size>30)semanticResultCache.delete(semanticResultCache.keys().next().value);
   const cards=result.matches.filter(h=>ankiCards.has(Number(h.cardId))&&ankiNotes.has(Number(h.noteId))&&Number(ankiCards.get(Number(h.cardId)).note)===Number(h.noteId));
   context.semanticCardIds=cards.map(h=>Number(h.cardId));context.matches=[];
   for(const hit of cards){if(context.matches.some(n=>n.id===Number(hit.noteId)))continue;context.matches.push({id:Number(hit.noteId),score:hit.score,reasons:[hit.reason]})}

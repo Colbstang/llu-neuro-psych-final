@@ -51,15 +51,176 @@
   function safeLink(value, image = false) {
     try {
       const url = new URL(value);
-      if (url.protocol !== 'https:') return '';
+      if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443')) return '';
       const hosts = image ? ['upload.wikimedia.org', 'mdwiki.org', 'www.mdwiki.org']
         : ['mdwiki.org', 'www.mdwiki.org', 'en.wikipedia.org', 'commons.wikimedia.org', 'creativecommons.org'];
       return hosts.includes(url.hostname) ? url.href : '';
     } catch (_) { return ''; }
   }
+  const STUB_DEFINITION = /^\s*(?:[^.\n]{1,100}\s+)?may refer to\s*:/i;
+  function isUsableRecord(record) {
+    return !!record && !STUB_DEFINITION.test(String(record.definition || record.summary || ''));
+  }
+  function createLookupService(options = {}) {
+    const fetchImpl = options.fetch || (typeof fetch === 'function' ? fetch.bind(scope) : null);
+    const endpoint = options.endpoint || '/api/term';
+    const maxEntries = Math.max(1, Math.min(200, options.maxEntries || 100));
+    const ttlMs = Math.max(1000, Math.min(30 * 60 * 1000, options.ttlMs || 5 * 60 * 1000));
+    const timeoutMs = Math.max(1000, Math.min(45000, options.timeoutMs || 45000));
+    const maxPrefetches = Math.max(1, Math.min(30, options.maxPrefetches || 12));
+    const maxConcurrentPrefetch = Math.max(1, Math.min(3, options.maxConcurrentPrefetch || 2));
+    const maxQueuedPrefetch = Math.max(1, Math.min(12, options.maxQueuedPrefetch || 6));
+    const memo = new Map(), inflight = new Map(), queued = new Map();
+    let activePrefetch = 0, startedPrefetch = 0;
+
+    function cacheGet(key) {
+      const entry = memo.get(key);
+      if (!entry) return undefined;
+      if (Date.now() - entry.at > ttlMs || (entry.result?.ok && !isUsableRecord(entry.result.record))) {
+        memo.delete(key); return undefined;
+      }
+      memo.delete(key); memo.set(key, entry);
+      return entry.result;
+    }
+    function cacheSet(key, result) {
+      if (!result?.ok || !isUsableRecord(result.record)) return;
+      memo.delete(key); memo.set(key, {at: Date.now(), result});
+      while (memo.size > maxEntries) memo.delete(memo.keys().next().value);
+    }
+    function remember(record) {
+      if (!record?.id || !isUsableRecord(record)) return;
+      const result = {ok: true, record};
+      cacheSet('id:' + record.id, result);
+      for (const alias of [record.title, ...(record.aliases || [])]) {
+        if (typeof alias === 'string' && alias.trim()) cacheSet('q:' + normalizedAlias(alias), result);
+      }
+    }
+    function keyFor(query, isId) { return (isId ? 'id:' : 'q:') + (isId ? String(query) : normalizedAlias(query)); }
+    function start(query, isId, background = false) {
+      const key = keyFor(query, isId), existing = inflight.get(key);
+      if (existing) {
+        if (!background) existing.backgroundOnly = false;
+        return existing;
+      }
+      if (!fetchImpl) return {promise: Promise.reject(new Error('Lookup is unavailable')), consumers: 0};
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const requestKey = isId ? 'id' : 'q';
+      const url = endpoint + '?' + new URLSearchParams({[requestKey]: String(query)});
+      const entry = {controller, backgroundOnly: background, consumers: 0, promise: null};
+      entry.promise = Promise.resolve().then(() => fetchImpl(url, {signal: controller.signal})).then(async response => {
+        const result = await response.json();
+        if (result?.ok && isUsableRecord(result.record)) {
+          cacheSet(key, result);
+          cacheSet('id:' + result.record.id, result);
+          if (!isId) cacheSet('q:' + normalizedAlias(query), result);
+          return result;
+        }
+        if (result?.ok && result.record && !isUsableRecord(result.record))
+          return {ok:false,error:'ambiguous_term',candidates:result.candidates || []};
+        return result;
+      }).finally(() => {
+        clearTimeout(timer);
+        if (inflight.get(key) === entry) inflight.delete(key);
+      });
+      inflight.set(key, entry);
+      return entry;
+    }
+    function consume(entry, signal) {
+      entry.consumers++;
+      let released = false;
+      const release = () => {
+        if (released) return;
+        released = true;
+        entry.consumers = Math.max(0, entry.consumers - 1);
+      };
+      if (!signal) return entry.promise.finally(release);
+      if (signal.aborted) {
+        release();
+        if (!entry.consumers && !entry.backgroundOnly) entry.controller.abort();
+        return Promise.reject(Object.assign(new Error('Lookup cancelled'), {name: 'AbortError'}));
+      }
+      return new Promise((resolve, reject) => {
+        const abort = () => {
+          release();
+          if (!entry.consumers) entry.controller.abort();
+          reject(Object.assign(new Error('Lookup cancelled'), {name: 'AbortError'}));
+        };
+        signal.addEventListener('abort', abort, {once: true});
+        entry.promise.then(resolve, reject).finally(() => {
+          signal.removeEventListener('abort', abort);
+          release();
+        });
+      });
+    }
+    function lookup(query, isId = false, signal) {
+      if (typeof query !== 'string' || !query.trim()) return Promise.resolve({ok:false,error:'invalid_query',candidates:[]});
+      const key = keyFor(query, isId), cached = cacheGet(key);
+      if (cached) return Promise.resolve(cached);
+      return consume(start(query, isId, false), signal);
+    }
+    function drainPrefetch() {
+      while (activePrefetch < maxConcurrentPrefetch && queued.size) {
+        const [key, item] = queued.entries().next().value;
+        queued.delete(key);
+        if (cacheGet(key) || inflight.has(key) || startedPrefetch >= maxPrefetches) continue;
+        startedPrefetch++;
+        activePrefetch++;
+        start(item.query, item.isId, true).promise.catch(() => {}).finally(() => {
+          activePrefetch--;
+          drainPrefetch();
+        });
+      }
+      if (startedPrefetch >= maxPrefetches) queued.clear();
+    }
+    function prefetch(query, isId = true) {
+      if (typeof query !== 'string' || !query.trim()) return false;
+      const key = keyFor(query, isId);
+      if (cacheGet(key) || inflight.has(key) || queued.has(key) || startedPrefetch >= maxPrefetches) return false;
+      if (queued.size >= maxQueuedPrefetch) return false;
+      queued.set(key, {query, isId});
+      drainPrefetch();
+      return true;
+    }
+    function cancelPrefetch(query, isId = true) {
+      const key = keyFor(query, isId);
+      queued.delete(key);
+      const entry = inflight.get(key);
+      if (entry?.backgroundOnly) entry.controller.abort();
+    }
+    return {lookup, prefetch, cancelPrefetch, remember, cacheSize: () => memo.size,
+      prefetchState: () => ({active: activePrefetch, queued: queued.size, started: startedPrefetch})};
+  }
+  const lookupService = createLookupService();
+  function createImageFigure(record, documentRef) {
+    const doc = documentRef || (typeof document !== 'undefined' ? document : null);
+    const image = record?.image, url = safeLink(image?.url, true);
+    const fileUrl = safeLink(image?.file_url), licenseUrl = safeLink(image?.license_url);
+    if (!doc || !url || !fileUrl || !licenseUrl || !image?.license) return null;
+    const figure = doc.createElement('figure'); figure.className = 'definition-figure';
+    const pixels = doc.createElement('img'); pixels.src = url; pixels.alt = image.alt || record.title || 'Medical illustration';
+    pixels.loading = 'lazy'; pixels.decoding = 'async'; pixels.referrerPolicy = 'no-referrer';
+    pixels.addEventListener('error', () => figure.remove(), {once: true}); figure.append(pixels);
+    const caption = doc.createElement('figcaption');
+    const artist = doc.createTextNode((image.artist || 'Image contributors') + ' · ');
+    const license = doc.createElement('a'); license.href = licenseUrl; license.textContent = image.license;
+    license.target = '_blank'; license.rel = 'noopener noreferrer';
+    const separator = doc.createTextNode(' · ');
+    const source = doc.createElement('a'); source.href = fileUrl; source.textContent = 'Image source';
+    source.target = '_blank'; source.rel = 'noopener noreferrer';
+    caption.append(artist, license, separator, source); figure.append(caption); return figure;
+  }
   class TermScanner {
     constructor(root, records, options = {}) {
       this.root = root; this.compiled = compileLexicon(records); this.options = options; this.enabled = true;
+      this.visibleTermIds = new Set();
+      this.prefetchObserver = options.prefetch !== false && typeof IntersectionObserver === 'function' ? new IntersectionObserver(entries => {
+        for (const entry of entries) {
+          const id = entry.target.dataset.termId;
+          if (!id) continue;
+          if (entry.isIntersecting) { lookupService.prefetch(id, true); this.prefetchObserver.unobserve(entry.target); }
+        }
+      }, {rootMargin: '140px 0px', threshold: 0}) : null;
       this.onClick = event => { const node = event.target.closest?.('.med-term'); if (node && root.contains(node)) options.onOpen?.(node.dataset.termId, node); };
       this.onOver = event => { const node = event.target.closest?.('.med-term'); if (node && root.contains(node) && !node.contains(event.relatedTarget)) options.onHover?.(node.dataset.termId, node); };
       this.onFocus = event => { const node = event.target.closest?.('.med-term'); if (node) options.onHover?.(node.dataset.termId, node, true); };
@@ -70,6 +231,7 @@
     setEnabled(enabled) { this.enabled = !!enabled; this.scan(); }
     scan() {
       this.observer.disconnect();
+      this.prefetchObserver?.disconnect();
       for (const node of this.root.querySelectorAll('.med-term')) node.replaceWith(document.createTextNode(node.textContent));
       this.root.normalize();
       let total = 0;
@@ -91,13 +253,21 @@
           fragment.append(document.createTextNode(node.nodeValue.slice(cursor))); node.replaceWith(fragment);
         }
       }
+      const termNodes = [...this.root.querySelectorAll('.med-term')];
+      const currentIds = new Set(termNodes.map(node => node.dataset.termId).filter(Boolean));
+      for (const id of this.visibleTermIds) if (!currentIds.has(id)) lookupService.cancelPrefetch(id, true);
+      this.visibleTermIds = currentIds;
+      if (this.prefetchObserver) for (const node of termNodes) this.prefetchObserver.observe(node);
+      this.options.onTerms?.(termNodes);
       this.options.onScan?.(total, this.enabled);
       this.observer.observe(this.root, {childList: true, subtree: true, characterData: true});
       return total;
     }
-    destroy() { this.observer.disconnect(); clearTimeout(this.timer); this.setEnabled(false); this.observer.disconnect(); this.root.removeEventListener('click', this.onClick); this.root.removeEventListener('mouseover', this.onOver); this.root.removeEventListener('focusin', this.onFocus); }
+    destroy() { this.observer.disconnect(); this.prefetchObserver?.disconnect(); for (const id of this.visibleTermIds) lookupService.cancelPrefetch(id, true); clearTimeout(this.timer); this.setEnabled(false); this.observer.disconnect(); this.root.removeEventListener('click', this.onClick); this.root.removeEventListener('mouseover', this.onOver); this.root.removeEventListener('focusin', this.onFocus); }
   }
-  const api = {normalizedAlias, compileLexicon, findTerms, safeLink, TermScanner, attach: (root, records, options) => new TermScanner(root, records, options)};
+  const api = {normalizedAlias, compileLexicon, findTerms, safeLink, createLookupService,
+    lookup: lookupService.lookup, prefetch: lookupService.prefetch, cancelPrefetch: lookupService.cancelPrefetch,
+    createImageFigure, TermScanner, attach: (root, records, options) => new TermScanner(root, records, options)};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   scope.MedicalTermCards = api;
   if (typeof document === 'undefined') return;
@@ -129,13 +299,12 @@
       ['key', 'Open a definition, read the context, and keep your place in the text.']
     ], sources: ['Multiple_sclerosis', 'Oligodendrocyte', 'Interferon_beta-1a', 'Guillain%E2%80%93Barr%C3%A9_syndrome', 'Myasthenia_gravis']}
   };
-  let lexicon = [], scanner, selected = '', hoverTimer, closeTimer, hoverSerial = 0, panelSerial = 0, history = [], historyAt = -1, staticMode = false;
-  const cache = new Map();
+  let lexicon = [], scanner, selected = '', hoverTimer, closeTimer, hoverController = null, panelController = null, hoverSerial = 0, panelSerial = 0, history = [], historyAt = -1, staticMode = false;
   let preference = true; try { preference = JSON.parse(localStorage.getItem(STORE) || '{}').automatic !== false; } catch (_) {}
   byId('auto-terms').checked = preference;
   function el(tag, text, className) { const node = document.createElement(tag); if (text !== undefined) node.textContent = text; if (className) node.className = className; return node; }
   function link(text, url, image = false) { const node = el('a', text); node.href = safeLink(url, image) || '#'; node.target = '_blank'; node.rel = 'noopener noreferrer'; return node; }
-  function closeHover() { clearTimeout(hoverTimer); clearTimeout(closeTimer); hoverSerial++; hover.hidden = true; }
+  function closeHover() { clearTimeout(hoverTimer); clearTimeout(closeTimer); hoverSerial++; hoverController?.abort(); hoverController = null; hover.hidden = true; }
   function renderSample(name) {
     closeHover(); selected = ''; byId('define-selection').disabled = true;
     document.querySelectorAll('[data-sample]').forEach(node => node.setAttribute('aria-pressed', String(node.dataset.sample === name)));
@@ -153,25 +322,14 @@
     }
     scanner?.scan();
   }
-  async function lookup(query, isId = false) {
-    const key = (isId ? 'id:' + query : 'q:' + normalizedAlias(query));
-    if (cache.has(key)) return cache.get(key);
+  async function lookup(query, isId = false, signal) {
     if (staticMode && !isId) {
       const hits = lexicon.filter(record => [record.title, ...(record.aliases || [])].some(label => normalizedAlias(label) === normalizedAlias(query)));
-      if (hits.length === 1) return cache.get('id:' + hits[0].id);
+      if (hits.length === 1) return lookupService.lookup(hits[0].id, true, signal);
       if (hits.length > 1) return {ok:false, error:'ambiguous_term', candidates:hits.map(record => ({title:record.title}))};
       return {ok:false, error:'source_unavailable', candidates:[]};
     }
-    const response = await fetch('/api/term?' + new URLSearchParams({[isId ? 'id' : 'q']: query}), {signal: AbortSignal.timeout(15000)});
-    const result = await response.json();
-    if (result.ok && result.record) { cache.set(key, result); cache.set('id:' + result.record.id, result); }
-    return result;
-  }
-  function imageFigure(record) {
-    const image = record.image, url = safeLink(image?.url, true); if (!url || !image.license || !safeLink(image.file_url) || !safeLink(image.license_url)) return null;
-    const figure = el('figure', undefined, 'definition-figure'), pixels = el('img'); pixels.src = url; pixels.alt = image.alt || record.title; pixels.loading = 'lazy';
-    pixels.addEventListener('error', () => figure.remove(), {once: true}); figure.append(pixels);
-    const caption = el('figcaption'); caption.append(document.createTextNode((image.artist || 'Image contributors') + ' · '), link(image.license, image.license_url), document.createTextNode(' · '), link('Image source', image.file_url)); figure.append(caption); return figure;
+    return lookupService.lookup(query, isId, signal);
   }
   function attribution(record) {
     const source = record.source || {}, node = el('div', undefined, 'attribution');
@@ -189,7 +347,7 @@
     panel.replaceChildren();
     const source = el('div', undefined, 'definition-source'); source.append(el('span', undefined, 'source-dot'), el('span', record.source?.name || 'MDWiki')); panel.append(source, el('h2', record.title));
     const definition = record.definition || record.summary || ''; panel.append(el('p', definition, 'definition-lead'));
-    const figure = imageFigure(record); if (figure) panel.append(figure);
+    const figure = createImageFigure(record, document); if (figure) panel.append(figure);
     const summary = record.summary || '', remainder = summary.startsWith(definition) ? summary.slice(definition.length).trim() : summary;
     if (remainder && remainder !== definition) { const details = el('details', undefined, 'more-background'); details.append(el('summary', 'More background')); const body = el('div', undefined, 'definition-body'); remainder.split(/\n\s*\n|\n/).filter(Boolean).forEach(p => body.append(el('p', p))); details.append(body); panel.append(details); }
     const actions = el('div', undefined, 'source-actions'); actions.append(link('Read full article ↗', record.source?.url)); if (safeLink(record.source?.revision_url)) actions.append(link('This source revision ↗', record.source.revision_url)); panel.append(actions);
@@ -198,9 +356,9 @@
     panel.append(attribution(record)); setCurrent(record);
   }
   async function openTerm(query, isId = false, navigate = false) {
-    const serial = ++panelSerial; closeHover(); panel.replaceChildren(el('p', 'Looking up ' + (lexicon.find(row => row.id === query)?.title || query) + '…', 'selection-hint'));
+    const serial = ++panelSerial; panelController?.abort(); panelController = new AbortController(); closeHover(); panel.replaceChildren(el('p', 'Looking up ' + (lexicon.find(row => row.id === query)?.title || query) + '…', 'selection-hint'));
     try {
-      const result = await lookup(query, isId); if (serial !== panelSerial) return;
+      const result = await lookup(query, isId, panelController.signal); if (serial !== panelSerial) return;
       if (!result.ok) { renderMiss(query, result); return; }
       const record = result.record;
       if (!lexicon.some(row => row.id === record.id)) { lexicon.push({id:record.id, title:record.title, aliases:record.aliases || [], source:record.source}); if (scanner) { scanner.compiled = compileLexicon(lexicon); scanner.scan(); } }
@@ -229,12 +387,14 @@
     hover.style.top = (rect.bottom + card.height + 16 <= innerHeight ? rect.bottom + 9 : Math.max(12, rect.top - card.height - 9)) + 'px';
   }
   function scheduleHover(id, node, immediate = false) {
-    clearTimeout(hoverTimer); clearTimeout(closeTimer); const serial = ++hoverSerial;
+    clearTimeout(hoverTimer); clearTimeout(closeTimer); hoverController?.abort(); hoverController = new AbortController(); const controller = hoverController, serial = ++hoverSerial;
     hoverTimer = setTimeout(async () => {
       if (!node.isConnected) return;
       try {
-        const result = await lookup(id, true); if (serial !== hoverSerial || !result.ok) return;
+        const result = await lookup(id, true, controller.signal); if (serial !== hoverSerial || !result.ok) return;
         hover.replaceChildren(el('h3', result.record.title), el('p', result.record.definition || result.record.summary));
+        const figure = createImageFigure(result.record, document);
+        if (figure) { figure.classList.add('term-hover-figure'); hover.append(figure); }
         const foot = el('div', undefined, 'hover-footer'); foot.append(el('span', 'MDWiki · ' + (result.record.source?.license || '')));
         const button = el('button', 'Keep beside reading →'); button.type = 'button'; button.onclick = () => openTerm(id, true); foot.append(button); hover.append(foot); hover.hidden = false; placeHover(node);
       } catch (_) { /* Hover stays unobtrusive when the source is unavailable. */ }
@@ -263,9 +423,9 @@
     try {
       let result;
       try { const response = await fetch('/api/terms'); if (!response.ok) throw new Error('No local service'); result = await response.json(); if (!result.ok || !Array.isArray(result.records)) throw new Error('No lexicon'); }
-      catch (_) { const response = await fetch('data/terms.json'); const pack = await response.json(); result = {records: pack.records}; staticMode = true; for (const record of pack.records || []) cache.set('id:' + record.id, {ok:true, record}); }
+      catch (_) { const response = await fetch('data/terms.json'); const pack = await response.json(); result = {records: pack.records}; staticMode = true; for (const record of pack.records || []) lookupService.remember(record); }
       lexicon = result.records || [];
-      scanner = new TermScanner(reading, lexicon, {onOpen: (id) => openTerm(id, true), onHover: scheduleHover, onScan: (count, enabled) => { byId('scanner-status').textContent = enabled ? count + ' terms recognized · ' + lexicon.length + ' local definitions' : 'Automatic definitions off · Manual lookup available'; }});
+      scanner = new TermScanner(reading, lexicon, {prefetch: !staticMode, onOpen: (id) => openTerm(id, true), onHover: scheduleHover, onScan: (count, enabled) => { byId('scanner-status').textContent = enabled ? count + ' terms recognized · ' + lexicon.length + ' local definitions' : 'Automatic definitions off · Manual lookup available'; }});
       scanner.setEnabled(preference);
       for (const title of ['Nephrotic syndrome', 'Complement system', 'Multiple sclerosis']) { const record = lexicon.find(row => row.title.toLowerCase() === title.toLowerCase()); if (record) { const button = el('button', record.title); button.type = 'button'; button.onclick = () => openTerm(record.id, true); byId('suggested-terms').append(button); } }
     } catch (_) { byId('scanner-status').textContent = 'Medical vocabulary unavailable'; }

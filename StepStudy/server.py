@@ -29,6 +29,8 @@ from StepStudy.course_module import CourseModule
 from StepStudy.course_reader import reader_html
 from StepStudy.grading import grade_recall, provider_status
 from StepStudy.intake import IntakeStore
+from StepStudy.labs import LocalLabs, lab_policy
+from StepStudy.reference_service import ReferenceService
 from StepStudy.module_signals import collect_module_signals
 from StepStudy.live_cards import LiveCards
 from StepStudy.planning import build_review_queue
@@ -43,6 +45,8 @@ from TermCards.provider import TermProvider
 
 ROOT = Path(__file__).resolve().parent
 STATIC = {"/step.js": ROOT / "step.js", "/step.css": ROOT / "step.css",
+          "/shortcuts.js": ROOT / "shortcuts.js",
+          "/workspace_tools.js": ROOT / "workspace_tools.js", "/workspace_tools.css": ROOT / "workspace_tools.css",
           "/course_embed.js": ROOT / "course_embed.js", "/course_embed.css": ROOT / "course_embed.css",
           "/terms/term_cards.js": PROJECT / "TermCards" / "term_cards.js",
           "/terms/selection_lookup.js": PROJECT / "TermCards" / "selection_lookup.js"}
@@ -109,7 +113,7 @@ class Services:
     def __init__(self, data_dir: Path, *, terms=None, intake=None, store=None, anki=None,
                  grader=None, ai_status=None, tts=None, module_reader=None, cards=None,
                  course=None, course_progress=None, course_anki=None, anki_bridge=None,
-                 reference_transport=None):
+                 reference_transport=None, labs=None):
         self.data_dir = Path(data_dir).expanduser().resolve()
         # A local study app never puts progress in a publishable checkout.
         if self.data_dir == PROJECT or PROJECT in self.data_dir.parents:
@@ -120,6 +124,8 @@ class Services:
         self.catalog = self.store.catalog
         self.terms = terms or TermProvider(PROJECT / "TermCards" / "data" / "terms.json", cache_path=self.data_dir / "term-cache.json")
         self.intake = intake or IntakeStore(self.data_dir / "question-intake.sqlite3", self.data_dir / "question-images")
+        self.labs = labs or LocalLabs(self.data_dir / "labs.json")
+        self.reference_service = ReferenceService(self.data_dir)
         self.anki = anki or AnkiSignals()
         self.cards = cards or LiveCards(self.data_dir)
         self.grader = grader or grade_recall
@@ -148,6 +154,7 @@ class Services:
         self._course_signal_data: dict[str, Any] | None = None
         self._course_document_pages: dict[str, int | None] | None = None
         self.course_prewarm_thread: threading.Thread | None = None
+        self._intake_catalog_ready = False
         self._course_anki_instance = None
         self.pending: OrderedDict[str, dict[str, Any]] = OrderedDict()
         self.lock = threading.RLock()
@@ -167,6 +174,7 @@ class Services:
             self.anki_signals = {"available": False, "subjects": {}, "reason": "Sync Anki to read your current review signals."}
 
     def start_worker(self):
+        self.reference_service.start()
         pref = self.store.snapshot()["preferences"]
         if pref.get("watchEnabled"):
             self.intake.start_watch(pref.get("watchFolder") or None)
@@ -195,6 +203,8 @@ class Services:
             try:
                 if self._course_signal_data is None:
                     full_data = self.course.data()
+                    self.intake.configure_course(full_data)
+                    self._intake_catalog_ready = True
                     self._course_signal_data = _course_signal_data(full_data)
                     self._course_document_pages = self._document_page_catalog(full_data)
                     del full_data
@@ -211,6 +221,7 @@ class Services:
                 self.module_checked_at = time.monotonic()
 
     def close(self):
+        self.reference_service.close()
         self.stop_event.set()
         self._course_refresh_event.set()
         from StepStudy.grading import cancel_active_grading
@@ -238,6 +249,27 @@ class Services:
                 pass
         self.tts.close()
         self.cards.close()
+
+    def intake_catalog(self):
+        if self.course is not None and not self._intake_catalog_ready:
+            try:
+                self.intake.configure_course(self.course.data())
+                self._intake_catalog_ready = True
+            except (OSError, ValueError, TimeoutError):
+                pass
+        return [{key: row[key] for key in ("module_id", "topic_id", "topic_title", "chapter_id", "title")}
+                for row in self.intake.course_catalog]
+
+    def capture_region(self, body):
+        context = body.get("context", {})
+        if not isinstance(context, dict) or not set(context).issubset({"subject_id", "chapter_id"}):
+            raise ValueError("Invalid capture context")
+        self.intake_catalog()
+        if context.get("subject_id") and context["subject_id"] not in self.store.topic_ids:
+            raise ValueError("Unknown capture subject")
+        if context.get("chapter_id") and context["chapter_id"] not in {row["chapter_id"] for row in self.intake.course_catalog}:
+            raise ValueError("Unknown capture chapter")
+        return self.intake.capture_region(context)
 
     def question_signals(self):
         raw = self.intake.topic_signals()
@@ -362,6 +394,7 @@ class Services:
                 else:
                     status, mime, raw = 200, "application/json; charset=utf-8", json.dumps(result).encode("utf-8")
             else:
+                self.reference_service.start()
                 headers = {"Accept": "application/json", "Content-Type": "application/json"}
                 request = Request(endpoint, data=payload, headers=headers, method=method)
                 with build_opener(_NoRedirect()).open(request, timeout=COURSE_REFERENCE_TIMEOUT) as response:
@@ -546,6 +579,10 @@ class Handler(BaseHTTPRequestHandler):
         return True
 
     def do_GET(self):
+        # Opaque lab frames may load only their registered lab files. They never
+        # pass the app API guard; mutations still require the app session token.
+        if urlsplit(self.path).path.startswith("/lab/"):
+            self.lab_file(); return
         if not self.guard(): return
         parsed = urlsplit(self.path)
         if len(parsed.query) > 1500:
@@ -641,10 +678,20 @@ class Handler(BaseHTTPRequestHandler):
             elif parsed.path == "/api/recall": self.json(200, service.recall(param("topic_id")))
             elif parsed.path == "/api/card-queue": self.json(200, service.card_queue(param("topic_id")))
             elif parsed.path == "/api/questions":
-                rows = service.intake.search_questions(param("q"), limit=100) if param("q") else service.intake.list_questions(status=param("status") or None, limit=100)
+                chapter = param("chapter_id")
+                rows = (service.intake.search_questions(param("q"), limit=100) if param("q")
+                        else service.intake.questions_for_chapter(chapter) if chapter
+                        else service.intake.list_questions(status=param("status") or None, limit=100))
                 topic = param("topic_id")
                 if topic: rows = [row for row in rows if topic in row["topic_ids"]]
+                if chapter: rows = [row for row in rows if any(link.get("chapter_id") == chapter for link in row["course_links"])]
                 self.json(200, {"ok": True, "questions": rows, "intake": service.intake.status()})
+            elif parsed.path == "/api/intake/catalog":
+                self.json(200, {"ok": True, "chapters": service.intake_catalog()})
+            elif parsed.path == "/api/intake/chapter-links":
+                self.json(200, {"ok": True, "counts": service.intake.chapter_link_counts()})
+            elif parsed.path == "/api/labs":
+                self.json(200, {"ok": True, "labs": service.labs.list()})
             elif parsed.path == "/api/question-image":
                 path = service.intake.image_path(int(param("id")))
                 self.send(200, path.read_bytes(), mimetypes.guess_type(path.name)[0] or "image/png")
@@ -747,6 +794,14 @@ class Handler(BaseHTTPRequestHandler):
                 result = service.cards.begin(tid, body.get("card_id"))
             elif path == "/api/card-rate":
                 result = service.rate_card(body.get("topic_id"), body.get("token"), body.get("ease"), body.get("request_id"))
+            elif path == "/api/capture-region":
+                result = service.capture_region(body)
+            elif path == "/api/labs/register":
+                result = {"ok": True, "lab": service.labs.register(body.get("path"), body.get("title", ""))}
+            elif path == "/api/labs/open":
+                result = service.labs.open_native(body.get("id"))
+            elif path == "/api/labs/remove":
+                result = service.labs.remove(body.get("id"))
             elif path == "/api/watch":
                 enabled = body.get("enabled")
                 if not isinstance(enabled, bool): raise ValueError("Choose whether watching is enabled")
@@ -767,6 +822,9 @@ class Handler(BaseHTTPRequestHandler):
                 elif action == "outcome": row = service.intake.mark_outcome(identity, body.get("outcome"))
                 elif action == "topics": row = service.intake.set_topics(identity, body.get("topic_ids"))
                 elif action == "retry": row = service.intake.retry_question(identity)
+                elif action == "course-links":
+                    service.intake_catalog()
+                    row = service.intake.set_course_links(identity, body.get("chapter_ids"))
                 else: raise ValueError("Unknown question action")
                 result = {"ok": True, "question": row}
             elif path == "/api/speech":
@@ -781,8 +839,27 @@ class Handler(BaseHTTPRequestHandler):
             self.json(400, {"ok": False, "error": str(error)[:200]})
         except CourseProxyError as error:
             self.json(error.status, {"ok": False, "error": str(error)[:200]})
+        except RuntimeError as error:
+            self.json(503, {"ok": False, "error": str(error)[:200]})
         except (OSError, TTSUnavailable):
             self.json(503, {"ok": False, "error": "The local service is unavailable"})
+
+    def lab_file(self):
+        port = self.server.server_address[1]
+        host = self.headers.get("Host", "")
+        origins = {f"http://localhost:{port}", f"http://127.0.0.1:{port}", f"http://[::1]:{port}"}
+        if host not in {f"localhost:{port}", f"127.0.0.1:{port}", f"[::1]:{port}"} or self.headers.get("Origin") not in {None, "null", *origins}:
+            self.json(403, {"ok": False, "error": "Lab files are local only"}); return
+        pieces = urlsplit(self.path).path.split("/", 3)
+        try:
+            if len(pieces) != 4:
+                raise KeyError("Lab file not found")
+            identity, relative = pieces[2], urllib.parse.unquote(pieces[3])
+            body, mime = self.server.services.labs.asset(identity, relative)
+            self.send(200, body, mime, {"Access-Control-Allow-Origin": "null", "Referrer-Policy": "no-referrer"},
+                      csp=lab_policy(f"http://{host}", identity))
+        except (ValueError, OSError, KeyError):
+            self.json(404, {"ok": False, "error": "Lab file not found"})
 
     def json(self, status, payload):
         self.send(status, json.dumps(payload, ensure_ascii=False).encode(), "application/json; charset=utf-8")

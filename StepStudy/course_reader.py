@@ -43,13 +43,16 @@ def reader_html(data: dict, anki: dict, token: str, *, view="guide", subject="ne
     template = (SOURCE_ROOT / "guide_template.html").read_text(encoding="utf-8")
     css = "\n".join((SOURCE_ROOT / name).read_text(encoding="utf-8") for name in CSS_FILES)
     css += "\n" + (Path(__file__).with_name("course_embed.css")).read_text(encoding="utf-8")
+    css += "\n" + (Path(__file__).with_name("course_practice.css")).read_text(encoding="utf-8")
     javascript = "\n".join((SOURCE_ROOT / name).read_text(encoding="utf-8") for name in JS_FILES)
     javascript += "\n" + (Path(__file__).with_name("course_embed.js")).read_text(encoding="utf-8")
+    javascript += "\n" + (Path(__file__).with_name("course_practice.js")).read_text(encoding="utf-8")
     javascript += "\ninitReadingTools();startStudyApp().then(()=>window.StepCourseReady());"
     configuration = {"apiBase": "/api/course", "token": token, "ready": True}
     module = {"view": view, "subject": subject, "target": target, "scope": scope, "publicOnly": source == "public"}
     setup = f'<script nonce="{nonce}">window.STUDY_APP_CONFIG={_script_json(configuration)};window.STEP_COURSE_CONFIG={_script_json(module)};</script>'
     setup += '<script src="/terms/term_cards.js"></script><script src="/terms/selection_lookup.js"></script>'
+    setup += '<script src="/shortcuts.js"></script><link rel="stylesheet" href="/workspace_tools.css"><script src="/workspace_tools.js"></script>'
     template = template.replace("</head>", setup + "</head>", 1)
     template = template.replace('<script>const DATA=__DATA__;</script>', f'<script nonce="{nonce}">const DATA=__DATA__;</script>')
     template = template.replace('<script src="anki_context_data.js"></script>', f'<script nonce="{nonce}">window.ANKI_CONTEXT={_script_json(anki)};</script>')

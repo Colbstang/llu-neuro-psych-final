@@ -3,7 +3,7 @@
 const referenceParams=new URLSearchParams(location.search);
 const referenceOnly=referenceParams.get('reference')==='1';
 let referenceSession=referenceParams.get('referenceSession')||'',referenceChild=null,referenceChildReady=false,referencePending=null,referenceLastRequest=null;
-let referenceReceiving=false,referenceDetached=false,referenceLastTerm='',referenceTermContext='',referenceSpeech=null;
+let referenceReceiving=false,referenceDetached=false,referenceLastTerm='',referenceTermContext='',referenceSpeech=null,referenceResultsPosition=null;
 const referenceStateFields=new Set(['bookPageView','bookHighlights','sourcePageView','readingHighlights','readingAutoHighlight','freehandStrokes','freehandLastKey','referenceSources','referenceViews','ankiCardPosition','ankiMediaPosition','imagePositions','guideHighlightBookTopics','referencePaneRatio','bookLabels','referenceSearchFamilies','referenceVoice']);
 const referenceMainFields=new Set(['view','page','scope','studyScope','objectiveQuiz','objectiveFilter','objectiveSearch','questionFilter','studyTarget']);
 function referenceClone(value){return value===undefined?undefined:JSON.parse(JSON.stringify(value))}
@@ -125,10 +125,12 @@ const referenceLocalShow=showSidePanel;
 showSidePanel=function(title,html,options={}){
  if(referenceRoute('panel',{title,html,options:{bookPanel:options.bookPanel,keepScroll:options.keepScroll,keepZoom:options.keepZoom}}))return;
  const alreadyOpen=!$('#side-panel').hidden,mainY=window.scrollY;
+ if(alreadyOpen&&$('#side-panel').dataset.ankiContextKey===ankiContext?.key&&$('#side-content').querySelector('.reference-view-tabs'))referenceResultsPosition={context:ankiContext,scrollTop:$('#side-content').scrollTop};
  const sameRapid=alreadyOpen&&$('#rapid-card')&&String(html).includes('id="rapid-card"');
  const result=referenceLocalShow(title,html,{...options,keepScroll:options.keepScroll??!!sameRapid});
  if(referenceTermContext!==String(title)){referenceLastTerm='';referenceTermContext=String(title)}
  window.refreshReferenceSearchControls?.(window.referencePanelSearchContext?.());
+ referenceUpdateNavigation();
  referenceApplySize();
  if(alreadyOpen&&!referenceOnly)requestAnimationFrame(()=>{if(Math.abs(window.scrollY-mainY)>1)window.scrollTo({top:mainY,behavior:'instant'})});
  return result;
@@ -142,8 +144,34 @@ function referenceApplySize(){
  const divider=$('#reference-divider');if(divider)divider.setAttribute('aria-valuenow',String(Math.round(ratio*100)));
 }
 function referenceSetRatio(ratio){state.referencePaneRatio=Math.max(.3,Math.min(.75,ratio));referenceApplySize()}
+function referenceUpdateNavigation(){
+ const back=document.querySelector('[data-reference-results]');if(back)back.disabled=!ankiContext;
+}
+function referenceShowSearchResults(){
+ if(!ankiContext)return;
+ // A page request that finishes after Back must not replace the results.
+ sourceViewerSerial++;sourceViewerActive=null;activeRef=ankiContext.topic||'';ankiReferenceMode='cards';bookMarkMode=false;
+ const position=referenceResultsPosition;
+ renderAnkiReference({keepScroll:false});
+ if(position?.context===ankiContext)$('#side-content').scrollTop=position.scrollTop;
+ if(ankiContext.retrieval==='loading')fetchSemanticCards(ankiContext);
+}
+function referenceSearchSelection(text=''){
+ const query=String(text).trim().slice(0,4000);
+ if(query)openAnkiContext({kind:'selection',text:query,searchQuery:query,title:'Search · '+query.slice(0,72),topics:[]});
+ else{if($('#side-panel').hidden)openReferenceWorkspace();document.querySelector('[data-reference-search-query]')?.focus();}
+}
+function referenceSearchResource(family,text=''){
+ if(!['first_aid','pathoma','mehlman','in_house'].includes(family))return;
+ const query=String(text||document.querySelector('[data-reference-search-query]')?.value||ankiContext?.searchQuery||ankiContext?.text||'').trim().slice(0,4000);
+ const label={first_aid:'First Aid',pathoma:'Pathoma',mehlman:'Mehlman',in_house:'Slides / notes'}[family];
+ state.referenceSearchFamilies=[family];save();
+ if(query)openAnkiContext({kind:'selection',text:query,searchQuery:query,searchScope:family==='in_house'?'sources':'books',referenceSearchFamilies:[family],title:label+' · '+query.slice(0,72),topics:[]});
+ else{openReferenceWorkspace();window.refreshReferenceSearchControls({text:'',searchScope:family==='in_house'?'sources':'books',referenceSearchFamilies:[family]});document.querySelector('[data-reference-search-query]')?.focus();}
+}
 function openReferenceWorkspace(){
  if(referenceRoute('empty',{}))return;
+ sourceViewerSerial++;semanticRequestSerial++;semanticAbort?.abort();sourceViewerActive=null;
  showSidePanel('References',`<section class="reference-empty"><h3>Look up a term or sentence</h3><p>Search your cards, books, lecture slides and notes. Choose a match to open its exact page.</p><div class="reference-library">${(DATA.source_catalog?.documents||[]).filter(doc=>['First Aid','Pathoma'].includes(doc.id)||doc.kind==='supplement').map(doc=>`<button data-reference-library="${esc(doc.id)}">${esc(doc.title)} · ${doc.page_count} pages</button>`).join('')}</div></section>`);
 }
 function detachReferenceWorkspace(){
@@ -200,7 +228,8 @@ function referenceSetupControls(){
  const panel=$('#side-panel'),head=panel.querySelector('.side-panel-head');
  const actions=document.createElement('div');actions.className='reference-workspace-actions';actions.innerHTML=`<button data-reference-listen aria-pressed="false" title="Hear the selected term or reference heading">🔊 Listen</button><select aria-label="Local neural voice" data-reference-voice>${['Bella','Jasper','Luna','Bruno','Rosie','Hugo','Kiki','Leo'].map(voice=>`<option ${voice===(state.referenceVoice||'Bella')?'selected':''}>${voice}</option>`).join('')}</select><button data-reference-detach title="Send lookups to a separate tab">Open reference tab ↗</button><button data-reference-dock>Dock beside guide</button>`;head.insertBefore(actions,$('#close-side'));
  const status=document.createElement('p');status.id='reference-listen-status';status.className='reference-listen-status';status.setAttribute('role','status');head.after(status);
- const host=document.createElement('div');host.id='reference-search-host';status.after(host);window.refreshReferenceSearchControls?.();
+ const nav=document.createElement('nav');nav.className='reference-navigation';nav.setAttribute('aria-label','Reference navigation');nav.innerHTML='<button type="button" data-reference-results disabled>← Back to search results</button><button type="button" data-reference-home>Reference library</button>';status.after(nav);
+ const host=document.createElement('div');host.id='reference-search-host';nav.after(host);window.refreshReferenceSearchControls?.();referenceUpdateNavigation();
  const divider=document.createElement('div');divider.id='reference-divider';divider.className='reference-divider';divider.setAttribute('role','separator');divider.setAttribute('aria-orientation','vertical');divider.setAttribute('aria-label','Resize study and reference panes');divider.setAttribute('aria-valuemin','30');divider.setAttribute('aria-valuemax','75');divider.tabIndex=0;document.body.append(divider);
  let resizing=false;
  divider.addEventListener('pointerdown',event=>{event.preventDefault();resizing=true;divider.setPointerCapture(event.pointerId);document.body.classList.add('reference-resizing')});
@@ -216,9 +245,11 @@ function referenceSetupControls(){
   if(event.target.closest('[data-reference-listen],[data-selection-listen]')){event.preventDefault();referenceSpeakText(referenceListenTerm());return}
   if(event.target.closest('[data-reference-detach]')){detachReferenceWorkspace();return}
   if(event.target.closest('[data-reference-dock]')){dockReferenceWorkspace();return}
+  if(event.target.closest('[data-reference-results]')){referenceShowSearchResults();return}
+  if(event.target.closest('[data-reference-home]')){openReferenceWorkspace();return}
   const library=event.target.closest('[data-reference-library]');if(library){window.openSourceDocumentById(library.dataset.referenceLibrary,1,'');return}
   const background=event.target.closest('[data-open-background-result]');if(background){const entry=ankiContext?.backgroundMatches?.[Number(background.dataset.openBackgroundResult)];if(!entry)return;const url=entry.url&&/^https?:\/\//.test(entry.url)?entry.url:'';referenceLastTerm=entry.title;showSidePanel(entry.title,`<article class="background-reference"><div class="eyebrow">BACKGROUND REFERENCE</div><h3>${esc(entry.title)}</h3><div class="reference-definition">${esc(entry.summary||entry.excerpt||'')}</div><p class="source-links">${url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(entry.source||'Source')}</a>`:esc(entry.source||'')}${entry.source_updated?' · Updated '+esc(entry.source_updated):''}${entry.fetched_at?' · Local copy '+esc(entry.fetched_at):''}${entry.license?'<br>'+esc(entry.license):''}</p><button data-background-return>← Search results</button></article>`);return}
-  if(event.target.closest('[data-background-return]'))renderAnkiReference({keepScroll:true});
+  if(event.target.closest('[data-background-return]'))referenceShowSearchResults();
  });
  document.addEventListener('change',event=>{if(event.target.matches('[data-reference-voice]')){referenceStopSpeech('');state.referenceVoice=event.target.value;save()}});
  window.addEventListener('pagehide',()=>{referenceStopSpeech('');if(referenceOnly)referencePeerMessage({type:'closed'})});

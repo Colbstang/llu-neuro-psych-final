@@ -19,6 +19,8 @@ PROJECT_FILES = {
         "index.html", "step.js", "step.css", "data/topics.json",
         "course_module.py", "course_reader.py", "course_embed.js",
         "course_embed.css",
+        "labs.py", "workspace_tools.js", "workspace_tools.css", "shortcuts.js",
+        "course_practice.js", "course_practice.css", "reference_service.py",
     ],
     "TermCards": [
         "__init__.py", "provider.py", "term_cards.js",
@@ -44,7 +46,10 @@ def make_project(root: Path) -> None:
         path.write_text(body, encoding="utf-8")
     launcher = root / "StudyApp" / "native" / "Launcher.swift"
     launcher.parent.mkdir(parents=True, exist_ok=True)
-    launcher.write_text("// fixture launcher\n", encoding="utf-8")
+    launcher.write_text("// fixture launcher\nNSApp.mainMenu = mainMenu\n", encoding="utf-8")
+    menu = root / "StepStudy" / "native" / "WorkspaceMenu.swift"
+    menu.parent.mkdir(parents=True, exist_ok=True)
+    menu.write_text("// Step-only capture menu fixture\n", encoding="utf-8")
 
 
 class NativeBundleTests(unittest.TestCase):
@@ -108,6 +113,8 @@ class NativeBundleTests(unittest.TestCase):
                 self.assertTrue(check)
                 source_path = Path(command[-3])
                 source_paths.append(source_path)
+                self.assertIn("installWorkspaceMenu(mainMenu)", source_path.read_text())
+                self.assertIn("Step-only capture menu fixture", source_path.read_text())
                 Path(command[-1]).write_bytes(b"fake executable")
 
             with patch.object(build_app, "__file__", str(app_script)), \

@@ -20,6 +20,13 @@ body:not(.with-panel) .reference-divider,.reference-detached .reference-divider,
 .reference-resizing{cursor:col-resize;user-select:none}
 .reference-listen-status{font-size:10px;min-height:14px;line-height:1.3;color:#516557;margin:0 12px 4px}
 .reference-listen-status:empty{display:none}
+.reference-navigation{display:flex;flex:0 0 auto;flex-wrap:wrap;gap:6px;padding:4px 12px 8px}
+.reference-navigation button{font-size:12px;padding:6px 9px}
+.study-shortcut-help{max-width:620px;width:calc(100% - 48px);padding:24px;border:1px solid #cbd8d0;color:#263b35;background:#fff;font:14px/1.6 system-ui,sans-serif}
+.study-shortcut-help::backdrop{background:rgb(20 40 32 / .25)}
+.study-shortcut-help h2{margin:0 0 12px;font-size:22px}.study-shortcut-help dl{display:grid;grid-template-columns:150px 1fr;gap:10px 16px}.study-shortcut-help dt{font-weight:600}.study-shortcut-help dd{margin:0}.study-shortcut-help p{font-size:12px;color:#64766b}.study-shortcut-help button{padding:7px 12px}
+.course-definition .definition-image{margin:18px 0}.course-definition .definition-image img{max-width:100%;max-height:340px;object-fit:contain}.course-definition .definition-image figcaption{font-size:11px;color:#64766b}
+.course-term-hover .definition-image{margin:8px 0}.course-term-hover .definition-image img{width:100%;max-height:160px;object-fit:contain}.course-term-hover .definition-image figcaption{font-size:10px}
 .reference-empty,.background-reference{max-width:720px;margin:0 auto;font-size:14px;line-height:1.6}
 .reference-empty h3,.background-reference h3{font-size:22px;margin:5px 0 12px}
 .reference-library{display:grid;gap:6px;margin-top:14px}
@@ -36,4 +43,4 @@ body:not(.with-panel) .reference-divider,.reference-detached .reference-divider,
 .reference-only .reference-workspace-actions button[data-reference-dock]{display:inline-block}
 .reference-workspace-actions button[data-reference-dock]{display:none}
 @media(max-width:700px){:root{--reference-width:calc((100vw - 72px)*.6)}.with-panel .shell{margin-right:var(--reference-width)}.side-panel-head{flex-wrap:wrap}.side-panel-head h2{flex-basis:100%}#reference-search-host .reference-search-controls{grid-template-columns:minmax(70px,1fr) 95px auto}.reference-divider{width:12px}}
-@media print{.reference-divider,#reference-search-host,.reference-listen-status{display:none!important}}
+@media print{.reference-divider,#reference-search-host,.reference-listen-status,.reference-navigation{display:none!important}}

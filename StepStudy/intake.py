@@ -35,6 +35,16 @@ MEDICAL_CUE = re.compile(
     r"artery|vein|cerebral|aphasia|seizure|stroke|tumou?r|cancer|infection|"
     r"medication|drug|dose|pharmacology|anatomy|physiology|pathology|"
     r"blood pressure|heart rate|respiratory|neurologic|neurological|psychiatric)\b", re.I)
+TITLE_GENERIC = set("""anatomy organization control overview foundations normal clinical features
+pathways pathway diseases disease disorder disorders system systems syndrome syndromes brain
+cerebral spinal nerve nerves neurology neurologic psychiatry psychiatric approach patterns pattern
+review course chapter specific mechanism mechanisms treatment treatments physiology pathology
+pharmacology introduction function functional signals guide gross common before after understand
+explain compare comparison localize localise identify differentiate presentation development
+underlying structure structures major important learning objectives recognize recognition model
+section topic process blood vessels infection infections patient patients support response responses
+adult pediatric paediatric congenital acute chronic white matter central peripheral motor sensory
+anterior posterior medial lateral findings management basics principles""".split())
 
 
 def _private_path(path: str | Path, name: str) -> Path:
@@ -147,7 +157,8 @@ class IntakeStore:
     def __init__(self, db_path: str | Path, image_dir: str | Path,
                  catalog_path: str | Path | None = None,
                  ocr: Callable[[Path], str] | None = None,
-                 clock: Callable[[], float] | None = None):
+                 clock: Callable[[], float] | None = None,
+                 capture: Callable[[Path], bool] | None = None):
         self.path = _private_path(db_path, "Intake database")
         self.image_dir = _private_path(image_dir, "Screenshot image directory")
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -157,6 +168,9 @@ class IntakeStore:
         self.topics = catalog["topics"]
         self.ocr = ocr or VisionOCR()
         self.clock = clock or time.time
+        self.capture = capture or self._capture_selection
+        self._capture_lock = threading.Lock()
+        self.course_catalog: list[dict[str, Any]] = []
         self._watch_lock = threading.RLock()
         self._watch_folder: Path | None = None
         self._watch_default = False
@@ -192,6 +206,10 @@ class IntakeStore:
               );
               CREATE INDEX IF NOT EXISTS questions_status_created ON questions(status,created_at DESC);
             """)
+            columns = {row[1] for row in db.execute("PRAGMA table_info(questions)")}
+            for column in ("course_links_json", "tag_evidence_json"):
+                if column not in columns:
+                    db.execute(f"ALTER TABLE questions ADD COLUMN {column} TEXT NOT NULL DEFAULT '[]'")
             try:
                 db.execute("CREATE VIRTUAL TABLE IF NOT EXISTS questions_fts USING fts5(full_text, stem, options, content='questions', content_rowid='id')")
                 db.executescript("""
@@ -237,7 +255,97 @@ class IntakeStore:
                 if any(re.search(r"(?<!\w)" + re.escape(keyword.casefold()) + r"(?!\w)", folded)
                        for keyword in topic.get("keywords", []) if keyword)]
 
-    def ingest_file(self, source: str | Path) -> dict[str, Any]:
+    def configure_course(self, data: dict[str, Any]) -> None:
+        """Index stable labels and keywords only; never classify from private prose."""
+        grouping = data.get("topic_groups")
+        groups = grouping.get("groups", []) if isinstance(grouping, dict) else []
+        page_groups: dict[str, list[dict[str, Any]]] = {}
+        for group in groups if isinstance(groups, list) else []:
+            if not isinstance(group, dict) or not isinstance(group.get("id"), str):
+                continue
+            for identity in group.get("page_ids", []) if isinstance(group.get("page_ids"), list) else []:
+                if isinstance(identity, str):
+                    page_groups.setdefault(identity, []).append(group)
+        result = []
+        for page in data.get("pages", []) if isinstance(data.get("pages"), list) else []:
+            if not isinstance(page, dict) or not isinstance(page.get("id"), str):
+                continue
+            title = str(page.get("title", ""))[:300]
+            keywords = [value[:100] for value in (page.get("keywords", []) if isinstance(page.get("keywords"), list) else [])
+                        if isinstance(value, str) and value.strip()]
+            # Long title phrases are useful when no explicit keywords exist;
+            # generic individual words never create a chapter link.
+            titles = [title, *[str(block.get("title", ""))[:300] for block in (page.get("blocks", []) if isinstance(page.get("blocks"), list) else [])
+                              if isinstance(block, dict)]]
+            distinctive, phrases = [], []
+            for label in titles:
+                words = [word.casefold() for word in re.findall(r"[A-Za-z]+", label)]
+                terms = [word for word in words if len(word) >= 6 and word not in TITLE_GENERIC]
+                distinctive.extend(terms)
+                for part in re.split(r"[,;:/]|\s+and\s+", label, flags=re.I):
+                    if len(part.split()) >= 2 and any(re.search(r"(?<!\w)" + re.escape(term) + r"(?!\w)", part, re.I) for term in terms):
+                        phrases.append(part.strip())
+            for group in page_groups.get(page["id"], [{}]):
+                result.append({"module_id": "neuro-psych", "topic_id": str(group.get("id", "")),
+                               "topic_title": str(group.get("title", ""))[:200],
+                               "chapter_id": page["id"], "title": title,
+                               "keywords": list(dict.fromkeys(keywords + phrases + distinctive))})
+        self.course_catalog = result
+
+    def _automatic_links(self, text: str, context: dict[str, Any] | None = None) -> tuple[list, list]:
+        folded = text.casefold()
+        links, evidence = [], []
+        for topic in self.topics:
+            matches = [keyword for keyword in topic.get("keywords", []) if keyword and
+                       re.search(r"(?<!\w)" + re.escape(keyword.casefold()) + r"(?!\w)", folded)]
+            if matches:
+                evidence.append({"subject_id": topic["id"], "confidence": "keyword", "evidence": matches})
+            elif context and context.get("subject_id") == topic["id"]:
+                evidence.append({"subject_id": topic["id"], "confidence": "context", "evidence": []})
+        for chapter in self.course_catalog:
+            matches = [keyword for keyword in chapter["keywords"] if
+                       re.search(r"(?<!\w)" + re.escape(keyword.casefold()) + r"(?!\w)", folded)]
+            contextual = bool(context and context.get("chapter_id") == chapter["chapter_id"])
+            if matches or contextual:
+                links.append({key: chapter[key] for key in ("module_id", "topic_id", "chapter_id", "title", "topic_title")})
+                links[-1].update({"confidence": "keyword" if matches else "context", "evidence": matches})
+        return links, evidence
+
+    @staticmethod
+    def _capture_selection(target: Path) -> bool:
+        """An explicit region selection only. Escape cancels without an intake item."""
+        executable = Path("/usr/sbin/screencapture")
+        if not executable.is_file():
+            raise RuntimeError("Region capture is available in the Mac app. Import a screenshot file instead.")
+        try:
+            result = subprocess.run([str(executable), "-i", "-s", "-x", str(target)],
+                                    capture_output=True, text=True, timeout=120, check=False)
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("Capture timed out. Choose Capture region again when ready.") from None
+        if target.is_file() and target.stat().st_size:
+            return True
+        if result.stderr.strip():
+            raise RuntimeError("The Mac could not capture this region. Check Screen Recording permission in System Settings.")
+        return False
+
+    def capture_region(self, context: dict[str, Any] | None = None) -> dict[str, Any]:
+        if not self._capture_lock.acquire(blocking=False):
+            raise ValueError("A region selection is already open")
+        try:
+            with tempfile.TemporaryDirectory(prefix="capture-", dir=self.image_dir) as folder:
+                target = Path(folder) / "region.png"
+                if not self.capture(target):
+                    return {"ok": True, "cancelled": True}
+                result = self.ingest_file(target, context=context)
+                # An explicit capture may be a teaching figure. Retain it for
+                # review rather than silently hiding it as a non-question.
+                if not result["duplicate"] and result["question"]["status"] == "excluded":
+                    result["question"] = self.confirm(result["question"]["id"], False)
+                return {"ok": True, "cancelled": False, **result}
+        finally:
+            self._capture_lock.release()
+
+    def ingest_file(self, source: str | Path, *, context: dict[str, Any] | None = None) -> dict[str, Any]:
         source = Path(source).expanduser().resolve()
         try:
             kind, _, _ = _image_header(source)
@@ -264,11 +372,13 @@ class IntakeStore:
                 raise RuntimeError("OCR returned no readable text")
             stem, options, explanation, status = self._parse(text)
             tags = self._topic_ids(stem)
+            links, evidence = self._automatic_links(stem, context)
+            tags = list(dict.fromkeys(tags + [item["subject_id"] for item in evidence]))
             now = float(self.clock())
             with self._connect() as db:
-                cursor = db.execute("INSERT OR IGNORE INTO questions(sha256,image_name,full_text,stem,options_json,explanation,topic_ids_json,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                cursor = db.execute("INSERT OR IGNORE INTO questions(sha256,image_name,full_text,stem,options_json,explanation,topic_ids_json,status,created_at,updated_at,course_links_json,tag_evidence_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                                     (sha, dest.name, text, stem, json.dumps(options, ensure_ascii=False), explanation,
-                                     json.dumps(tags), status, now, now))
+                                     json.dumps(tags), status, now, now, json.dumps(links), json.dumps(evidence)))
                 row = db.execute("SELECT * FROM questions WHERE sha256=?", (sha,)).fetchone()
             return {"duplicate": cursor.rowcount == 0, "question": self._row(row)}
         except Exception as error:
@@ -288,7 +398,8 @@ class IntakeStore:
                 "options": json.loads(row["options_json"]), "explanation": row["explanation"],
                 "topic_ids": json.loads(row["topic_ids_json"]), "status": row["status"],
                 "outcome": row["outcome"], "error": row["error"], "created_at": row["created_at"],
-                "updated_at": row["updated_at"]}
+                "updated_at": row["updated_at"], "course_links": json.loads(row["course_links_json"]),
+                "tag_evidence": json.loads(row["tag_evidence_json"])}
 
     def list_questions(self, status: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
         if status is not None and status not in {"confirmed", "needs_confirmation", "excluded", "deleted"}:
@@ -307,6 +418,17 @@ class IntakeStore:
         if row is None:
             raise KeyError("Question not found")
         return self._row(row)
+
+    def questions_for_chapter(self, chapter_id: str, limit: int = 100) -> list[dict[str, Any]]:
+        if not isinstance(chapter_id, str) or not chapter_id or len(chapter_id) > 200:
+            raise ValueError("Choose a stable course chapter ID")
+        limit = max(1, min(int(limit), 200))
+        with self._connect() as db:
+            rows = db.execute("""SELECT q.* FROM questions q WHERE q.status IN ('confirmed','needs_confirmation')
+                AND EXISTS (SELECT 1 FROM json_each(q.course_links_json) link
+                            WHERE json_extract(link.value,'$.chapter_id')=?)
+                ORDER BY q.created_at DESC,q.id DESC LIMIT ?""", (chapter_id, limit))
+            return [self._row(row) for row in rows]
 
     def image_path(self, question_id: int) -> Path:
         """Return the private stored image for an existing question ID only."""
@@ -368,19 +490,39 @@ class IntakeStore:
             text = text.strip()[:200_000]
             stem, options, explanation, status = self._parse(text)
             tags = self._topic_ids(stem)
+            links, evidence = self._automatic_links(stem)
             error = ""
         except Exception as failure:
             error = str(failure).replace(str(image), "[private image]")
             error = error.replace(str(self.image_dir), "[private storage]")[:1000]
             text, stem, options, explanation, tags, status = "", "", [], "", [], "needs_confirmation"
+            links, evidence = [], []
         with self._connect() as db:
-            db.execute("UPDATE questions SET full_text=?,stem=?,options_json=?,explanation=?,topic_ids_json=?,status=?,error=?,updated_at=? WHERE id=? AND status!='deleted'",
+            db.execute("UPDATE questions SET full_text=?,stem=?,options_json=?,explanation=?,topic_ids_json=?,status=?,error=?,updated_at=?,course_links_json=?,tag_evidence_json=? WHERE id=? AND status!='deleted'",
                        (text, stem, json.dumps(options, ensure_ascii=False), explanation, json.dumps(tags), status, error,
-                        float(self.clock()), int(question_id)))
+                        float(self.clock()), json.dumps(links), json.dumps(evidence), int(question_id)))
             updated = db.execute("SELECT * FROM questions WHERE id=? AND status!='deleted'", (int(question_id),)).fetchone()
         if updated is None:
             raise KeyError("Question not found")
         return self._row(updated)
+
+    def set_course_links(self, question_id: int, chapter_ids: list[str]) -> dict[str, Any]:
+        if not isinstance(chapter_ids, list) or len(chapter_ids) > 100 or any(not isinstance(value, str) for value in chapter_ids):
+            raise ValueError("chapter_ids must be a bounded list of stable course IDs")
+        known = {row["chapter_id"] for row in self.course_catalog}
+        unique = set(chapter_ids)
+        if not unique.issubset(known):
+            raise ValueError("Unknown course chapter ID")
+        links = [{**{key: row[key] for key in ("module_id", "topic_id", "chapter_id", "title", "topic_title")},
+                  "confidence": "reviewed", "evidence": []}
+                 for row in self.course_catalog if row["chapter_id"] in unique]
+        with self._connect() as db:
+            cursor = db.execute("UPDATE questions SET course_links_json=?,updated_at=? WHERE id=? AND status!='deleted'",
+                                (json.dumps(links), float(self.clock()), int(question_id)))
+            row = db.execute("SELECT * FROM questions WHERE id=?", (int(question_id),)).fetchone()
+        if not cursor.rowcount or row is None:
+            raise KeyError("Question not found")
+        return self._row(row)
 
     def mark_outcome(self, question_id: int, outcome: str) -> dict[str, Any]:
         if outcome not in {"unknown", "wrong", "uncertain", "correct"}:
@@ -400,9 +542,10 @@ class IntakeStore:
         unique = list(dict.fromkeys(topic_ids))
         if any(topic_id not in known for topic_id in unique):
             raise ValueError("Unknown Step study topic ID")
+        evidence = [{"subject_id": identity, "confidence": "reviewed", "evidence": []} for identity in unique]
         with self._connect() as db:
-            cursor = db.execute("UPDATE questions SET topic_ids_json=?,updated_at=? WHERE id=? AND status!='deleted'",
-                                (json.dumps(unique), float(self.clock()), int(question_id)))
+            cursor = db.execute("UPDATE questions SET topic_ids_json=?,tag_evidence_json=?,updated_at=? WHERE id=? AND status!='deleted'",
+                                (json.dumps(unique), json.dumps(evidence), float(self.clock()), int(question_id)))
             row = db.execute("SELECT * FROM questions WHERE id=?", (int(question_id),)).fetchone()
         if cursor.rowcount == 0 or row is None:
             raise KeyError("Question not found")
@@ -425,6 +568,15 @@ class IntakeStore:
                     if topic_id in result:
                         result[topic_id][row["outcome"]] += 1
         return result
+
+    def chapter_link_counts(self) -> dict[str, int]:
+        """Count many-to-many associations without returning screenshots or prose."""
+        counts: dict[str, int] = {}
+        with self._connect() as db:
+            for row in db.execute("SELECT course_links_json FROM questions WHERE status IN ('confirmed','needs_confirmation')"):
+                for identity in {link.get("chapter_id") for link in json.loads(row[0]) if link.get("chapter_id")}:
+                    counts[identity] = counts.get(identity, 0) + 1
+        return counts
 
     def status(self) -> dict[str, Any]:
         with self._connect() as db:

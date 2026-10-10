@@ -107,6 +107,76 @@ class ProviderTests(unittest.TestCase):
             self.assertLessEqual(timeout, 10)
             self.assertIn("https://github.com/Colbstang/llu-neuro-psych-final", request.get_header("User-agent"))
 
+    def test_attributed_mdwiki_page_image_is_metadata_only_and_license_linked(self):
+        article = page(title="Nephrotic syndrome", extract="A kidney disorder.")
+        article["query"]["pages"][0].update({
+            "pageimage": "Example_histology.jpg",
+            "thumbnail": {"source": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Example_histology.jpg",
+                          "width": 640, "height": 480},
+        })
+        image = {"query": {"pages": [{"title": "File:Example_histology.jpg", "imageinfo": [{
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Example_histology.jpg",
+            "extmetadata": {
+                "Artist": {"value": '<a href="/wiki/User:Example">Example artist</a>'},
+                "ImageDescription": {"value": "Renal histology &amp; stained tissue."},
+                "LicenseShortName": {"value": "CC BY-SA 3.0"},
+                "LicenseUrl": {"value": "http://creativecommons.org/licenses/by-sa/3.0/"},
+            },
+        }]}]}}
+        provider = self.provider([article, image])
+        provider._records = []
+        result = provider.lookup(query="Nephrotic syndrome")
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["record"]["definition"], "A kidney disorder.")
+        self.assertEqual(result["record"]["image"], {
+            "url": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Example_histology.jpg",
+            "file_url": "https://commons.wikimedia.org/wiki/File:Example_histology.jpg",
+            "artist": "Example artist",
+            "license": "CC BY-SA 3.0",
+            "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+            "alt": "Renal histology & stained tissue.",
+            "width": 640,
+            "height": 480,
+        })
+        self.assertEqual(len(self.calls), 2)
+        self.assertLessEqual(self.calls[1][1], 3.0)
+        article_params = parse_qs(urlsplit(self.calls[0][0].full_url).query)
+        self.assertIn("pageimages", article_params["prop"][0])
+        self.assertEqual(article_params["pithumbsize"], ["640"])
+        image_params = parse_qs(urlsplit(self.calls[1][0].full_url).query)
+        self.assertEqual(image_params["titles"], ["File:Example_histology.jpg"])
+        self.assertEqual(image_params["iiprop"], ["url|extmetadata"])
+
+    def test_unattributed_or_unsafe_page_image_is_omitted_without_losing_text(self):
+        article = page(title="Nephrotic syndrome", extract="A kidney disorder.")
+        article["query"]["pages"][0].update({
+            "pageimage": "Example.svg",
+            "thumbnail": {"source": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Example.svg",
+                          "width": 640, "height": 480},
+        })
+        provider = self.provider([article])
+        provider._records = []
+        result = provider.lookup(query="Nephrotic syndrome")
+        self.assertTrue(result["ok"])
+        self.assertNotIn("image", result["record"])
+        self.assertEqual(len(self.calls), 1)
+
+        article = page(title="Nephrotic syndrome", extract="A kidney disorder.")
+        article["query"]["pages"][0].update({
+            "pageimage": "Example.jpg",
+            "thumbnail": {"source": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Example.jpg",
+                          "width": 640, "height": 480},
+        })
+        unlicensed = {"query": {"pages": [{"title": "File:Example.jpg", "imageinfo": [{
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Example.jpg",
+            "extmetadata": {"Artist": {"value": "Artist"}, "LicenseShortName": {"value": "Unknown"}},
+        }]}]}}
+        provider = self.provider([article, unlicensed])
+        provider._records = []
+        result = provider.lookup(query="Nephrotic syndrome")
+        self.assertTrue(result["ok"])
+        self.assertNotIn("image", result["record"])
+
     def test_search_candidates_are_never_auto_selected(self):
         provider = self.provider([missing(), {"query": {"search": [
             {"title": "Beta blocker", "snippet": "..."}, {"title": "Beta oxidation"}
@@ -129,6 +199,90 @@ class ProviderTests(unittest.TestCase):
         result = provider.lookup(query="Complement system")
         self.assertFalse(result["ok"])
         self.assertEqual(result["error"], "ambiguous_term")
+
+    def test_disambiguation_stub_without_pageprops_returns_linked_choices(self):
+        data = page("Posterior", "Posterior may refer to:")
+        data["query"]["pages"][0]["links"] = [
+            {"title": "Posterior (anatomy)"}, {"title": "Anterior"},
+        ]
+        provider = self.provider([data])
+        provider._records = []
+        result = provider.lookup(query="Posterior")
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"], "ambiguous_term")
+        self.assertEqual([item["title"] for item in result["candidates"]], ["Posterior (anatomy)", "Anterior"])
+
+    def test_mirrored_disambiguation_pages_return_source_link_choices(self):
+        def mirrored(title, html):
+            missing_page = {"query": {"pages": [{"title": title, "missing": True,
+                "revisions": [{"revid": 123, "mirrored": True}]}]}}
+            parse = {"parse": {"title": title, "revid": 123, "text": html}}
+            return [missing_page, parse]
+
+        posterior_html = ('<p>Posterior may refer to:</p><ul>'
+                          '<li><a href="./Posterior_(anatomy)" title="Posterior (anatomy)">Posterior (anatomy)</a></li>'
+                          '<li><a href="./Anterior" title="Anterior">Anterior</a></li></ul>')
+        provider = self.provider(mirrored("Posterior", posterior_html))
+        provider._records = []
+        result = provider.lookup(query="Posterior")
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"], "ambiguous_term")
+        self.assertEqual(result["candidates"][0]["title"], "Posterior (anatomy)")
+        self.assertIn("mdwiki.org/wiki/Posterior_%28anatomy%29", result["candidates"][0]["url"])
+
+        hemisphere_html = ('<p>Hemisphere may refer to:</p><ul>'
+                           '<li><a href="./Northern_Hemisphere" title="Northern Hemisphere">Northern Hemisphere</a></li>'
+                           '<li><a href="./Cerebral_hemisphere" title="Cerebral hemisphere">Cerebral hemisphere</a></li>'
+                           '<li><a href="./Cerebellar_hemisphere" title="Cerebellar hemisphere">Cerebellar hemisphere</a></li></ul>')
+        provider = self.provider(mirrored("Hemisphere", hemisphere_html))
+        provider._records = []
+        result = provider.lookup(query="Hemisphere")
+        self.assertFalse(result["ok"])
+        self.assertEqual([item["title"] for item in result["candidates"][:2]],
+                         ["Cerebral hemisphere", "Cerebellar hemisphere"])
+
+    def test_source_backed_posterior_anatomy_redirect_uses_matching_section(self):
+        direct = {"query": {
+            "redirects": [{"from": "Posterior (anatomy)", "to": "Anatomical terms of location"}],
+            "pages": [{"title": "Anatomical terms of location", "missing": True,
+                       "fullurl": "https://mdwiki.org/wiki/Anatomical_terms_of_location",
+                       "revisions": [{"revid": 77, "mirrored": True}] }],
+        }}
+        html = ("<h2><span>Anterior and posterior</span></h2>"
+                "<p>Anterior describes what is in front, and posterior describes what is to the back of something.</p>"
+                "<h2>Other terms</h2><p>This unrelated paragraph must not be included.</p>")
+        provider = self.provider([direct, {"parse": {"title": "Anatomical terms of location", "revid": 77, "text": html}}])
+        provider._records = []
+        result = provider.lookup(query="Posterior (anatomy)")
+        self.assertTrue(result["ok"])
+        record = result["record"]
+        self.assertEqual(record["title"], "Posterior (anatomy)")
+        self.assertIn("posterior describes what is to the back", record["definition"])
+        self.assertNotIn("unrelated", record["summary"])
+        self.assertEqual(record["source"]["section"], "Anterior and posterior")
+        self.assertTrue(record["source"]["url"].endswith("#Anterior_and_posterior"))
+
+    def test_stale_cached_disambiguation_stub_is_not_recognized_by_query_or_id(self):
+        cache_path = self.root / "cache" / "cache.json"
+        cache_path.parent.mkdir(parents=True)
+        stale = {"id": "mdwiki-posterior", "title": "Posterior", "aliases": [],
+                 "definition": "Posterior may refer to:", "summary": "Posterior may refer to:",
+                 "source": {"name": "MDWiki", "url": "https://mdwiki.org/wiki/Posterior"}}
+        cache_path.write_text(json.dumps({"query:posterior": stale, "id:mdwiki-posterior": stale}), encoding="utf-8")
+        mirrored_missing = {"query": {"pages": [{"title": "Posterior", "missing": True,
+            "revisions": [{"revid": 123, "mirrored": True}]}]}}
+        parsed = {"parse": {"title": "Posterior", "text":
+            '<p>Posterior may refer to:</p><ul><li><a href="./Posterior_(anatomy)" '
+            'title="Posterior (anatomy)">Posterior (anatomy)</a></li></ul>'}}
+        provider = self.provider([mirrored_missing, parsed])
+        provider._records = []
+        self.assertFalse(any(row["title"] == "Posterior" for row in provider.lexicon()))
+        self.assertEqual(provider.lookup(record_id="mdwiki-posterior")["error"], "unknown_term")
+        result = provider.lookup(query="Posterior")
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"], "ambiguous_term")
+        self.assertEqual(result["candidates"][0]["title"], "Posterior (anatomy)")
+        self.assertEqual(len(self.calls), 2)
 
     def test_invalid_and_unavailable_queries_are_bounded(self):
         provider = self.provider()

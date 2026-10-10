@@ -102,6 +102,156 @@ def _lead_plain_text(html: str) -> str:
     return parser.result()
 
 
+class _LocalLinkParser(HTMLParser):
+    """Collect safe same-wiki article choices from a parsed disambiguation page."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.links: list[dict[str, str]] = []
+        self._seen: set[str] = set()
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag != "a":
+            return
+        values = dict(attrs)
+        href = values.get("href") or ""
+        title = (values.get("title") or "").strip()
+        if not href.startswith("./"):
+            return
+        if not title:
+            title = urllib.parse.unquote(href[2:].split("#", 1)[0]).replace("_", " ")
+        if not title or ":" in title:
+            return
+        key = normalize_term(title)
+        if key in self._seen:
+            return
+        self._seen.add(key)
+        self.links.append({"title": title, "url": WIKI_ROOT + "/wiki/" + urllib.parse.quote(title.replace(" ", "_"))})
+
+
+class _NamedSectionParser(HTMLParser):
+    """Read prose paragraphs beneath one exact article heading."""
+
+    def __init__(self, heading: str):
+        super().__init__(convert_charrefs=True)
+        self.target = normalize_term(heading)
+        self._heading_tag: str | None = None
+        self._heading_text: list[str] = []
+        self._active = False
+        self._paragraph: list[str] | None = None
+        self._paragraphs: list[str] = []
+        self._ignored: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in {"h2", "h3", "h4"}:
+            if self._active:
+                self._active = False
+            self._heading_tag = tag
+            self._heading_text = []
+        elif self._active and tag in {"sup", "table", "ul", "ol", "figure", "script", "style"}:
+            self._ignored.append(tag)
+        elif self._active and not self._ignored and tag == "p":
+            self._finish_paragraph()
+            self._paragraph = []
+
+    def handle_endtag(self, tag: str) -> None:
+        if self._ignored:
+            for index in range(len(self._ignored) - 1, -1, -1):
+                if self._ignored[index] == tag:
+                    del self._ignored[index:]
+                    break
+            return
+        if self._heading_tag == tag:
+            heading = " ".join("".join(self._heading_text).split())
+            self._heading_tag = None
+            self._active = normalize_term(heading) == self.target
+            return
+        if tag == "p":
+            self._finish_paragraph()
+
+    def handle_data(self, data: str) -> None:
+        if self._heading_tag:
+            self._heading_text.append(data)
+        elif self._active and not self._ignored and self._paragraph is not None:
+            self._paragraph.append(data)
+
+    def _finish_paragraph(self) -> None:
+        if self._paragraph is not None:
+            text = re.sub(r"\s+", " ", "".join(self._paragraph)).strip()
+            if text:
+                self._paragraphs.append(text)
+            self._paragraph = None
+
+    def result(self) -> str:
+        self._finish_paragraph()
+        return "\n\n".join(self._paragraphs)
+
+
+def _html_link_candidates(source_html: str) -> list[dict[str, str]]:
+    parser = _LocalLinkParser()
+    parser.feed(source_html)
+    parser.close()
+    return parser.links
+
+
+def _named_section_plain_text(source_html: str, heading: str) -> str:
+    parser = _NamedSectionParser(heading)
+    parser.feed(source_html)
+    parser.close()
+    return parser.result()
+
+
+class _MetadataTextParser(HTMLParser):
+    """Reduce Commons attribution metadata to displayable plain text."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts: list[str] = []
+
+    def handle_data(self, data: str) -> None:
+        self.parts.append(data)
+
+
+def _metadata_text(value: Any, limit: int) -> str:
+    if not isinstance(value, str):
+        return ""
+    parser = _MetadataTextParser()
+    parser.feed(value)
+    parser.close()
+    return re.sub(r"\s+", " ", " ".join(parser.parts)).strip()[:limit]
+
+
+def _safe_image_url(value: Any) -> str:
+    """Accept only bounded HTTPS raster thumbnails hosted by Wikimedia."""
+    if not isinstance(value, str) or len(value) > 2048:
+        return ""
+    try:
+        parsed = urllib.parse.urlsplit(value)
+        _ = parsed.port
+    except ValueError:
+        return ""
+    if (parsed.scheme != "https" or parsed.hostname != "upload.wikimedia.org" or parsed.port not in (None, 443)
+            or parsed.username or parsed.password
+            or not parsed.path.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".gif"))):
+        return ""
+    return value
+
+
+def _safe_source_url(value: Any, hosts: set[str]) -> str:
+    if not isinstance(value, str) or len(value) > 2048:
+        return ""
+    try:
+        parsed = urllib.parse.urlsplit(value)
+        _ = parsed.port
+    except ValueError:
+        return ""
+    if parsed.scheme not in {"http", "https"} or parsed.hostname not in hosts or parsed.username or parsed.password:
+        return ""
+    if parsed.port not in (None, 80, 443):
+        return ""
+    return urllib.parse.urlunsplit(("https", parsed.hostname, parsed.path, parsed.query, parsed.fragment))
+
+
 def normalize_term(value: str) -> str:
     """Normalize punctuation, whitespace, and case for exact alias matching."""
     value = unicodedata.normalize("NFKD", value)
@@ -148,6 +298,56 @@ def _sentence_excerpt(text: str, max_words: int, max_sentences: int | None = Non
     return excerpt
 
 
+def _is_disambiguation_stub(text: Any) -> bool:
+    """Recognize short disambiguation leads even when pageprops are absent."""
+    if not isinstance(text, str):
+        return False
+    first_line = re.sub(r"\s+", " ", text.strip().splitlines()[0] if text.strip() else "")
+    return bool(re.match(
+        r"^(?:the\s+)?[^.!?]{1,160}\b(?:may|can)\s+(?:also\s+)?refer\s+to\s*:?\s*(?:$|\S)",
+        first_line, re.IGNORECASE,
+    ))
+
+
+def _is_stub_record(record: Any) -> bool:
+    if not isinstance(record, dict):
+        return False
+    return _is_disambiguation_stub(record.get("definition")) or _is_disambiguation_stub(record.get("summary"))
+
+
+def _page_candidates(page: dict[str, Any], query: str = "", limit: int = 6) -> list[dict[str, str]]:
+    links = page.get("links", [])
+    candidates: list[dict[str, str]] = []
+    seen: set[str] = set()
+    if isinstance(links, list):
+        for link in links:
+            if not isinstance(link, dict) or not isinstance(link.get("title"), str):
+                continue
+            title = link["title"].strip()
+            key = normalize_term(title)
+            if not title or key in seen:
+                continue
+            seen.add(key)
+            candidates.append({
+                "title": title,
+                "url": WIKI_ROOT + "/wiki/" + urllib.parse.quote(title.replace(" ", "_")),
+            })
+    norm_query = normalize_term(query)
+    def priority(candidate: dict[str, str], original_index: int) -> tuple[int, int]:
+        title = candidate["title"].casefold()
+        if norm_query == "posterior" and "(anatomy)" in title:
+            return (0, 0)
+        if norm_query == "posterior" and title == "anterior":
+            return (1, 0)
+        if norm_query == "hemisphere" and ("cerebral hemisphere" in title or "cerebellar hemisphere" in title):
+            return (0, 0)
+        if "anatom" in title or "brain" in title or "cerebral" in title or "cerebell" in title:
+            return (1, 0)
+        return (2, original_index)
+    ranked = sorted(enumerate(candidates), key=lambda row: priority(row[1], row[0]))
+    return [candidate for _, candidate in ranked[:limit]]
+
+
 def default_cache_path() -> Path:
     """Return per-user app data outside the repository."""
     if os.name == "nt":
@@ -191,7 +391,8 @@ class TermProvider:
                 return {}
             data = json.loads(raw.decode("utf-8"))
             if isinstance(data, dict):
-                return {k: v for k, v in data.items() if isinstance(k, str) and isinstance(v, dict)}
+                return {k: v for k, v in data.items()
+                        if isinstance(k, str) and isinstance(v, dict) and not _is_stub_record(v)}
         except (OSError, json.JSONDecodeError):
             pass
         return {}
@@ -229,7 +430,7 @@ class TermProvider:
                 return {"ok": False, "error": "ambiguous_term", "candidates": self._candidate_rows(hits)}
             with self._cache_lock:
                 cached = self._cache.get("id:" + record_id)
-            return {"ok": True, "record": cached} if cached else {"ok": False, "error": "unknown_term", "candidates": []}
+            return {"ok": True, "record": cached} if cached and not _is_stub_record(cached) else {"ok": False, "error": "unknown_term", "candidates": []}
 
         assert query is not None
         if len(query) > MAX_QUERY_LENGTH or any(ord(ch) < 32 for ch in query):
@@ -250,13 +451,13 @@ class TermProvider:
         cache_key = "query:" + norm
         with self._cache_lock:
             cached = self._cache.get(cache_key)
-        if cached:
+        if cached and not _is_stub_record(cached):
             return {"ok": True, "record": cached}
         try:
             result = self._lookup_remote(query)
         except (OSError, TimeoutError, ValueError, json.JSONDecodeError):
             return {"ok": False, "error": "source_unavailable", "candidates": []}
-        if result.get("ok") and result.get("record"):
+        if result.get("ok") and result.get("record") and not _is_stub_record(result["record"]):
             with self._cache_lock:
                 self._cache[cache_key] = result["record"]
                 self._cache["id:" + result["record"]["id"]] = result["record"]
@@ -272,11 +473,11 @@ class TermProvider:
             rows.append({"title": title, "url": str((record.get("source") or {}).get("url", ""))})
         return rows
 
-    def _api(self, params: dict[str, str]) -> dict[str, Any]:
+    def _api(self, params: dict[str, str], timeout: float | None = None) -> dict[str, Any]:
         params = {**params, "format": "json"}
         url = API_URL + "?" + urllib.parse.urlencode(params)
         request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
-        response = self.opener(request, timeout=self.timeout)
+        response = self.opener(request, timeout=min(self.timeout, timeout) if timeout is not None else self.timeout)
         try:
             body = response.read(MAX_RESPONSE_BYTES + 1)
         finally:
@@ -295,9 +496,10 @@ class TermProvider:
         # accepted only when the requested text itself resolves to that page.
         direct = self._api({
             "action": "query", "titles": query,
-            "prop": "extracts|info|revisions|pageprops", "exintro": "1",
+            "prop": "extracts|info|revisions|pageprops|links|pageimages", "plnamespace": "0", "pllimit": "5", "exintro": "1",
             "explaintext": "1", "inprop": "url", "rvprop": "ids|timestamp",
             "formatversion": "2", "redirects": "1", "ppprop": "disambiguation",
+            "piprop": "thumbnail|name", "pithumbsize": "640",
         })
         direct_pages = direct.get("query", {}).get("pages", [])
         direct_redirects = direct.get("query", {}).get("redirects", [])
@@ -333,10 +535,11 @@ class TermProvider:
 
         title = exact["title"]
         page_data = self._api({
-            "action": "query", "titles": title, "prop": "extracts|info|revisions|pageprops",
+            "action": "query", "titles": title, "prop": "extracts|info|revisions|pageprops|links|pageimages",
+            "plnamespace": "0", "pllimit": "5",
             "exintro": "1", "explaintext": "1", "inprop": "url",
             "rvprop": "ids|timestamp", "formatversion": "2", "redirects": "1",
-            "ppprop": "disambiguation",
+            "ppprop": "disambiguation", "piprop": "thumbnail|name", "pithumbsize": "640",
         })
         pages = page_data.get("query", {}).get("pages", [])
         if not isinstance(pages, list) or not pages or not isinstance(pages[0], dict):
@@ -346,10 +549,11 @@ class TermProvider:
 
     def _record_result(self, page: dict[str, Any], query: str) -> dict[str, Any]:
         page_title = page.get("title", query)
-        if page.get("missing") or page.get("pageprops", {}).get("disambiguation") is not None:
-            return {"ok": False, "error": "ambiguous_term", "candidates": [{
-                "title": page_title, "url": page.get("fullurl", "")
-            }]}
+        pageprops = page.get("pageprops")
+        extract = page.get("extract", "")
+        if (page.get("missing") or (isinstance(pageprops, dict) and "disambiguation" in pageprops)
+                or _is_disambiguation_stub(extract)):
+            return {"ok": False, "error": "ambiguous_term", "candidates": _page_candidates(page, query)}
         # Redirects are accepted only when the canonical target remains an exact
         # term match. This prevents a short query such as "beta" selecting a
         # broader article that merely ranked first in search.
@@ -362,7 +566,6 @@ class TermProvider:
                 return {"ok": False, "error": "unknown_term", "candidates": [{
                     "title": page_title, "url": page.get("fullurl", "")
                 }]}
-        extract = page.get("extract", "")
         if not isinstance(extract, str):
             extract = ""
         extract = extract.strip()
@@ -403,7 +606,60 @@ class TermProvider:
             "id": "mdwiki-" + _slug(page_title), "title": page_title, "aliases": [],
             "definition": definition, "summary": summary, "source": source,
         }
+        image = self._image_metadata(page, page_title)
+        if image:
+            record["image"] = image
         return {"ok": True, "record": record}
+
+    def _image_metadata(self, page: dict[str, Any], page_title: str) -> dict[str, Any] | None:
+        """Attach one source-provided, attributed lead image without blocking text on failures."""
+        filename = page.get("pageimage")
+        thumbnail = page.get("thumbnail")
+        image_url = _safe_image_url(thumbnail.get("source") if isinstance(thumbnail, dict) else None)
+        if not isinstance(filename, str) or not filename or len(filename) > 240 or not image_url:
+            return None
+        # The title originates at MDWiki, but still keep file lookups within the
+        # image namespace and bound the request by the common API response cap.
+        if any(ord(char) < 32 for char in filename):
+            return None
+        try:
+            payload = self._api({
+                "action": "query", "titles": "File:" + filename,
+                "prop": "imageinfo", "iiprop": "url|extmetadata", "iiurlwidth": "640",
+                "formatversion": "2",
+            }, timeout=3.0)
+        except (OSError, TimeoutError, ValueError, json.JSONDecodeError):
+            return None
+        pages = payload.get("query", {}).get("pages", [])
+        if not isinstance(pages, list) or not pages or not isinstance(pages[0], dict):
+            return None
+        infos = pages[0].get("imageinfo", [])
+        if not isinstance(infos, list) or not infos or not isinstance(infos[0], dict):
+            return None
+        info = infos[0]
+        description = _safe_source_url(info.get("descriptionurl"), {"commons.wikimedia.org", "mdwiki.org", "www.mdwiki.org"})
+        metadata = info.get("extmetadata")
+        if not description or not isinstance(metadata, dict):
+            return None
+        def value(key):
+            item = metadata.get(key)
+            return item.get("value") if isinstance(item, dict) else None
+        license_name = _metadata_text(value("LicenseShortName"), 80)
+        license_url = _safe_source_url(value("LicenseUrl"), {"creativecommons.org"})
+        artist = _metadata_text(value("Artist"), 180)
+        alt = _metadata_text(value("ImageDescription"), 240) or page_title
+        if not license_name or not license_url or not artist:
+            return None
+        return {
+            "url": image_url,
+            "file_url": description,
+            "artist": artist,
+            "license": license_name,
+            "license_url": license_url,
+            "alt": alt,
+            "width": thumbnail.get("width") if isinstance(thumbnail.get("width"), int) else None,
+            "height": thumbnail.get("height") if isinstance(thumbnail.get("height"), int) else None,
+        }
 
     @staticmethod
     def _is_mirrored_revision(page: dict[str, Any]) -> bool:
@@ -433,16 +689,38 @@ class TermProvider:
                 "title": parsed_title, "url": page.get("fullurl", "")
             }]}
         lead = _lead_plain_text(parsed["text"])
-        if not lead:
+        posterior_anatomy_alias = (
+            normalize_term(query) == "posterior anatomy"
+            and normalize_term(parsed_title) == "anatomical terms of location"
+        )
+        posterior_section = (_named_section_plain_text(parsed["text"], "Anterior and posterior")
+                             if posterior_anatomy_alias else "")
+        if not lead and not posterior_section:
             return {"ok": False, "error": "content_unavailable", "candidates": [{
                 "title": parsed_title, "url": page.get("fullurl", "")
             }]}
         enriched = dict(page)
         enriched["title"] = parsed_title
-        enriched["extract"] = lead
+        enriched["extract"] = posterior_section or lead
+        if _is_disambiguation_stub(lead):
+            enriched["links"] = _html_link_candidates(parsed["text"])
         enriched.pop("missing", None)
         if not enriched.get("revisions") and parsed.get("revid") is not None:
             enriched["revisions"] = [{"revid": parsed["revid"]}]
+        # MDWiki's Posterior (anatomy) page is an exact redirect to this
+        # article. Its named section supplies the matching anatomical meaning.
+        if posterior_section:
+            result = self._record_result(enriched, query)
+            if result.get("ok") and isinstance(result.get("record"), dict):
+                record = result["record"]
+                record["id"] = "mdwiki-posterior-anatomy"
+                record["title"] = "Posterior (anatomy)"
+                record["definition"] = _sentence_excerpt(posterior_section, 80, max_sentences=2)
+                record["summary"] = _sentence_excerpt(posterior_section, 350)
+                record["source"]["url"] = record["source"]["url"] + "#Anterior_and_posterior"
+                record["source"]["section"] = "Anterior and posterior"
+                record["source"]["changes"] = "Section excerpt; shortened for display."
+            return result
         return self._record_result(enriched, query)
 
     def _trim_cache(self) -> None:

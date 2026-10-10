@@ -73,6 +73,7 @@ class IntakeTests(unittest.TestCase):
         self.assertEqual(question["status"], "needs_confirmation")
         tagged = self.store.set_topics(question["id"], ["neuro", "neuro"])
         self.assertEqual(tagged["topic_ids"], ["neuro"])
+        self.assertEqual(tagged["tag_evidence"], [{"subject_id": "neuro", "confidence": "reviewed", "evidence": []}])
         with self.assertRaises(ValueError):
             self.store.set_topics(question["id"], ["made-up-topic"])
 
@@ -155,6 +156,74 @@ class IntakeTests(unittest.TestCase):
         counts = self.store.scan_folder(folder)
         self.assertEqual(counts["scanned"], 20)
         self.assertTrue(counts["truncated"])
+
+    def course_fixture(self):
+        return {"pages": [
+            {"id": "ch-gaze", "title": "Horizontal gaze and brainstem", "keywords": ["gaze palsy", "cranial nerve"]},
+            {"id": "ch-vessels", "title": "Cerebral vessels", "keywords": ["stroke", "middle cerebral artery"]}],
+            "topic_groups": {"groups": [
+                {"id": "brainstem", "title": "Brainstem pathways", "page_ids": ["ch-gaze"]},
+                {"id": "vascular", "title": "Vascular disease", "page_ids": ["ch-vessels", "ch-gaze"]}]}}
+
+    def test_multiple_subject_and_chapter_links_have_reviewable_evidence(self):
+        self.store.configure_course(self.course_fixture())
+        image = self.add("multi.png", b"multi", "A patient has a stroke, cranial nerve palsy, and delirium. Which diagnosis?\nA. One\nB. Two")
+        question = self.store.ingest_file(image)["question"]
+        self.assertEqual(set(question["topic_ids"]), {"neuro", "psychiatry"})
+        self.assertEqual({link["chapter_id"] for link in question["course_links"]}, {"ch-gaze", "ch-vessels"})
+        self.assertEqual({link["topic_id"] for link in question["course_links"] if link["chapter_id"] == "ch-gaze"}, {"brainstem", "vascular"})
+        self.assertTrue(all(link["confidence"] == "keyword" and link["evidence"] for link in question["course_links"]))
+        self.assertEqual(self.store.chapter_link_counts(), {"ch-gaze": 1, "ch-vessels": 1})
+        self.assertEqual(self.store.questions_for_chapter("ch-vessels")[0]["id"], question["id"])
+        reviewed = self.store.set_course_links(question["id"], ["ch-vessels", "ch-vessels"])
+        self.assertEqual(len(reviewed["course_links"]), 1)
+        self.assertEqual(reviewed["course_links"][0]["confidence"], "reviewed")
+        with self.assertRaises(ValueError):
+            self.store.set_course_links(question["id"], ["missing-chapter"])
+        self.store.delete_question(question["id"])
+        self.assertEqual(self.store.chapter_link_counts(), {})
+        self.assertEqual(self.store.questions_for_chapter("ch-vessels"), [])
+
+    def test_capture_cancel_does_nothing_and_explicit_figure_keeps_context_reviewable(self):
+        self.store.configure_course(self.course_fixture())
+        self.store.capture = lambda target: False
+        cancelled = self.store.capture_region({"subject_id": "neuro", "chapter_id": "ch-gaze"})
+        self.assertTrue(cancelled["cancelled"])
+        self.assertEqual(self.store.list_questions(), [])
+        def capture(target):
+            png(target, b"figure")
+            return True
+        self.store.capture = capture
+        self.store.ocr = lambda path: "A teaching diagram with labels"
+        result = self.store.capture_region({"subject_id": "neuro", "chapter_id": "ch-gaze"})
+        self.assertFalse(result["cancelled"])
+        self.assertEqual(result["question"]["status"], "needs_confirmation")
+        self.assertEqual(result["question"]["topic_ids"], ["neuro"])
+        self.assertEqual(result["question"]["course_links"][0]["confidence"], "context")
+        self.assertEqual(result["question"]["tag_evidence"][0]["confidence"], "context")
+        self.assertEqual(len(self.store.list_questions()), 1)
+        self.assertFalse(any(path.name.startswith("capture-") for path in self.store.image_dir.iterdir()))
+
+    def test_existing_intake_state_survives_schema_extension_and_reopening(self):
+        question = self.store.ingest_file(self.add("existing.png", b"existing", "A patient has a stroke. Which diagnosis?\nA. One\nB. Two"))["question"]
+        self.store.mark_outcome(question["id"], "wrong")
+        reopened = IntakeStore(self.store.path, self.store.image_dir, ocr=lambda _: "unused")
+        row = reopened.get_question(question["id"])
+        self.assertEqual(row["outcome"], "wrong")
+        self.assertEqual(row["stem"], question["stem"])
+        self.assertEqual(row["course_links"], [])
+        self.assertTrue(reopened.image_path(row["id"]).is_file())
+
+    def test_distinctive_metadata_titles_link_multiple_chapters_but_generic_labels_do_not(self):
+        self.store.configure_course({"pages": [
+            {"id": "stroke-map", "title": "Stroke localization"},
+            {"id": "vessels", "title": "Cerebral vessels", "blocks": [{"id": "stroke-detail", "title": "Stroke mechanisms"}]},
+            {"id": "generic", "title": "Clinical review and treatment mechanisms"}]})
+        links, _ = self.store._automatic_links("A patient has a stroke. Review the clinical treatment.")
+        self.assertEqual({link["chapter_id"] for link in links}, {"stroke-map", "vessels"})
+        self.assertTrue(all("stroke" in link["evidence"] for link in links))
+        generic, _ = self.store._automatic_links("Clinical review and treatment mechanisms")
+        self.assertEqual(generic, [])
 
 
 if __name__ == "__main__":

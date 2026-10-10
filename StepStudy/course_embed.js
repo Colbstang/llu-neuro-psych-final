@@ -4,7 +4,6 @@ const stepCourseConfig = window.STEP_COURSE_CONFIG;
 const stepCourseViews = new Set(['guide','objectives','questions','pathology','drugs','bugs']);
 let stepCourseStarted = false, stepCourseScanner = null, stepCourseLexicon = [];
 let stepCourseDefinitionSerial = 0, stepCourseHoverSerial = 0, stepCourseHoverTimer;
-const stepCourseDefinitions = new Map();
 const stepCourseOldQuestionImage = questionImageUrl;
 questionImageUrl = function (question) {
   const source=String(question.screenshot_url||question.screenshot||'');
@@ -18,7 +17,12 @@ function stepCourseInfo() {
   const c = guideLengthCounts();
   return {view:currentView,scope:week8Scope()?'week8':'all',chapters:scopePageEntries().length,
     objectives:scopeObjectives().length,questions:DATA.questions.filter(scopeQuestion).length,
-    currentPages:c.current/c.unit,expandedPages:c.full/c.unit,revision:studyAppRevision};
+    currentPages:c.current/c.unit,expandedPages:c.full/c.unit,revision:studyAppRevision,chapterId:stepCourseActiveChapter()};
+}
+function stepCourseActiveChapter(){
+  const visible=[...document.querySelectorAll('#guide [id^="page-"]')].find(node=>{const rect=node.getBoundingClientRect();return rect.top<=150&&rect.bottom>150;});
+  const index=visible?Number(visible.id.slice(5)):Number(state.page);
+  return pages[index]?.id||'';
 }
 const stepCourseOldNav = renderNav;
 const stepCourseOldOverview = scopeOverviewMarkup;
@@ -70,11 +74,7 @@ function stepCourseLink(label,url,image=false) {
   const link=stepCourseElement('a',label);link.href=safe;link.target='_blank';link.rel='noopener noreferrer';return link;
 }
 async function stepCourseLookup(query,isId=false) {
-  const key=(isId?'id:':'q:')+query.toLowerCase();if(stepCourseDefinitions.has(key))return stepCourseDefinitions.get(key);
-  const response=await fetch('/api/term?'+new URLSearchParams({[isId?'id':'q']:query}),{signal:AbortSignal.timeout(45000)});
-  const result=await response.json();
-  if(result.ok){stepCourseDefinitions.set(key,result);stepCourseDefinitions.set('id:'+result.record.id,result);}
-  return result;
+  return window.MedicalTermCards.lookup(query,isId);
 }
 function stepCourseDefinitionMarkup(record) {
   const article=stepCourseElement('article',undefined,'course-definition');
@@ -86,6 +86,7 @@ function stepCourseDefinitionMarkup(record) {
   if(source.history_url)attribution.append(document.createTextNode(' · '),stepCourseLink('History',source.history_url));
   if(source.original_url)attribution.append(document.createTextNode(' · '),stepCourseLink('Original source',source.original_url));
   if(source.original_history_url)attribution.append(document.createTextNode(' · '),stepCourseLink('Original contributors',source.original_history_url));
+  const image=window.MedicalTermCards.createImageFigure(record);if(image)article.append(image);
   article.append(attribution);return article.outerHTML;
 }
 async function stepCourseDefine(query,isId=false) {
@@ -94,7 +95,7 @@ async function stepCourseDefine(query,isId=false) {
   try {
     const result=await stepCourseLookup(query,isId);if(serial!==stepCourseDefinitionSerial)return;
     if(!result.ok){
-      const root=stepCourseElement('div');root.append(stepCourseElement('p',result.error==='source_unavailable'?'The source is unavailable. Cached terms still work.':'Choose a more specific term.'));
+      const root=stepCourseElement('div');root.append(stepCourseElement('p',result.error==='source_unavailable'?'The source is unavailable. Cached terms still work.':result.error==='ambiguous_term'?'This term has multiple meanings. Choose the definition you want.':'Choose a more specific term.'));
       for(const candidate of result.candidates||[]){const b=stepCourseElement('button',candidate.title);b.dataset.courseDefine=candidate.title;root.append(b);}
       showSidePanel(query,root.outerHTML);return;
     }
@@ -111,6 +112,7 @@ function stepCourseHover(id,anchor,immediate=false) {
     try {
       const result=await stepCourseLookup(id,true);if(serial!==stepCourseHoverSerial||!anchor.isConnected||!result.ok)return;
       const record=result.record,hover=$('#course-term-hover');hover.replaceChildren(stepCourseElement('strong',record.title),stepCourseElement('p',record.definition),stepCourseElement('small',(record.source?.name||'MDWiki')+' · '+(record.source?.license||'')));
+      const image=window.MedicalTermCards.createImageFigure(record);if(image)hover.append(image);
       const b=stepCourseElement('button','Keep beside reading →');b.onclick=()=>stepCourseDefine(id,true);hover.append(b);hover.hidden=false;
       const rect=anchor.getBoundingClientRect();hover.style.left=Math.max(8,Math.min(rect.left,innerWidth-320))+'px';hover.style.top=Math.max(8,Math.min(rect.bottom+8,innerHeight-hover.offsetHeight-8))+'px';
     }catch(_){/* A definition outage must not interrupt course reading. */}
@@ -123,16 +125,33 @@ window.addEventListener('message',event=>{
   if(event.origin!==location.origin||event.source!==window.parent||event.data?.app!=='step-course')return;
   const message=event.data;
   if(message.type==='navigate'&&stepCourseViews.has(message.view)){
-    const unchanged=message.view===currentView && (!message.scope||message.scope===state.studyScope) && (!message.target||message.target===state.studyTarget) && !message.options;
+    const unchanged=message.view===currentView && (!message.scope||message.scope===state.studyScope) && (!message.target||message.target===state.studyTarget) && !message.options && !message.chapterId && !message.shortcut;
     if(unchanged){stepCoursePost('view',stepCourseInfo());return;}
     if(message.scope==='week8'||message.scope==='all')state.studyScope=message.scope;
     if(['both','step','in-house'].includes(message.target))state.studyTarget=message.target;
     if(message.view==='objectives'&&message.options?.reviewBad){objectiveView='bad';objectiveQuiz='';objectiveSearch='';}
     ensureScopePage();navigateView(message.view,message.options||{});
+    if(message.chapterId){const index=pages.findIndex(page=>page.id===message.chapterId);if(index>=0){state.page=index;requestAnimationFrame(()=>document.getElementById('page-'+index)?.scrollIntoView({block:'start'}));}}
+    if(message.shortcut?.kind==='resource')referenceSearchResource(message.shortcut.family,'');
   } else if(message.type==='definitions') {
     stepCourseScanner?.setEnabled(message.enabled===true);
   } else if(message.type==='reference')openReferenceWorkspace();
+  else if(message.type==='chapter'&&typeof message.chapterId==='string'){
+    const index=pages.findIndex(page=>page.id===message.chapterId);if(index>=0){state.page=index;navigateView('guide');requestAnimationFrame(()=>document.getElementById('page-'+index)?.scrollIntoView({block:'start'}));}
+  }else if(message.type==='shortcuts')window.StepShortcuts.help(document,true);
+  else if(message.type==='question-links-changed')window.StepWorkspaceTools?.invalidateQuestionLinks();
 });
+document.addEventListener('keydown',event=>{
+  const text=window.getSelection()?.toString().trim()||'',action=window.StepShortcuts?.action(event,text);if(!action)return;
+  event.preventDefault();
+  if(action.kind==='help')window.StepShortcuts.help(document,true);
+  else if(action.kind==='library')openReferenceWorkspace();
+  else if(action.kind==='back')referenceShowSearchResults();
+  else if(action.kind==='resource')referenceSearchResource(action.family,text);
+  else if(action.kind==='search')referenceSearchSelection(text);
+});
+let stepCourseContextFrame;
+addEventListener('scroll',()=>{if(stepCourseContextFrame||currentView!=='guide')return;stepCourseContextFrame=requestAnimationFrame(()=>{stepCourseContextFrame=null;stepCoursePost('context',{chapterId:stepCourseActiveChapter()});});},{passive:true});
 window.StepCourseReady = async function () {
   stepCourseStarted=true;
   if(stepCourseConfig.publicOnly){const notice=stepCourseElement('aside','Public course text. Import your private bundle to load answered LOs, personal questions, lecture images, books, and scoped Anki cards.','course-public-notice');document.querySelector('.shell').prepend(notice);}
@@ -149,4 +168,12 @@ window.StepCourseReady = async function () {
     stepCoursePost('ready',stepCourseInfo());
   }catch(_){stepCoursePost('ready',stepCourseInfo());}
   window.MedicalSelectionLookup.attach($('#guide'),query=>stepCourseDefine(query));
+  if(window.StepWorkspaceTools){
+    window.StepWorkspaceTools.configure({getContext:()=>({subject_id:stepCourseConfig.subject,chapter_id:stepCourseActiveChapter()}),onCaptured:()=>stepCoursePost('inbox'),onError:message=>studyAppStatus(message),onNavigate:item=>stepCoursePost('inbox',{chapterId:item.chapter_id||stepCourseActiveChapter()})});
+    const mount=()=>{for(const node of document.querySelectorAll('#guide [id^="page-"]')){
+      if(node.dataset.inboxMounted)return;const index=Number(node.id.slice(5));if(!pages[index]?.id)continue;
+      node.dataset.inboxMounted='true';const host=stepCourseElement('div');node.append(host);window.StepWorkspaceTools.mountChapterQuestions(host,pages[index].id);
+    }};
+    new MutationObserver(mount).observe($('#guide'),{childList:true});mount();
+  }
 };
