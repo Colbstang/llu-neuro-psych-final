@@ -68,6 +68,32 @@ class PlanningTests(unittest.TestCase):
             None, None, now="2026-10-09T00:00:00Z")
         self.assertEqual([row["id"] for row in rows], ["recall:renal"])
 
+    def test_concept_queue_aggregates_individual_due_and_unseen_without_touching_anki(self):
+        catalog = [{"id": "neuro", "label": "Neurology", "dependencies": []}]
+        state = {"topics": {"neuro": {"active": True}}}
+        concepts = [
+            {"item_id": "lo:1", "topic_ids": ["neuro"], "status": "due"},
+            {"item_id": "lo:2", "topic_ids": ["neuro"], "status": "unseen"},
+            {"item_id": "lo:3", "topic_ids": ["renal"], "status": "due"},
+        ]
+        anki = {"available": True, "subjects": {"neuro": {"due_count": 2}}}
+        rows = build_review_queue(catalog, state, anki, None,
+                                  now="2026-10-09T00:00:00Z", concept_items=concepts)
+        concept = next(row for row in rows if row["kind"] == "concept")
+        self.assertEqual((concept["due_count"], concept["unseen_count"], concept["count"]), (1, 1, 2))
+        self.assertEqual(next(row for row in rows if row["kind"] == "anki")["count"], 2)
+
+    def test_concept_queue_uses_full_candidate_counts_when_session_is_capped(self):
+        catalog = [{"id": "neuro", "label": "Neurology"}]
+        rows = build_review_queue(
+            catalog, {"topics": {"neuro": {"active": True}}}, None, None,
+            now="2026-10-09T00:00:00Z",
+            concept_items=[{"item_id": "lo:one", "topic_ids": ["neuro"], "status": "unseen"}],
+            concept_counts={"neuro": {"due_count": 7, "unseen_count": 12}},
+        )
+        concept = next(row for row in rows if row["kind"] == "concept")
+        self.assertEqual((concept["due_count"], concept["unseen_count"], concept["count"]), (7, 12, 19))
+
 
 if __name__ == "__main__":
     unittest.main()

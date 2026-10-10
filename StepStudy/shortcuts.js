@@ -9,6 +9,9 @@
     if (event.altKey && !event.metaKey && !event.ctrlKey && resources[event.code]) return {kind:'resource',family:resources[event.code]};
     if (event.metaKey || event.ctrlKey || event.altKey) return null;
     if (event.key === '?') return {kind:'help'};
+    if (event.key.toLowerCase() === 'q') return {kind:'quiz'};
+    if (event.key.toLowerCase() === 'n') return {kind:'session'};
+    if (event.key.toLowerCase() === 'v') return {kind:'visual'};
     if (event.key.toLowerCase() === 's') return {kind:'search',text:String(selected).trim().slice(0,4000)};
     if (event.key.toLowerCase() === 'r') return {kind:'library'};
     if (event.key.toLowerCase() === 'b') return {kind:'back'};
@@ -18,7 +21,7 @@
     const dialog = document.createElement('dialog');dialog.className='study-shortcut-help';
     const heading=document.createElement('h2');heading.textContent='Study shortcuts';dialog.append(heading);
     const table=document.createElement('dl');
-    const rows=[['H','Highlight selected course or PDF text'],['D','Define selected text'],['S','Search selected text, or focus search'],['⌥1 / ⌥2 / ⌥3 / ⌥4','First Aid / Pathoma / Mehlman / slides & notes'],['R','Reference library'],['B','Back to reference search results'],['?','Show these shortcuts']];
+    const rows=[['H','Highlight selected course or PDF text'],['D','Define selected text'],['S','Search selected text, or focus search'],['⌥1 / ⌥2 / ⌥3 / ⌥4','First Aid / Pathoma / Mehlman / slides & notes'],['R','Reference library'],['B','Back to reference search results'],['Q','Recall the current chapter'],['N','Open or resume a study session'],['V','Open visual recall'],['?','Show these shortcuts']];
     if(capture)rows.push(['⌘⇧2','Capture a selected region into the question inbox']);
     for(const [key,description] of rows){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=key;dd.textContent=description;table.append(dt,dd);}dialog.append(table);
     const note=document.createElement('p');note.textContent='Reading shortcuts pause while you type. Space and 1–4 keep their Anki review actions.';dialog.append(note);

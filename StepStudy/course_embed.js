@@ -145,6 +145,9 @@ document.addEventListener('keydown',event=>{
   const text=window.getSelection()?.toString().trim()||'',action=window.StepShortcuts?.action(event,text);if(!action)return;
   event.preventDefault();
   if(action.kind==='help')window.StepShortcuts.help(document,true);
+  else if(action.kind==='quiz')stepCoursePost('recall-chapter',{chapterId:stepCourseActiveChapter()});
+  else if(action.kind==='session')stepCoursePost('study-session');
+  else if(action.kind==='visual')stepCoursePost('visual-recall');
   else if(action.kind==='library')openReferenceWorkspace();
   else if(action.kind==='back')referenceShowSearchResults();
   else if(action.kind==='resource')referenceSearchResource(action.family,text);
@@ -172,7 +175,13 @@ window.StepCourseReady = async function () {
     window.StepWorkspaceTools.configure({getContext:()=>({subject_id:stepCourseConfig.subject,chapter_id:stepCourseActiveChapter()}),onCaptured:()=>stepCoursePost('inbox'),onError:message=>studyAppStatus(message),onNavigate:item=>stepCoursePost('inbox',{chapterId:item.chapter_id||stepCourseActiveChapter()})});
     const mount=()=>{for(const node of document.querySelectorAll('#guide [id^="page-"]')){
       if(node.dataset.inboxMounted)return;const index=Number(node.id.slice(5));if(!pages[index]?.id)continue;
-      node.dataset.inboxMounted='true';const host=stepCourseElement('div');node.append(host);window.StepWorkspaceTools.mountChapterQuestions(host,pages[index].id);
+      node.dataset.inboxMounted='true';
+      const recall=stepCourseElement('button','Recall this chapter','course-recall-action');recall.type='button';recall.onclick=()=>stepCoursePost('recall-chapter',{chapterId:pages[index].id});
+      node.querySelector('h1,h2')?.insertAdjacentElement('afterend',recall);
+      for(const image of node.querySelectorAll('img[src^="/api/course/asset/"]')){
+        const practice=stepCourseElement('button','Practice this image','course-image-recall');practice.type='button';practice.onclick=()=>stepCoursePost('practice-image',{assetId:decodeURIComponent(image.getAttribute('src').split('/api/course/asset/')[1]),title:image.alt||pages[index].title,chapterId:pages[index].id});image.insertAdjacentElement('afterend',practice);
+      }
+      const host=stepCourseElement('div');node.append(host);window.StepWorkspaceTools.mountChapterQuestions(host,pages[index].id);
     }};
     new MutationObserver(mount).observe($('#guide'),{childList:true});mount();
   }

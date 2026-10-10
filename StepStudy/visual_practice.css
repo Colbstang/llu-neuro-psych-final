@@ -1,0 +1,47 @@
+.visual-recall{max-width:1180px;margin:0 auto;color:#263b35}
+.visual-recall button,.visual-recall input,.visual-recall textarea,.visual-recall select{font:inherit}
+.visual-heading{display:grid;grid-template-columns:1fr auto;gap:6px 18px;align-items:center;margin:0 0 22px}
+.visual-heading h2{grid-column:1;margin:0;color:#263b35;font-size:25px;font-weight:550;letter-spacing:-.35px}
+.visual-heading>.visual-intro,.visual-heading>.visual-meta{grid-column:1;grid-row:2;margin:0;color:#63716b;font-size:13px;line-height:1.55}
+.visual-heading>button{grid-column:2;grid-row:1/3}
+.visual-primary{border:1px solid #286348;background:#286348;color:#fff;padding:8px 13px;cursor:pointer}
+.visual-recall button:not(.visual-primary){border:1px solid #cad8cf;background:white;color:#345545;padding:7px 11px;cursor:pointer}
+.visual-recall button:disabled{opacity:.5;cursor:not-allowed}
+.visual-recall button:focus-visible,.visual-recall input:focus-visible,.visual-recall textarea:focus-visible,.visual-recall select:focus-visible{outline:3px solid #7eb5a1;outline-offset:2px}
+.visual-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.visual-item{border-top:2px solid #8eaa97;border-bottom:1px solid #dce6de;padding:15px 0 13px}
+.visual-item h3{margin:0 0 7px;font-size:16px;font-weight:600}
+.visual-meta,.visual-status{margin:5px 0;color:#63716b;font-size:11px;line-height:1.5}
+.visual-actions,.visual-ratings{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 0}
+.visual-empty{max-width:640px;padding:22px 0;border-top:1px solid #dce6de;color:#63716b;font-size:14px;line-height:1.7}
+.visual-editor{display:grid;gap:14px;max-width:920px}
+.visual-source-picker{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;align-items:end}
+.visual-field{display:grid;gap:6px;color:#52675c;font-size:11px;line-height:1.4}
+.visual-field input,.visual-field textarea,.visual-field select{width:100%;min-width:0;border:1px solid #cad8cf;border-radius:3px;background:#fff;color:#263b35;padding:8px 9px;font-size:13px}
+.visual-field input[type=checkbox]{width:auto;accent-color:#357253}
+.visual-topics{display:flex;gap:8px 16px;flex-wrap:wrap;border:1px solid #e0e8e2;padding:9px 12px}
+.visual-topics legend,.visual-mask-edit legend{padding:0 5px;color:#52675c;font-size:11px;font-weight:600}
+.visual-topics .visual-field{display:inline-flex;align-items:center;gap:6px}
+.visual-stage{position:relative;width:fit-content;max-width:100%;margin:10px auto 16px;line-height:0;touch-action:none;user-select:none;background:#f4f7f5}
+.visual-stage>img{display:block;width:auto;height:auto;max-width:100%;max-height:76vh;object-fit:contain}
+.visual-mask{position:absolute;display:flex;align-items:center;justify-content:center;overflow:auto;border:1px solid #315e49;background:#2a5b43;color:#fff;padding:4px;font-size:12px;line-height:1.35;text-align:center;cursor:pointer;touch-action:none}
+.visual-recall button.visual-mask{border:1px solid #315e49;background:#2a5b43;color:#fff;padding:4px;font-size:12px;line-height:1.35;text-align:center}
+.visual-mask.is-revealed,.visual-recall button.visual-mask.is-revealed{background:#f6f9f6;color:#263b35}
+.visual-mask.is-editable{border:2px solid #245d43;background:rgba(42,91,67,.58);pointer-events:none}
+.visual-mask-draft{position:absolute;border:2px dashed #286348;background:rgba(126,181,161,.2);pointer-events:none}
+.visual-mask-list{display:grid;gap:10px}
+.visual-mask-edit{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,1fr);gap:9px 14px;border:1px solid #dce6de;padding:11px}
+.visual-mask-edit legend{grid-column:1/-1}
+.visual-coordinates{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(90px,1fr));gap:8px}
+.visual-mask-edit>button{justify-self:start}
+.visual-ratings{border-top:1px solid #dce6de;padding-top:14px;margin-top:18px}
+.visual-ratings button{min-width:74px}
+.visual-error{margin:8px 0;color:#9a4038;font-size:13px;line-height:1.6}
+@media(max-width:680px){
+  .visual-heading{grid-template-columns:1fr;align-items:start}
+  .visual-heading>button{grid-column:1;grid-row:auto;justify-self:start}
+  .visual-source-picker{grid-template-columns:1fr}
+  .visual-mask-edit{grid-template-columns:1fr}
+  .visual-coordinates{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .visual-mask{font-size:10px;padding:2px}
+}

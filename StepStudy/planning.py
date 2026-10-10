@@ -44,7 +44,9 @@ def _signal_map(signals: Any) -> tuple[bool, dict[str, dict[str, Any]]]:
 
 
 def build_review_queue(catalog: Any, state: dict[str, Any], anki_signals: dict[str, Any] | None,
-                       question_signals: dict[str, Any] | None, now: datetime | str | None = None) -> list[dict[str, Any]]:
+                       question_signals: dict[str, Any] | None, now: datetime | str | None = None,
+                       concept_items: list[dict[str, Any]] | None = None,
+                       concept_counts: dict[str, dict[str, int]] | None = None) -> list[dict[str, Any]]:
     """Return actionable records; absent signals do not turn into zeroes/mastery."""
     current = _instant(now, datetime.now(timezone.utc))
     current_s = current.isoformat(timespec="seconds").replace("+00:00", "Z")
@@ -53,6 +55,29 @@ def build_review_queue(catalog: Any, state: dict[str, Any], anki_signals: dict[s
     states = state.get("topics", {}) if isinstance(state, dict) else {}
     anki_available, anki_topics = _signal_map(anki_signals)
     question_available, question_topics = _signal_map(question_signals)
+    selected_concept_counts: dict[str, dict[str, int]] = {}
+    for concept in concept_items if isinstance(concept_items, list) else []:
+        if not isinstance(concept, dict):
+            continue
+        item_topics = concept.get("topic_ids", [concept.get("topic_id")] if concept.get("topic_id") else [])
+        for tid in item_topics if isinstance(item_topics, list) else []:
+            if tid not in labels:
+                continue
+            counts = selected_concept_counts.setdefault(tid, {"due": 0, "unseen": 0})
+            status = concept.get("status")
+            if status in counts:
+                counts[status] += 1
+    # The selected study session is intentionally capped; prefer the full
+    # candidate aggregates supplied by concept_review for planner totals.
+    if isinstance(concept_counts, dict):
+        for tid, supplied_counts in concept_counts.items():
+            if tid not in labels or not isinstance(supplied_counts, dict):
+                continue
+            due = supplied_counts.get("due_count", supplied_counts.get("due"))
+            unseen = supplied_counts.get("unseen_count", supplied_counts.get("unseen"))
+            if (isinstance(due, int) and not isinstance(due, bool) and due >= 0 and
+                    isinstance(unseen, int) and not isinstance(unseen, bool) and unseen >= 0):
+                selected_concept_counts[tid] = {"due": due, "unseen": unseen}
     items: list[dict[str, Any]] = []
 
     for topic in topics:
@@ -69,6 +94,20 @@ def build_review_queue(catalog: Any, state: dict[str, Any], anki_signals: dict[s
             items.append({"id": f"recall:{tid}", "topic_id": tid, "title": title,
                           "kind": "recall", "reason": "Your concept recall is due.",
                           "due_at": next_recall, "priority": 100, "count": 1})
+
+        concept_count = selected_concept_counts.get(tid, {"due": 0, "unseen": 0})
+        if concept_count["due"] or concept_count["unseen"]:
+            due = concept_count["due"]
+            unseen = concept_count["unseen"]
+            descriptions = []
+            if due:
+                descriptions.append(f"{due} due")
+            if unseen:
+                descriptions.append(f"{unseen} unseen")
+            items.append({"id": f"concept:{tid}", "topic_id": tid, "title": title,
+                          "kind": "concept", "reason": f"Concept recall: {', '.join(descriptions)} individual item(s).",
+                          "due_at": current_s if due else None, "priority": 95 if due else 15,
+                          "count": due + unseen, "due_count": due, "unseen_count": unseen})
 
         if anki_available and tid in anki_topics:
             signal = anki_topics[tid]
@@ -93,7 +132,7 @@ def build_review_queue(catalog: Any, state: dict[str, Any], anki_signals: dict[s
 
         # A selected empty topic gets a learning prompt. Related inactive dependencies
         # are surfaced as explicit recommendations, without activating them.
-        if not next_recall and not anki_due and not (question_available and question_topics.get(tid, {}).get("unresolved_count", 0) > 0):
+        if not next_recall and not concept_count["due"] and not concept_count["unseen"] and not anki_due and not (question_available and question_topics.get(tid, {}).get("unresolved_count", 0) > 0):
             deps = [dep for dep in topic.get("dependencies", []) if not states.get(dep, {}).get("active", False)]
             extra = f" Related prerequisites to consider: {', '.join(labels.get(dep, dep) for dep in deps)}." if deps else ""
             items.append({"id": f"learn:{tid}", "topic_id": tid, "title": title,

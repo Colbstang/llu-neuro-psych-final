@@ -17,6 +17,7 @@ import subprocess
 import tempfile
 import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -45,6 +46,26 @@ underlying structure structures major important learning objectives recognize re
 section topic process blood vessels infection infections patient patients support response responses
 adult pediatric paediatric congenital acute chronic white matter central peripheral motor sensory
 anterior posterior medial lateral findings management basics principles""".split())
+REPAIR_LIMITS = {"reason_fooled_me": 2000, "missing_distinction": 2000,
+                 "correction": 5000, "source_reference": 1000, "follow_up_prompt": 2000}
+REPAIR_CONFIDENCE = {"unknown", "low", "medium", "high"}
+REPAIR_INTERVALS = {"needs_practice": 24 * 60 * 60, "recalled": 3 * 24 * 60 * 60}
+
+
+def _empty_repair() -> dict[str, Any]:
+    return {"schema_version": 1, "confidence": "unknown", **{key: "" for key in REPAIR_LIMITS},
+            "retry_count": 0, "last_retry_at": None, "last_self_result": None,
+            "next_retry_at": None}
+
+
+def _repair_priority(outcome: str, repair: dict[str, Any]) -> int:
+    """A study priority only; self-recall never resolves the original outcome."""
+    confidence = repair.get("confidence", "unknown")
+    if outcome == "wrong":
+        return {"high": 100, "medium": 80, "unknown": 70, "low": 60}.get(confidence, 70)
+    if outcome == "uncertain" or repair.get("last_self_result") == "needs_practice":
+        return {"high": 90, "medium": 60, "unknown": 50, "low": 40}.get(confidence, 50)
+    return 0
 
 
 def _private_path(path: str | Path, name: str) -> Path:
@@ -210,15 +231,42 @@ class IntakeStore:
             for column in ("course_links_json", "tag_evidence_json"):
                 if column not in columns:
                     db.execute(f"ALTER TABLE questions ADD COLUMN {column} TEXT NOT NULL DEFAULT '[]'")
+            if "repair_json" not in columns:
+                db.execute("ALTER TABLE questions ADD COLUMN repair_json TEXT NOT NULL DEFAULT '{}'")
+            db.executescript("""
+              CREATE TABLE IF NOT EXISTS question_retries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                question_id INTEGER NOT NULL REFERENCES questions(id),
+                request_id TEXT NOT NULL,
+                answer TEXT NOT NULL,
+                self_result TEXT NOT NULL CHECK(self_result IN ('needs_practice','recalled')),
+                prompt TEXT NOT NULL DEFAULT '',
+                correction TEXT NOT NULL DEFAULT '',
+                source_reference TEXT NOT NULL DEFAULT '',
+                attempted_at REAL NOT NULL,
+                UNIQUE(question_id,request_id)
+              );
+              CREATE INDEX IF NOT EXISTS question_retries_question_date ON question_retries(question_id,attempted_at DESC,id DESC);
+            """)
             try:
-                db.execute("CREATE VIRTUAL TABLE IF NOT EXISTS questions_fts USING fts5(full_text, stem, options, content='questions', content_rowid='id')")
+                # External-content columns must exactly match the source table.
+                # Older indexes called options_json 'options', which made a
+                # restart rebuild fail and subsequent updates reject deletes.
+                fts_columns = {row[1] for row in db.execute("PRAGMA table_info(questions_fts)")}
+                if fts_columns and "options_json" not in fts_columns:
+                    db.executescript("""
+                      DROP TRIGGER IF EXISTS questions_fts_insert;
+                      DROP TRIGGER IF EXISTS questions_fts_update;
+                      DROP TABLE questions_fts;
+                    """)
+                db.execute("CREATE VIRTUAL TABLE IF NOT EXISTS questions_fts USING fts5(full_text, stem, options_json, content='questions', content_rowid='id')")
                 db.executescript("""
                   CREATE TRIGGER IF NOT EXISTS questions_fts_insert AFTER INSERT ON questions BEGIN
-                    INSERT INTO questions_fts(rowid,full_text,stem,options) VALUES(new.id,new.full_text,new.stem,new.options_json);
+                    INSERT INTO questions_fts(rowid,full_text,stem,options_json) VALUES(new.id,new.full_text,new.stem,new.options_json);
                   END;
                   CREATE TRIGGER IF NOT EXISTS questions_fts_update AFTER UPDATE ON questions BEGIN
-                    INSERT INTO questions_fts(questions_fts,rowid,full_text,stem,options) VALUES('delete',old.id,old.full_text,old.stem,old.options_json);
-                    INSERT INTO questions_fts(rowid,full_text,stem,options) VALUES(new.id,new.full_text,new.stem,new.options_json);
+                    INSERT INTO questions_fts(questions_fts,rowid,full_text,stem,options_json) VALUES('delete',old.id,old.full_text,old.stem,old.options_json);
+                    INSERT INTO questions_fts(rowid,full_text,stem,options_json) VALUES(new.id,new.full_text,new.stem,new.options_json);
                   END;
                 """)
                 db.execute("INSERT INTO questions_fts(questions_fts) VALUES('rebuild')")
@@ -394,12 +442,144 @@ class IntakeStore:
 
     @staticmethod
     def _row(row: sqlite3.Row) -> dict[str, Any]:
+        repair = {**_empty_repair(), **json.loads(row["repair_json"])}
         return {"id": row["id"], "full_text": row["full_text"], "stem": row["stem"],
                 "options": json.loads(row["options_json"]), "explanation": row["explanation"],
                 "topic_ids": json.loads(row["topic_ids_json"]), "status": row["status"],
                 "outcome": row["outcome"], "error": row["error"], "created_at": row["created_at"],
                 "updated_at": row["updated_at"], "course_links": json.loads(row["course_links_json"]),
-                "tag_evidence": json.loads(row["tag_evidence_json"])}
+                "tag_evidence": json.loads(row["tag_evidence_json"]),
+                "repair": repair, "repair_priority": _repair_priority(row["outcome"], repair)}
+
+    @staticmethod
+    def _retry_row(row: sqlite3.Row) -> dict[str, Any]:
+        return {"id": row["id"], "question_id": row["question_id"], "request_id": row["request_id"],
+                "answer": row["answer"], "self_result": row["self_result"], "prompt": row["prompt"],
+                "correction": row["correction"], "source_reference": row["source_reference"],
+                "attempted_at": row["attempted_at"],
+                "date": datetime.fromtimestamp(row["attempted_at"], timezone.utc).isoformat()}
+
+    def get_repair(self, question_id: int, history_limit: int = 30) -> dict[str, Any]:
+        limit = max(1, min(int(history_limit), 100))
+        with self._connect() as db:
+            db.execute("BEGIN")
+            row = db.execute("SELECT * FROM questions WHERE id=? AND status!='deleted'", (int(question_id),)).fetchone()
+            if row is None:
+                raise KeyError("Question not found")
+            question = self._row(row)
+            attempts = [self._retry_row(attempt) for attempt in db.execute(
+                "SELECT * FROM question_retries WHERE question_id=? ORDER BY attempted_at DESC,id DESC LIMIT ?", (int(question_id), limit))]
+        repair = {**question["repair"], "history": attempts,
+                  "history_partial": question["repair"]["retry_count"] > len(attempts)}
+        return {"ok": True, "question": question, "repair": repair}
+
+    def save_repair(self, question_id: int, patch: dict[str, Any]) -> dict[str, Any]:
+        """Merge explicit user repair notes without touching outcome, OCR or links."""
+        if not isinstance(patch, dict) or not set(patch).issubset({"confidence", *REPAIR_LIMITS}):
+            raise ValueError("Invalid question repair fields")
+        if "confidence" in patch and (not isinstance(patch["confidence"], str) or patch["confidence"] not in REPAIR_CONFIDENCE):
+            raise ValueError("Confidence must be unknown, low, medium, or high")
+        for key, maximum in REPAIR_LIMITS.items():
+            if key in patch and (not isinstance(patch[key], str) or len(patch[key]) > maximum):
+                raise ValueError(f"{key} must be text up to {maximum} characters")
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT * FROM questions WHERE id=? AND status!='deleted'", (int(question_id),)).fetchone()
+            if row is None:
+                raise KeyError("Question not found")
+            repair = {**self._row(row)["repair"], **patch}
+            if repair["correction"].strip() and not repair["source_reference"].strip():
+                raise ValueError("Add a source reference for the correction you checked")
+            repair["updated_at"] = float(self.clock())
+            db.execute("UPDATE questions SET repair_json=?,updated_at=? WHERE id=?",
+                       (json.dumps(repair, ensure_ascii=False), repair["updated_at"], int(question_id)))
+        return self.get_repair(question_id)
+
+    def record_retry(self, question_id: int, answer: str, self_result: str, request_id: str) -> dict[str, Any]:
+        if not isinstance(answer, str) or not answer.strip() or len(answer) > 10_000:
+            raise ValueError("Enter an independent retry answer up to 10000 characters")
+        if not isinstance(self_result, str) or self_result not in {"needs_practice", "recalled"}:
+            raise ValueError("Choose needs_practice or recalled explicitly")
+        if not isinstance(request_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{8,128}", request_id):
+            raise ValueError("A unique bounded retry request_id is required")
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT * FROM questions WHERE id=? AND status!='deleted'", (int(question_id),)).fetchone()
+            if row is None:
+                raise KeyError("Question not found")
+            previous = db.execute("SELECT * FROM question_retries WHERE question_id=? AND request_id=?",
+                                  (int(question_id), request_id)).fetchone()
+            if previous is not None:
+                if previous["answer"] != answer.strip() or previous["self_result"] != self_result:
+                    raise ValueError("This retry request_id was already used for another response")
+            else:
+                repair = self._row(row)["repair"]
+                now = float(self.clock())
+                db.execute("INSERT INTO question_retries(question_id,request_id,answer,self_result,prompt,correction,source_reference,attempted_at) VALUES(?,?,?,?,?,?,?,?)",
+                           (int(question_id), request_id, answer.strip(), self_result, repair["follow_up_prompt"],
+                            repair["correction"], repair["source_reference"], now))
+                repair.update({"retry_count": repair["retry_count"] + 1, "last_retry_at": now,
+                               "last_self_result": self_result,
+                               "next_retry_at": now + REPAIR_INTERVALS[self_result]})
+                db.execute("UPDATE questions SET repair_json=?,updated_at=? WHERE id=?",
+                           (json.dumps(repair, ensure_ascii=False), now, int(question_id)))
+        return self.get_repair(question_id)
+
+    def _repair_metadata(self, db, topic_id: str | None = None) -> list[tuple[int, int, float, float | None]]:
+        if topic_id is not None and topic_id not in {topic["id"] for topic in self.topics}:
+            raise ValueError("Unknown subject")
+        metadata = []
+        for row in db.execute("SELECT id,outcome,repair_json,created_at,topic_ids_json FROM questions WHERE status='confirmed'"):
+            if topic_id is not None and topic_id not in json.loads(row["topic_ids_json"]):
+                continue
+            repair = {**_empty_repair(), **json.loads(row["repair_json"])}
+            priority = _repair_priority(row["outcome"], repair)
+            if priority:
+                metadata.append((row["id"], priority, repair["last_retry_at"] or row["created_at"], repair["next_retry_at"]))
+        return metadata
+
+    def repair_queue(self, limit: int = 50, *, due_only: bool = True,
+                     topic_id: str | None = None) -> list[dict[str, Any]]:
+        limit = max(1, min(int(limit), 200))
+        now = float(self.clock())
+        with self._connect() as db:
+            # Rank small metadata first; dashboard refreshes must not read every
+            # screenshot's full OCR text just to choose a few repair items.
+            metadata = [item for item in self._repair_metadata(db, topic_id)
+                        if not due_only or item[3] is None or item[3] <= now]
+            identities = [item[0] for item in sorted(metadata, key=lambda item: (-item[1], -item[2], -item[0]))[:limit]]
+            if not identities:
+                return []
+            placeholders = ",".join("?" for _ in identities)
+            rows = {row["id"]: self._row(row) for row in db.execute(
+                f"SELECT * FROM questions WHERE id IN ({placeholders})", identities)}
+        return [rows[identity] for identity in identities]
+
+    def repair_counts(self, topic_id: str | None = None) -> dict[str, Any]:
+        """Small aggregate metadata; original question outcome remains separate."""
+        now = float(self.clock())
+        with self._connect() as db:
+            metadata = self._repair_metadata(db, topic_id)
+        future = [item[3] for item in metadata if item[3] is not None and item[3] > now]
+        return {"total": len(metadata), "due": len(metadata) - len(future),
+                "scheduled": len(future), "new": sum(item[3] is None for item in metadata),
+                "earliest_due_at": min(future) if future else None}
+
+    def export_repairs(self) -> dict[str, Any]:
+        """Private backup of every repair and retry, excluding storage paths."""
+        with self._connect() as db:
+            db.execute("BEGIN")
+            questions = [{"id": row["id"], "topic_ids": json.loads(row["topic_ids_json"]),
+                          "course_links": json.loads(row["course_links_json"]), "outcome": row["outcome"],
+                          "repair": {**_empty_repair(), **json.loads(row["repair_json"])}}
+                         for row in db.execute("SELECT id,topic_ids_json,course_links_json,outcome,repair_json FROM questions WHERE status!='deleted'")]
+            history: dict[int, list] = {}
+            for row in db.execute("SELECT * FROM question_retries ORDER BY attempted_at,id"):
+                history.setdefault(row["question_id"], []).append(self._retry_row(row))
+        return {"schema_version": 1, "questions": [
+            {"question_id": row["id"], "topic_ids": row["topic_ids"], "course_links": row["course_links"],
+             "outcome": row["outcome"], "repair": {**row["repair"], "history": history.get(row["id"], [])}}
+            for row in questions if row["repair"] != _empty_repair() or history.get(row["id"])]}
 
     def list_questions(self, status: str | None = None, limit: int = 100) -> list[dict[str, Any]]:
         if status is not None and status not in {"confirmed", "needs_confirmation", "excluded", "deleted"}:

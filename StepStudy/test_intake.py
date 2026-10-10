@@ -1,4 +1,5 @@
 import struct
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -52,6 +53,26 @@ class IntakeTests(unittest.TestCase):
         self.assertEqual(self.store.ingest_file(other)["question"]["status"], "excluded")
         self.assertEqual(self.store.ingest_file(survey)["question"]["status"], "needs_confirmation")
         self.assertEqual(len(self.store.list_questions("needs_confirmation")), 2)
+
+    def test_restart_migrates_legacy_search_index_without_losing_question_or_repair(self):
+        path = self.add("restart.png", b"restart", "A patient with a stroke has weakness. Which option fits?\nA. One\nB. Two")
+        question = self.store.ingest_file(path)["question"]
+        self.store.close()
+        with sqlite3.connect(self.root / "app" / "intake.sqlite3") as db:
+            db.executescript("""
+              DROP TRIGGER questions_fts_insert;
+              DROP TRIGGER questions_fts_update;
+              DROP TABLE questions_fts;
+              CREATE VIRTUAL TABLE questions_fts USING fts5(full_text,stem,options,content='questions',content_rowid='id');
+            """)
+        self.store = IntakeStore(self.root / "app" / "intake.sqlite3", self.root / "app" / "screenshots")
+        self.assertEqual(self.store.search_questions("stroke")[0]["id"], question["id"])
+        self.store.save_repair(question["id"], {"correction": "Checked synthetic distinction", "source_reference": "Synthetic source p. 1"})
+        self.store.close()
+        self.store = IntakeStore(self.root / "app" / "intake.sqlite3", self.root / "app" / "screenshots")
+        self.store.mark_outcome(question["id"], "wrong")
+        self.assertEqual(self.store.get_repair(question["id"])["repair"]["correction"], "Checked synthetic distinction")
+        self.assertEqual(self.store.search_questions("stroke")[0]["id"], question["id"])
 
     def test_sha_deduplication_and_id_scoped_private_image_access(self):
         source = self.add("first.png", b"same", "Which diagnosis is most likely?\nA. One\nB. Two")
@@ -224,6 +245,144 @@ class IntakeTests(unittest.TestCase):
         self.assertTrue(all("stroke" in link["evidence"] for link in links))
         generic, _ = self.store._automatic_links("Clinical review and treatment mechanisms")
         self.assertEqual(generic, [])
+
+    def repair_question(self, marker=b"repair"):
+        self.store.configure_course(self.course_fixture())
+        row = self.store.ingest_file(self.add("repair-"+marker.decode()+".png", marker,
+            "A patient has a stroke and delirium. Which diagnosis?\nA. One\nB. Two\nExplanation: original wording."))["question"]
+        self.store.mark_outcome(row["id"], "wrong")
+        return self.store.get_question(row["id"])
+
+    def test_repair_notes_are_additive_private_and_source_reference_is_required_for_correction(self):
+        row = self.repair_question()
+        saved = self.store.save_repair(row["id"], {"confidence": "high", "reason_fooled_me": "I overread a clue",
+            "missing_distinction": "Distinguish two possibilities", "correction": "My checked correction",
+            "source_reference": "Synthetic reference p. 4", "follow_up_prompt": "What distinction changes the answer?"})
+        self.assertEqual(saved["question"]["outcome"], "wrong")
+        self.assertEqual(saved["question"]["full_text"], row["full_text"])
+        self.assertEqual(saved["question"]["topic_ids"], row["topic_ids"])
+        self.assertEqual(saved["question"]["course_links"], row["course_links"])
+        self.assertEqual(saved["question"]["repair_priority"], 100)
+        updated = self.store.save_repair(row["id"], {"reason_fooled_me": "A revised note"})
+        self.assertEqual(updated["repair"]["correction"], "My checked correction")
+        with self.assertRaises(ValueError):
+            self.store.save_repair(row["id"], {"source_reference": ""})
+        with self.assertRaises(ValueError):
+            self.store.save_repair(row["id"], {"confidence": "mastered"})
+        with self.assertRaises(ValueError):
+            self.store.save_repair(row["id"], {"outcome": "correct"})
+        reopened = IntakeStore(self.store.path, self.store.image_dir, ocr=lambda _: "unused")
+        self.assertEqual(reopened.get_repair(row["id"])["repair"]["reason_fooled_me"], "A revised note")
+        self.assertEqual(reopened.get_question(row["id"])["outcome"], "wrong")
+
+    def test_independent_retry_is_idempotent_and_does_not_resolve_original_outcome(self):
+        row = self.repair_question()
+        self.store.clock = lambda: 1780000000.0
+        result = self.store.record_retry(row["id"], "My independent answer", "recalled", "retry-unique-1")
+        self.assertEqual(result["repair"]["retry_count"], 1)
+        self.assertEqual(result["repair"]["history"][0]["answer"], "My independent answer")
+        self.assertEqual(result["repair"]["history"][0]["self_result"], "recalled")
+        self.assertEqual(result["repair"]["next_retry_at"], 1780000000.0 + 3 * 86400)
+        self.assertEqual(result["question"]["outcome"], "wrong")
+        self.assertGreater(result["question"]["repair_priority"], 0)
+        self.assertEqual(self.store.topic_signals()["neuro"]["wrong"], 1)
+        repeated = self.store.record_retry(row["id"], "My independent answer", "recalled", "retry-unique-1")
+        self.assertEqual(repeated["repair"]["retry_count"], 1)
+        self.assertEqual(repeated["repair"]["next_retry_at"], result["repair"]["next_retry_at"])
+        with self.assertRaises(ValueError):
+            self.store.record_retry(row["id"], "Changed answer", "recalled", "retry-unique-1")
+        with self.assertRaises(ValueError):
+            self.store.record_retry(row["id"], "Answer", "correct", "retry-unique-2")
+        with self.assertRaises(ValueError):
+            self.store.record_retry(row["id"], " ", "needs_practice", "retry-unique-2")
+
+    def test_retry_history_snapshots_source_notes_and_private_export_keeps_full_history(self):
+        row = self.repair_question()
+        self.store.save_repair(row["id"], {"correction": "First correction", "source_reference": "Source A p. 1", "follow_up_prompt": "First prompt"})
+        self.store.clock = lambda: 1780000000.0
+        self.store.record_retry(row["id"], "First answer", "needs_practice", "retry-history-1")
+        self.store.save_repair(row["id"], {"correction": "Second correction", "source_reference": "Source B p. 2", "follow_up_prompt": "Second prompt"})
+        self.store.clock = lambda: 1780000300.0
+        self.store.record_retry(row["id"], "Second answer", "recalled", "retry-history-2")
+        recent = self.store.get_repair(row["id"], history_limit=1)["repair"]
+        self.assertTrue(recent["history_partial"])
+        self.assertEqual(recent["history"][0]["prompt"], "Second prompt")
+        exported = self.store.export_repairs()
+        item = exported["questions"][0]
+        self.assertEqual(item["topic_ids"], ["neuro", "psychiatry"])
+        self.assertEqual(item["course_links"], row["course_links"])
+        history = item["repair"]["history"]
+        self.assertEqual(len(history), 2)
+        self.assertEqual(history[0]["correction"], "First correction")
+        self.assertEqual(history[0]["source_reference"], "Source A p. 1")
+        self.assertNotIn("image_name", str(exported))
+        self.assertNotIn(str(self.root), str(exported))
+
+    def test_confident_wrong_questions_take_priority_and_only_explicit_outcome_changes_resolve_them(self):
+        confident = self.repair_question(b"confident")
+        uncertain = self.repair_question(b"uncertain")
+        self.store.save_repair(confident["id"], {"confidence": "high"})
+        self.store.save_repair(uncertain["id"], {"confidence": "low"})
+        self.store.record_retry(confident["id"], "A recalled distinction", "recalled", "retry-priority-1")
+        self.assertEqual(self.store.repair_queue(due_only=False)[0]["id"], confident["id"])
+        self.store.mark_outcome(confident["id"], "correct")
+        self.assertEqual([item["id"] for item in self.store.repair_queue()], [uncertain["id"]])
+
+    def test_repair_queue_waits_until_next_retry_for_both_explicit_results(self):
+        new = self.repair_question(b"new")
+        needs = self.repair_question(b"needs")
+        recalled = self.repair_question(b"recalled")
+        now = 1780000000.0
+        self.store.clock = lambda: now
+        self.store.record_retry(needs["id"], "Independent attempt", "needs_practice", "retry-due-needs")
+        self.store.record_retry(recalled["id"], "Independent attempt", "recalled", "retry-due-recalled")
+        self.assertEqual([item["id"] for item in self.store.repair_queue()], [new["id"]])
+        self.assertEqual(self.store.repair_counts(), {"total": 3, "due": 1, "scheduled": 2,
+            "new": 1, "earliest_due_at": now + 86400})
+        self.assertEqual(len(self.store.repair_queue(due_only=False)), 3)
+        self.store.clock = lambda: now + 86400
+        self.assertEqual({item["id"] for item in self.store.repair_queue()}, {new["id"], needs["id"]})
+        self.store.clock = lambda: now + 3 * 86400
+        self.assertEqual(len(self.store.repair_queue()), 3)
+        self.assertEqual(self.store.topic_signals()["neuro"]["wrong"], 3)
+        self.assertTrue(all(self.store.get_question(row["id"])["outcome"] == "wrong" for row in (new, needs, recalled)))
+
+    def test_repair_queue_filters_subject_before_limit_and_counts_without_source_text(self):
+        neuro = self.repair_question(b"neuro")
+        psychiatry = self.repair_question(b"psychiatry")
+        self.store.set_topics(neuro["id"], ["neuro"])
+        self.store.set_topics(psychiatry["id"], ["psychiatry"])
+        self.store.save_repair(psychiatry["id"], {"confidence": "high"})
+        self.assertEqual(self.store.repair_queue(1)[0]["id"], psychiatry["id"])
+        self.assertEqual(self.store.repair_queue(1, topic_id="neuro")[0]["id"], neuro["id"])
+        self.assertEqual(self.store.repair_counts("neuro"), {"total": 1, "due": 1, "scheduled": 0,
+            "new": 1, "earliest_due_at": None})
+        with self.assertRaises(ValueError): self.store.repair_queue(topic_id="unknown")
+
+    def test_repair_schema_upgrade_preserves_existing_question_and_links(self):
+        row = self.repair_question()
+        with self.store._connect() as db:
+            db.execute("DROP TABLE question_retries")
+            db.execute("ALTER TABLE questions DROP COLUMN repair_json")
+        reopened = IntakeStore(self.store.path, self.store.image_dir, ocr=lambda _: "unused")
+        upgraded = reopened.get_repair(row["id"])
+        self.assertEqual(upgraded["question"]["outcome"], "wrong")
+        self.assertEqual(upgraded["question"]["topic_ids"], row["topic_ids"])
+        self.assertEqual(upgraded["question"]["course_links"], row["course_links"])
+        self.assertEqual(upgraded["repair"]["confidence"], "unknown")
+        self.assertEqual(upgraded["repair"]["history"], [])
+
+    def test_deleted_question_repair_cannot_be_changed_or_exported(self):
+        row = self.repair_question()
+        self.store.save_repair(row["id"], {"confidence": "high"})
+        self.store.delete_question(row["id"])
+        with self.assertRaises(KeyError):
+            self.store.get_repair(row["id"])
+        with self.assertRaises(KeyError):
+            self.store.save_repair(row["id"], {"confidence": "low"})
+        with self.assertRaises(KeyError):
+            self.store.record_retry(row["id"], "answer", "recalled", "retry-deleted-1")
+        self.assertEqual(self.store.export_repairs()["questions"], [])
 
 
 if __name__ == "__main__":

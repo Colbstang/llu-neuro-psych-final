@@ -21,6 +21,9 @@ PROJECT_FILES = {
         "course_embed.css",
         "labs.py", "workspace_tools.js", "workspace_tools.css", "shortcuts.js",
         "course_practice.js", "course_practice.css", "reference_service.py",
+            "concept_learning.py", "study_session.py", "learning_sources.py",
+            "learning_flow.js", "learning_flow.css", "repair_practice.js", "repair_practice.css",
+            "visual_recall.py", "visual_practice.js", "visual_practice.css",
     ],
     "TermCards": [
         "__init__.py", "provider.py", "term_cards.js",

@@ -36,6 +36,10 @@ from StepStudy.live_cards import LiveCards
 from StepStudy.planning import build_review_queue
 from StepStudy.recall import build_recall
 from StepStudy.store import StepStudyStore
+from StepStudy.concept_learning import build_catalog, build_item_context
+from StepStudy.study_session import StudySessions, make_plan
+from StepStudy.visual_recall import VisualRecallStore
+from StepStudy.learning_sources import course_images
 from StepStudy.module_signals import summarize_module
 from StudyApp.anki_bridge import AnkiBridge
 from StudyApp.app_paths import default_data_dir as llu_study_data_dir
@@ -45,6 +49,7 @@ from TermCards.provider import TermProvider
 
 ROOT = Path(__file__).resolve().parent
 STATIC = {"/step.js": ROOT / "step.js", "/step.css": ROOT / "step.css",
+          **{f"/{name}": ROOT / name for name in ("learning_flow.js", "learning_flow.css", "repair_practice.js", "repair_practice.css", "visual_practice.js", "visual_practice.css")},
           "/shortcuts.js": ROOT / "shortcuts.js",
           "/workspace_tools.js": ROOT / "workspace_tools.js", "/workspace_tools.css": ROOT / "workspace_tools.css",
           "/course_embed.js": ROOT / "course_embed.js", "/course_embed.css": ROOT / "course_embed.css",
@@ -125,6 +130,9 @@ class Services:
         self.terms = terms or TermProvider(PROJECT / "TermCards" / "data" / "terms.json", cache_path=self.data_dir / "term-cache.json")
         self.intake = intake or IntakeStore(self.data_dir / "question-intake.sqlite3", self.data_dir / "question-images")
         self.labs = labs or LocalLabs(self.data_dir / "labs.json")
+        self.visual = VisualRecallStore(self.data_dir / "visual-recall.sqlite3")
+        self.study_sessions = StudySessions(self.data_dir / "study-session.json")
+        self._learning_catalog = None
         self.reference_service = ReferenceService(self.data_dir)
         self.anki = anki or AnkiSignals()
         self.cards = cards or LiveCards(self.data_dir)
@@ -157,6 +165,7 @@ class Services:
         self._intake_catalog_ready = False
         self._course_anki_instance = None
         self.pending: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        self.completed_concepts = OrderedDict()
         self.lock = threading.RLock()
         self.anki_lock = threading.Lock()
         self.module_lock = threading.Lock()
@@ -278,13 +287,146 @@ class Services:
                 "total": sum(row.get(key, 0) for key in ("wrong", "uncertain", "correct", "unknown"))}
                 for tid, row in raw.items() if any(row.values())}}
 
+    def concept_catalog(self):
+        if self.course is None: return []
+        with self.lock:
+            if self._learning_catalog is None:
+                self._learning_catalog = build_catalog(self.course.data(), source_resolver=getattr(self.course, "source_document_url", None))
+            return self._learning_catalog
+
+    def concepts(self, topic_id=None, chapter_id=None, limit=100):
+        catalog = self.concept_catalog()
+        if not topic_id:
+            active = self.store.snapshot()["topics"]
+            catalog = [{**item, "topic_ids": [tid for tid in item["topic_ids"] if active.get(tid, {}).get("active")]}
+                       for item in catalog if any(active.get(tid, {}).get("active") for tid in item["topic_ids"])]
+        return {"ok": True, **self.store.concept_review(catalog, topic_id or None, chapter_id or None, limit=limit)}
+
+    def start_concept(self, item_id, topic_id=None):
+        if self.course is None: raise ValueError("The course module is unavailable")
+        context = build_item_context(self.course.data(), item_id, source_resolver=getattr(self.course, "source_document_url", None))
+        if not context: raise ValueError("This objective has no supplied source explanation yet")
+        item = context["item"]
+        active = self.store.snapshot()["topics"]
+        topics = [tid for tid in item["topic_ids"] if active.get(tid, {}).get("active")]
+        if topic_id and topic_id not in topics: raise ValueError("This objective is not in the selected active subject")
+        if topic_id: topics = [topic_id]
+        if not topics: raise ValueError("Activate this subject before practicing recall")
+        context.update(item_id=item_id, topic_id=topics[0], chapter_id=item["chapter_id"],
+                       session_id=secrets.token_urlsafe(18), revealed=False)
+        with self.lock:
+            self.pending[context["session_id"]] = context
+            while len(self.pending) > 100: self.pending.popitem(last=False)
+        return {"ok": True, "recall": {key: context[key] for key in ("session_id", "item_id", "topic_id", "chapter_id", "prompt", "sources")} | {"chapter_title": item.get("chapter_title", "")}}
+
+    def reveal_concept(self, session_id, answer):
+        if not isinstance(answer, str) or not answer.strip() or len(answer) > 2000:
+            raise ValueError("Write your explanation before checking the source")
+        with self.lock:
+            context = self.pending.get(session_id)
+            if not context or "item" not in context: raise ValueError("Reopen this objective")
+            if context.get("submitting"): raise ValueError("This answer is being saved")
+            context["revealed"] = True
+            context.setdefault("independent_answer", answer)
+            return {"ok": True, "reference_context": context["reference_context"]}
+
+    def answer_concept(self, body):
+        session_id, answer, action = body.get("session_id"), body.get("answer"), body.get("action")
+        if not isinstance(answer, str) or not answer.strip() or len(answer) > 2000: raise ValueError("Enter an answer of 1–2,000 characters")
+        if action not in {"grade", "save", "self_rating"}: raise ValueError("Choose how to save this answer")
+        with self.lock:
+            signature = (answer, action, body.get("self_rating"))
+            previous = self.completed_concepts.get(session_id)
+            if previous:
+                if previous[0] != signature: raise ValueError("This answer has already been saved")
+                return previous[1]
+            prompt = self.pending.get(session_id)
+            if not prompt or "item" not in prompt: raise ValueError("This objective session expired. Reopen it.")
+            if prompt.get("submitting"): raise ValueError("This answer is already being saved")
+            if action == "grade" and prompt["revealed"]: raise ValueError("The explanation is revealed. Use your own recall rating.")
+            if action == "self_rating" and (not prompt["revealed"] or answer != prompt.get("independent_answer")):
+                raise ValueError("Check the source against your independent answer first")
+            prompt["submitting"] = True
+        try:
+            grade = self.grader(prompt["prompt"], answer, prompt["expected_points"], prompt["sources"], reference_context=prompt["reference_context"]) if action == "grade" else None
+            store_action = "assessed" if grade and grade.get("assessed") is True else ("self_rating" if action == "self_rating" else "save")
+            attempt = self.store.record_concept_attempt(prompt["item_id"], prompt["topic_id"], prompt["prompt"], answer,
+                action=store_action, grade=grade, self_rating=body.get("self_rating") if action == "self_rating" else None,
+                revealed=prompt["revealed"], session_id=session_id, attempt_id=session_id, chapter_id=prompt["chapter_id"])
+            result = {"ok": True, "grade": grade, "attempt": attempt}
+            if action == "grade" or prompt["revealed"]:
+                result["reference_context"] = prompt["reference_context"]
+            with self.lock:
+                self.pending.pop(session_id, None)
+                self.completed_concepts[session_id] = (signature, result)
+                while len(self.completed_concepts) > 100: self.completed_concepts.popitem(last=False)
+            return result
+        finally:
+            with self.lock: prompt.pop("submitting", None)
+
+    def visual_sources(self, chapter_id=None):
+        rows = course_images(self.course.data(), chapter_id) if self.course else []
+        if self.course and hasattr(self.course, "asset_mime"):
+            rows = [row for row in rows if self.course.asset_mime(row["source"]["id"]) in {"image/png", "image/jpeg"}]
+        topics = {}
+        for item in self.concept_catalog(): topics.setdefault(item["chapter_id"], set()).update(item["topic_ids"])
+        for row in rows: row["topic_ids"] = sorted(topics.get(row["chapter_id"], set()))
+        if not chapter_id:
+            for row in self.intake.list_questions(limit=100):
+                rows.append({"source": {"kind": "intake_image", "id": str(row["id"])},
+                             "title": "Saved screenshot " + str(row["id"]), "topic_ids": row["topic_ids"],
+                             "image_url": "/api/visual/image/intake_image/" + str(row["id"])})
+        return {"ok": True, "sources": rows}
+
+    def visual_image(self, kind, identity):
+        if kind == "upload": return self.visual.get_upload(identity)
+        if kind == "course_asset" and self.course: return self.course.asset(identity)
+        if kind == "intake_image":
+            path = self.intake.image_path(int(identity))
+            if path and path.is_file(): return {"body": path.read_bytes(), "mime_type": mimetypes.guess_type(path.name)[0] or "image/png"}
+        return None
+
+    def create_visual(self, body):
+        source = body.get("source")
+        if not isinstance(source, dict): raise ValueError("Choose an image")
+        image = self.visual_image(source.get("kind"), source.get("id"))
+        if not image: raise ValueError("This source image is unavailable. Choose it again.")
+        # Course tokens are intentionally ephemeral. A private copy makes an
+        # exercise and its masks survive a course reload or service restart.
+        if source["kind"] == "course_asset":
+            return {"ok": True, "exercise": self.visual.create_from_image(body.get("name"), image["body"], image["mime_type"], body.get("topic_ids", []), body.get("chapter_id"), body.get("masks", []))}
+        return {"ok": True, "exercise": self.visual.create_exercise(body.get("name"), source, body.get("topic_ids", []), body.get("chapter_id"), body.get("masks", []))}
+
+    def update_visual(self, body):
+        patch = body.get("patch")
+        if not isinstance(patch, dict): raise ValueError("Invalid exercise edit")
+        source = patch.get("source")
+        if source is not None:
+            if not isinstance(source, dict): raise ValueError("Choose an image")
+            image = self.visual_image(source.get("kind"), source.get("id"))
+            if not image: raise ValueError("This image is unavailable")
+            if source.get("kind") == "course_asset":
+                return {"ok": True, "exercise": self.visual.update_from_image(body.get("id"), patch, image["body"], image["mime_type"])}
+        return {"ok": True, "exercise": self.visual.update_exercise(body.get("id"), patch)}
+
+    def start_study_session(self, minutes, topic_id):
+        self.store._validate(topic_id)
+        if not self.store.snapshot()["topics"][topic_id]["active"]: raise ValueError("Activate this subject first")
+        concepts = self.concepts(topic_id, limit=20)["items"]
+        repairs = self.intake.repair_queue(topic_id=topic_id)
+        visuals = self.visual.list_exercises(topic_id=topic_id, due_only=True)
+        lab = next((item for item in self.concept_catalog() if topic_id in item["topic_ids"] and "eye-movements" in item["chapter_id"]), None)
+        plan = make_plan(concepts, repairs, visuals, self.anki_signals.get("subjects", {}).get(topic_id), minutes=minutes, topic_id=topic_id, lab=lab)
+        return {"ok": True, "session": self.study_sessions.start(plan)}
+
     def workspace(self):
         state = self.store.snapshot()
         questions = self.question_signals()
         with self.lock:
             anki = dict(self.anki_signals)
         module = self.read_module_signals()
-        queue = build_review_queue(self.catalog, state, anki, questions)
+        concept_summary = self.concepts(limit=100)
+        queue = build_review_queue(self.catalog, state, anki, questions, concept_items=concept_summary["items"], concept_counts=concept_summary["topic_counts"])
         if module.get("available") and state["preferences"].get("studyTarget") != "step":
             for tid, row in module.get("topics", {}).items():
                 if not state["topics"].get(tid, {}).get("active"):
@@ -300,6 +442,7 @@ class Services:
                 "queue": queue, "module": module,
                 "anki": anki, "questions": questions, "intake": self.intake.status(),
                 "ai": self.ai_status, "speech": {k: v for k, v in self.tts.status().items() if not k.startswith("missing_")},
+                "learning": {"due_count": concept_summary["due_count"], "unseen_count": concept_summary["unseen_count"], "session": self.study_sessions.snapshot()},
                 "glossary_count": len(self.terms.lexicon()), "module_url": "/#read"}
 
     def read_module_signals(self):
@@ -499,7 +642,7 @@ class Services:
             else:
                 grade = {"assessed": False, "score": None, "confidence": None, "feedback": "Answer saved without an AI assessment.", "missed_concepts": [], "citations": [], "status": "ungraded"}
             assessed = grade.get("assessed") is True
-            attempt = self.store.save_attempt(prompt["topic_id"], prompt["prompt"], answer, grade=grade, score=grade.get("score") if assessed else None)
+            attempt = self.store.save_attempt(prompt["topic_id"], prompt["prompt"], answer, grade=grade, score=grade.get("score") if assessed else None, item_id=prompt.get("item_id"), source_id=prompt.get("source_id"))
             with self.lock:
                 self.pending.pop(session_id, None)
             return {"ok": True, "grade": grade, "attempt": attempt}
@@ -676,6 +819,21 @@ class Handler(BaseHTTPRequestHandler):
                 topic, records, misses = service.topic_records(param("id"))
                 self.json(200, {"ok": True, "topic": topic, "records": records, "misses": misses})
             elif parsed.path == "/api/recall": self.json(200, service.recall(param("topic_id")))
+            elif parsed.path == "/api/concepts": self.json(200, service.concepts(param("topic_id"), param("chapter_id"), int(param("limit", "100"))))
+            elif parsed.path == "/api/concept": self.json(200, service.start_concept(param("item_id"), param("topic_id") or None))
+            elif parsed.path == "/api/gaze": self.json(200, {"ok": True, "items": [row for row in service.concept_catalog() if "eye-movements" in row["chapter_id"]][:30]})
+            elif parsed.path == "/api/study-session": self.json(200, {"ok": True, "session": service.study_sessions.snapshot()})
+            elif parsed.path == "/api/question-repair": self.json(200, service.intake.get_repair(int(param("id"))))
+            elif parsed.path == "/api/repair-queue": self.json(200, {"ok": True, "questions": service.intake.repair_queue()})
+            elif parsed.path == "/api/visual/sources": self.json(200, service.visual_sources(param("chapter_id") or None))
+            elif parsed.path == "/api/visual/exercises": self.json(200, {"ok": True, "exercises": service.visual.list_exercises(topic_id=param("topic_id") or None, chapter_id=param("chapter_id") or None, due_only=param("due") == "1")})
+            elif parsed.path == "/api/visual/exercise": self.json(200, {"ok": True, "exercise": service.visual.get_exercise(param("id"))})
+            elif parsed.path.startswith("/api/visual/image/"):
+                parts = parsed.path.removeprefix("/api/visual/image/").split("/")
+                if len(parts) != 2: raise ValueError("Unknown image")
+                result = service.visual_image(parts[0], urllib.parse.unquote(parts[1]))
+                if not result: self.json(404, {"ok": False, "error": "Image unavailable"}); return
+                self.send(200, result["body"], result["mime_type"])
             elif parsed.path == "/api/card-queue": self.json(200, service.card_queue(param("topic_id")))
             elif parsed.path == "/api/questions":
                 chapter = param("chapter_id")
@@ -696,7 +854,10 @@ class Handler(BaseHTTPRequestHandler):
                 path = service.intake.image_path(int(param("id")))
                 self.send(200, path.read_bytes(), mimetypes.guess_type(path.name)[0] or "image/png")
             elif parsed.path == "/api/export":
-                self.send(200, json.dumps(service.store.export_state(), indent=2).encode(), "application/json", {"Content-Disposition": 'attachment; filename="step-study-progress.json"'})
+                payload = {**service.store.export_state(), "question_repairs": service.intake.export_repairs(), "study_session": service.study_sessions.snapshot()}
+                self.send(200, json.dumps(payload, indent=2).encode(), "application/json", {"Content-Disposition": 'attachment; filename="step-study-progress.json"'})
+            elif parsed.path == "/api/visual/export":
+                self.send(200, json.dumps(service.visual.export_state()).encode(), "application/json", {"Content-Disposition": 'attachment; filename="step-study-visual-recall.json"'})
             elif parsed.path in ("/", "/index.html"):
                 page = (ROOT / "index.html").read_text().replace("__STEP_TOKEN__", self.server.token)
                 self.send(200, page.encode(), "text/html; charset=utf-8")
@@ -720,7 +881,7 @@ class Handler(BaseHTTPRequestHandler):
             self.json(415, {"ok": False, "error": "JSON is required"}); return
         try:
             length = int(self.headers.get("Content-Length", "0"))
-            limit = COURSE_PROGRESS_MAX_BODY if path in {"/api/course/progress", "/api/course/progress/import"} else (COURSE_PROXY_MAX_REQUEST if path in {"/api/course/search", "/api/course/source-page"} else 100_000)
+            limit = 15 * 1024 * 1024 if path == "/api/visual/upload" else COURSE_PROGRESS_MAX_BODY if path in {"/api/course/progress", "/api/course/progress/import"} else (COURSE_PROXY_MAX_REQUEST if path in {"/api/course/search", "/api/course/source-page"} else 100_000)
             if not 0 < length <= limit: raise ValueError("Request too large or empty")
             body = json.loads(self.rfile.read(length))
             if not isinstance(body, dict): raise ValueError("Request must be an object")
@@ -786,6 +947,25 @@ class Handler(BaseHTTPRequestHandler):
                 if "studyTarget" in values and values["studyTarget"] not in {"both", "step", "in-house"}: raise ValueError("Unknown study target")
                 service.store.set_preferences(values); result = {"ok": True}
             elif path == "/api/answer": result = service.answer(body.get("session_id"), body.get("answer"), body.get("grade") is True)
+            elif path == "/api/concept-reveal": result = service.reveal_concept(body.get("session_id"), body.get("answer"))
+            elif path == "/api/concept-answer": result = service.answer_concept(body)
+            elif path == "/api/study-session":
+                if body.get("action") == "start": result = service.start_study_session(body.get("minutes", 15), body.get("topic_id"))
+                else: result = {"ok": True, "session": service.study_sessions.update(body.get("session_id"), body.get("task_id"), action=body.get("action"), draft=body.get("draft"))}
+            elif path == "/api/question-repair":
+                if body.get("action") == "save": result = service.intake.save_repair(int(body.get("id")), body.get("repair"))
+                elif body.get("action") == "retry": result = service.intake.record_retry(int(body.get("id")), body.get("answer"), body.get("self_result"), body.get("request_id"))
+                else: raise ValueError("Unknown repair action")
+            elif path == "/api/visual/create": result = service.create_visual(body)
+            elif path == "/api/visual/update": result = service.update_visual(body)
+            elif path == "/api/visual/review": result = service.visual.record_review(body.get("id"), body.get("rating"), body.get("request_id"))
+            elif path == "/api/visual/upload":
+                value = body.get("data")
+                if not isinstance(value, str): raise ValueError("Choose an image file")
+                try: image = base64.b64decode(value, validate=True)
+                except ValueError: raise ValueError("Invalid image data")
+                source = service.visual.store_upload(image, body.get("mime_type"))
+                result = {"ok": True, "source": source, "image_url": "/api/visual/image/upload/" + source["id"]}
             elif path == "/api/anki-sync": result = service.sync_anki()
             elif path == "/api/card-start":
                 tid = body.get("topic_id")

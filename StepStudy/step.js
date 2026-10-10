@@ -43,7 +43,7 @@
   const main = $('main-content'), panel = $('reference-content');
   const referenceOnly = new URLSearchParams(location.search).get('reference') === '1';
   let data, catalog = [], lexicon = [], scanner, selectionLookup;
-  const workspaceViews = ['today','topics','read','objectives','course-questions','pathology','drugs','bugs','recall','cards','questions','labs','settings'];
+  const workspaceViews = ['today','topics','read','objectives','course-questions','pathology','drugs','bugs','recall','cards','questions','labs','settings','session','visual','concept','repair','gaze'];
   const courseViews = {read:'guide',objectives:'objectives','course-questions':'questions',pathology:'pathology',drugs:'drugs',bugs:'bugs'};
   let view = workspaceViews.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'today';
   let topicId = 'neuro', readRecords = [], recall = null, answerDraft = '', questionFilter = '', questionTopic = '', questionChapter = '';
@@ -51,6 +51,7 @@
   let history = [], historyAt = -1, detachedAliveAt = 0, detachedWanted = false, lastDefinitionRequest;
   let cardSession = null, cardHost = null;
   let courseFrame = null, courseReady = false, courseInfo = null, courseRefreshTimer, coursePending = null;
+  let learningItem='',learningChapter='',repairQuestion=null,visualSource=null,visualExercise='',learningFlush=null;
   let channel;
   try { channel = new BroadcastChannel('step-study-reference-v1'); } catch (_) {}
   function el(tag, text, cls) { const node = document.createElement(tag); if (text !== undefined && text !== null) node.textContent = text; if (cls) node.className = cls; return node; }
@@ -82,6 +83,7 @@
   }
   async function navigate(next, id, courseOptions) {
     if(!workspaceViews.includes(next))return;
+    if(learningFlush){const flush=learningFlush;await flush();if(learningFlush===flush)learningFlush=null;}
     if(courseViews[next] && next!=='read' && !catalog.find(row=>row.id===(id||topicId))?.existingModule)id='neuro';
     if(courseOptions)coursePending=courseOptions;
     if (id && id !== topicId) { topicId = id; recall = null; answerDraft = ''; cardSession = null; if(data)await pref({lastTopic:id}); }
@@ -98,15 +100,15 @@
     const due = ankiDueSummary(signals.map(row=>row.anki));
     const stats = el('div', undefined, 'stats');
     stats.append(metric(active.length, 'Active subjects', 'Paused subjects keep their history'),
-      metric(data.queue.filter(row => row.kind === 'recall').length, 'Concept recalls due', 'Scheduled from your recall attempts'),
+      metric(data.learning?.due_count ?? data.queue.filter(row => row.kind === 'recall').length, 'Concept recalls due', 'Scheduled from your recall attempts'),
       metric(data.anki.available && due.known ? (due.partial?'≥ ':'')+due.count : '—', 'Anki cards due', data.anki.available ? 'Mapped topic totals · cards may overlap' : 'Sync Anki to connect'),
       metric(signals.reduce((n,row) => n + row.unresolved,0), 'Imported questions to revisit', 'Marked wrong or uncertain'));
-    main.append(stats, readPool(), sectionHeading('Up next', button('Choose subjects', () => navigate('topics'), 'small')));
+    main.append(stats, readPool(), button(data.learning?.session?.status==='active'?'Resume study session':'Start a study session',()=>navigate('session'),'primary'), sectionHeading('Up next', button('Choose subjects', () => navigate('topics'), 'small')));
     const queue = el('div', undefined, 'queue');
     for (const item of data.queue.slice(0,10)) {
       const row = el('div', undefined, 'queue-item'), text = el('div');
-      text.append(el('span', {learn:'First pass', recall:'Recall', anki:'Anki', questions:'Missed questions', course:'Course review'}[item.kind], 'kind'), el('strong', item.title), el('p', item.reason));
-      const action = item.kind === 'anki' ? () => navigate('cards',item.topic_id) : item.kind === 'course' ? () => {const missed=!!data.module.topics?.[item.topic_id]?.wrong_count;return navigate(missed?'course-questions':'objectives',item.topic_id,{scope:'all',options:missed?{missed:true}:{reviewBad:true}});} : item.kind === 'questions' ? () => { questionTopic = item.topic_id; navigate('questions'); } : () => navigate(item.kind === 'recall' ? 'recall' : 'read', item.topic_id);
+      text.append(el('span', {learn:'First pass', recall:'Recall', anki:'Anki', questions:'Missed questions', concept:'Concept recall', course:'Course review'}[item.kind], 'kind'), el('strong', item.title), el('p', item.reason));
+      const action = item.kind === 'anki' ? () => navigate('cards',item.topic_id) : item.kind === 'course' ? () => {const missed=!!data.module.topics?.[item.topic_id]?.wrong_count;return navigate(missed?'course-questions':'objectives',item.topic_id,{scope:'all',options:missed?{missed:true}:{reviewBad:true}});} : item.kind === 'questions' ? () => { questionTopic = item.topic_id; navigate('questions'); } : () => navigate(['recall','concept'].includes(item.kind) ? 'recall' : 'read', item.topic_id);
       row.append(text, button(item.kind === 'anki' ? 'Review cards' : item.kind === 'course' ? 'Review in module' : item.kind === 'questions' ? 'Review' : item.kind === 'recall' ? 'Recall' : 'Begin', action, 'small')); queue.append(row);
     }
     if (!data.queue.length) queue.append(el('div', 'No scheduled work is due. Open an active subject to read or practice recall.', 'empty-box'));
@@ -243,6 +245,7 @@
     finally{s.busy=false;if(s===cardSession && view==='cards')renderLiveCard();}
   }
   async function recallPage(serial){
+    if(topic().existingModule){await scope.StepLearning.mountCatalog(main,{api,topicId,chapterId:learningChapter,topics:activeTopics(),onChoose:item=>{learningItem=item.item_id;learningChapter='';navigate('concept');}});return;}
     const selected=topic();main.append(pageIntro('EXPLAIN IT FROM MEMORY',selected.label,'Write a short explanation. The AI compares it with the linked source, then saves the result and schedules a concept recall. Anki scheduling stays separate.'));
     const tools=el('div',undefined,'read-toolbar');tools.append(topicSelector(id=>navigate('recall',id),true));main.append(tools);
     if(!data.state.topics[topicId]?.active){main.append(el('p','Activate this subject before practicing recall.','muted'),button('Activate',()=>activate(selected,true),'primary'));return;}
@@ -287,19 +290,50 @@
     actions.append(button('Exclude',()=>update('exclude'),'small'));node.append(actions);
     const tags=el('details');tags.append(el('summary','Check subject tags'));const tagRow=el('div',undefined,'form-row'),selected=new Set(row.topic_ids);for(const topic of catalog){const label=el('label'),box=el('input');box.type='checkbox';box.checked=selected.has(topic.id);box.onchange=()=>box.checked?selected.add(topic.id):selected.delete(topic.id);label.append(box,document.createTextNode(' '+topic.label));tagRow.append(label);}tags.append(tagRow,button('Save subjects',()=>update('topics',{topic_ids:[...selected]}),'small'));node.append(tags);
     const links=scope.StepWorkspaceTools?.renderQuestionLinks(row,{onSaved:()=>{scope.StepWorkspaceTools.invalidateQuestionLinks();coursePost('question-links-changed');}});if(links)node.append(links);
+    if(row.status==='confirmed'){actions.append(button('Repair this miss',()=>{repairQuestion=row;navigate('repair');},'small'),button('Retry from memory',()=>{repairQuestion={...row,startRetry:true};navigate('repair');},'small'),button('Practice this image',()=>{visualSource={source:{kind:'intake_image',id:String(row.id)},title:'Saved screenshot '+row.id,topic_ids:row.topic_ids};visualExercise='';navigate('visual');},'small'));}
     const raw=el('details');raw.append(el('summary','Original screenshot & OCR'));const img=el('img');img.loading='lazy';img.src='/api/question-image?id='+encodeURIComponent(row.id);img.alt='Saved source screenshot';raw.append(img,el('pre',row.full_text));node.append(raw);
     if(row.explanation){const explanation=el('details');explanation.append(el('summary','Explanation from the screenshot'),el('p',row.explanation));node.append(explanation);}return node;
   }
   function settingsPage(){main.append(pageIntro('LOCAL APP','Settings & backup','Your study pool, notes, recall history, and questions live in a private database outside the public project.'));
-    const backup=el('div',undefined,'settings-block');backup.append(el('h2','Progress backup'),el('p','Download your topic activation, notes, preferences, and recall attempts. This file is personal—keep it out of the public repository.'),link('Export progress','/api/export'));main.append(backup);
+    const backup=el('div',undefined,'settings-block');backup.append(el('h2','Progress backup'),el('p','Download your topic activation, notes, preferences, recall attempts, saved question repairs, and current session. Keep these private.'),link('Export progress','/api/export'),el('p','Visual exercises include their private images in a separate backup.'),link('Export visual recall','/api/visual/export'));main.append(backup);
     const reference=el('div',undefined,'settings-block');reference.append(el('h2','Reference in a second window'),el('p','Keep the guide in this window and definitions in another. Closing the second window returns new lookups to the side pane.'),button('Open reference window',()=>detachReference()));main.append(reference);
     const connections=el('div',undefined,'settings-block');connections.append(el('h2','Study connections'),el('p',data.anki.available?'Anki connected'+(data.anki.partial?' · bounded scopes and sampled history':''):'Anki: '+(data.anki.reason || 'Not connected')),el('p',data.ai.available?'AI grading connected · '+data.ai.model:'AI grading: '+data.ai.reason),el('p',data.speech.available?'Kitten Micro voice installed · local, on demand':'Local Kitten voice is not installed.'),el('p',data.glossary_count+' definitions cached locally. New terms are requested from MDWiki only when you choose a lookup.'),button('Sync Anki',()=>syncAnki(),'small'));main.append(connections);
     const modules=el('div',undefined,'settings-block');modules.append(el('h2','Neuro/Psych module'),el('p','Your populated guide is integrated into Read, Learning objectives, Course questions, Pathology, Drugs, and Bugs. It uses the existing progress database and reference library.'),button('Read Neuro/Psych',()=>navigate('read','neuro')));main.append(modules);
   }
-  async function render(){const serial=++renderSerial;scanner?.destroy();scanner=null;main.replaceChildren();const course=!!courseViews[view]&&!!topic()?.existingModule;main.hidden=course;$('course-host').hidden=!course;$('workspace').classList.toggle('course-active',course);$('open-reference').textContent=course?'References':'Reference ↗';try{if(course)showCourse();else if(view==='today')dashboard();else if(view==='topics')topicsPage();else if(view==='read')await readingPage(serial);else if(view==='recall')await recallPage(serial);else if(view==='cards')await cardsPage(serial);else if(view==='questions')await questionsPage(serial);else if(view==='labs')await scope.StepWorkspaceTools.mountLabs(main);else settingsPage();}catch(error){if(serial===renderSerial){main.hidden=false;$('course-host').hidden=true;main.append(el('p',error.message,'alert-text'));}} }
+  async function render(){const serial=++renderSerial;scanner?.destroy();scanner=null;main.replaceChildren();const course=!!courseViews[view]&&!!topic()?.existingModule;main.hidden=course;$('course-host').hidden=!course;$('workspace').classList.toggle('course-active',course);$('open-reference').textContent=course?'References':'Reference ↗';try{if(course)showCourse();else if(view==='today')dashboard();else if(view==='topics')topicsPage();else if(view==='read')await readingPage(serial);else if(view==='recall')await recallPage(serial);else if(view==='cards')await cardsPage(serial);else if(view==='questions')await questionsPage(serial);else if(view==='labs'){main.append(button('Guided gaze practice',()=>navigate('gaze'),'primary'));await scope.StepWorkspaceTools.mountLabs(main);}else if(view==='concept')await conceptPage();else if(view==='repair')await repairPage();else if(view==='visual')await visualPage();else if(view==='session')await sessionPage();else if(view==='gaze')await gazePage();else settingsPage();}catch(error){if(serial===renderSerial){main.hidden=false;$('course-host').hidden=true;main.append(el('p',error.message,'alert-text'));}} }
+  function visualApi(chapterId=''){return {
+    listSources:()=>api('/api/visual/sources?'+new URLSearchParams({chapter_id:chapterId})),
+    listExercises:filters=>api('/api/visual/exercises?'+new URLSearchParams(filters||{})),
+    getExercise:id=>api('/api/visual/exercise?'+new URLSearchParams({id})),
+    createExercise:body=>api('/api/visual/create',body),
+    updateExercise:(id,patch)=>api('/api/visual/update',{id,patch}),
+    recordReview:(id,rating,request_id)=>api('/api/visual/review',{id,rating,request_id}),
+    uploadImage:body=>api('/api/visual/upload',body)
+  };}
+  function conceptOptions(extra={}){return {api,topicId,onController:controller=>learningFlush=controller.flushDraft,aiAvailable:data.ai.available,onRead:chapterId=>navigate('read',topicId,{chapterId}),...extra};}
+  async function conceptPage(){if(!learningItem){await recallPage(renderSerial);return;}await scope.StepLearning.mountConcept(main,conceptOptions({itemId:learningItem,onReturn:()=>navigate('recall')}));}
+  async function visualPage(){const source=visualSource,exerciseId=visualExercise;visualSource=null;visualExercise='';await scope.StepVisualRecall.mount(main,{api:visualApi(source?.chapter_id||''),initialSource:source,exerciseId,topics:catalog,onError:toast});}
+  async function repairPage(){if(!repairQuestion){main.append(el('h1','Repair a saved question'),el('p','Choose a wrong or uncertain question in your inbox.'),button('Open question inbox',()=>navigate('questions'),'primary'));return;}const controller=scope.StepRepair.mount(main,{question:repairQuestion,api,onSaved:()=>refresh(),onError:toast});await controller.open(repairQuestion.startRetry?'retry':'repair');main.append(button('Return to question inbox',()=>navigate('questions'),'small'));}
+  async function gazePage(){const result=await api('/api/gaze');if(!result.items.length){main.append(el('h1','Guided gaze practice'),el('p','Add course explanations for eye movements before starting this lesson.'));return;}const choose=el('select');choose.setAttribute('aria-label','Gaze practice objective');for(const item of result.items){const o=el('option',item.title);o.value=item.item_id;choose.append(o);}main.append(choose);const host=el('div');main.append(host);const load=async()=>{host.replaceChildren();await scope.StepLearning.mountConcept(host,conceptOptions({itemId:choose.value,lab:true,onReturn:()=>navigate('gaze')}));};choose.onchange=()=>load().catch(e=>toast(e.message));await load();}
+  async function sessionPage(){
+    const result=await api('/api/study-session'),session=result.session;
+    if(!session||session.status!=='active'){
+      main.append(el('h1','Study a small set'),el('p','Pick a short session of due or new concepts, saved misses, and your visual exercises. You can leave and resume your place.'));
+      if(session){const c=scope.StepLearning.countSession(session);main.append(el('p',`Last session: ${c.complete} completed · ${c.skipped} skipped · ${c.total-c.complete-c.skipped} unfinished`,'session-progress'));}
+      const controls=el('div',undefined,'learning-actions'),subjects=topicSelector(()=>{},true),duration=el('select');duration.setAttribute('aria-label','Session length');[15,30,45].forEach(n=>{const o=el('option',n+' minutes');o.value=n;duration.append(o);});controls.append(subjects,duration,button('Start session',async()=>{await api('/api/study-session',{action:'start',minutes:Number(duration.value),topic_id:subjects.value});await refresh();await navigate('session');},'primary'));main.append(controls,el('p','The time is a target, not a countdown. Completing a step records session progress; your recall ratings and Anki reviews are saved separately.','muted'));return;
+    }
+    const task=session.tasks[session.position],c=scope.StepLearning.countSession(session);main.append(el('p',`${session.minutes} minute session · Step ${session.position+1} of ${c.total} · ${c.complete} completed`,'session-progress'));
+    const host=el('div');main.append(host);const complete=async()=>{learningFlush=null;await api('/api/study-session',{session_id:session.id,task_id:task.id,action:'complete'});await refresh();await navigate('session');};
+    if(task.kind==='concept'||task.kind==='lab')await scope.StepLearning.mountConcept(host,conceptOptions({itemId:task.ref,topicId:session.topic_id,lab:task.kind==='lab',draft:task.draft,onDraft:draft=>api('/api/study-session',{session_id:session.id,task_id:task.id,action:'draft',draft}),onDone:complete}));
+    else if(task.kind==='repair'){const r=await api('/api/question-repair?'+new URLSearchParams({id:task.ref}));const controller=scope.StepRepair.mount(host,{question:r.question,api,onError:toast,onSaved:result=>{if((result.repair?.retry_count||0)>(r.repair?.retry_count||0)&&!host.querySelector('.session-next'))host.append(button('Continue session',complete,'primary session-next'));}});await controller.open('retry');}
+    else if(task.kind==='visual')await scope.StepVisualRecall.mount(host,{api:visualApi(),exerciseId:task.ref,topics:catalog,onError:toast,onReviewed:()=>{if(!host.querySelector('.session-next'))host.append(button('Continue session',complete,'primary session-next'));}});
+    else if(task.kind==='anki'){host.append(el('h1','Review due cards'),el('p','Anki controls its queue and records each explicit rating. Return here when you finish this part of the session.'),button('Open Anki cards',()=>navigate('cards',task.ref),'primary'),button('I finished this step',complete,'small'));}
+    const controls=el('div',undefined,'session-controls');controls.append(button('Skip this step',async()=>{if(learningFlush)await learningFlush();learningFlush=null;await api('/api/study-session',{session_id:session.id,task_id:task.id,action:'skip'});await navigate('session');},'small'),button('Finish session for now',async()=>{if(learningFlush)await learningFlush();learningFlush=null;await api('/api/study-session',{session_id:session.id,action:'finish'});await refresh();await navigate('session');},'small'),button('Pause and return to reading',()=>navigate('read',session.topic_id),'small'));main.append(controls);
+    const outline=el('details');outline.append(el('summary','Session steps'));const list=el('ol',undefined,'session-outline');session.tasks.forEach(t=>list.append(el('li',t.title+' · '+t.status,t.status)));outline.append(list);main.append(outline);
+  }
   function attachScanner(root){scanner?.destroy();scanner=scope.MedicalTermCards.attach(root,lexicon,{onOpen:id=>openDefinition(id,true),onHover:hoverDefinition});scanner.setEnabled(data.state.preferences.automaticTerms!==false);}
   function updateViewLabels(){
-    $('view-label').textContent=({today:'Today',topics:'Topics',read:'Read & understand',objectives:'Learning objectives','course-questions':'Course questions',pathology:'Pathology',drugs:'Drugs',bugs:'Bugs',recall:'Open-ended recall',cards:'Live Anki cards',questions:'Question inbox',labs:'Interactive labs',settings:'Settings & backup'})[view];
+    $('view-label').textContent=({today:'Today',topics:'Topics',read:'Read & understand',objectives:'Learning objectives','course-questions':'Course questions',pathology:'Pathology',drugs:'Drugs',bugs:'Bugs',recall:'Concept recall',session:'Study session',visual:'Visual recall',concept:'Recall objective',repair:'Repair a question',gaze:'Guided gaze practice',cards:'Live Anki cards',questions:'Question inbox',labs:'Interactive labs',settings:'Settings & backup'})[view];
     const course=!!courseViews[view]&&!!topic()?.existingModule;
     $('scope-label').textContent=course?'Neuro / Psych'+(courseInfo?` · ${courseInfo.scope==='week8'?'Week 8 / Quiz 7':'Full course by topic'} · ${courseInfo.currentPages.toFixed(1)} page eq. now`:''):['read','recall','cards'].includes(view)?topic()?.label||'':'Your active subjects';
   }
@@ -329,6 +363,10 @@
     if(message.type==='context'&&typeof message.chapterId==='string'&&courseInfo)courseInfo.chapterId=message.chapterId;
     if(message.type==='inbox'){questionChapter=typeof message.chapterId==='string'?message.chapterId:'';questionFilter='';questionTopic='';refresh().then(()=>navigate('questions'));}
     if(message.type==='question-links-changed'){scope.StepWorkspaceTools.invalidateQuestionLinks();coursePost('question-links-changed');}
+    if(message.type==='study-session')navigate('session');
+    if(message.type==='visual-recall')navigate('visual');
+    if(message.type==='recall-chapter'&&typeof message.chapterId==='string'){learningChapter=message.chapterId;navigate('recall');}
+    if(message.type==='practice-image'&&typeof message.assetId==='string'){visualSource={source:{kind:'course_asset',id:message.assetId},title:String(message.title||'Course figure').slice(0,120),chapter_id:message.chapterId||'',topic_ids:[topicId]};visualExercise='';navigate('visual');}
   });
   $('course-module-start').onclick=()=>navigate('read','neuro');
   function showReference(){ $('reference-pane').hidden=false;$('workspace').classList.add('with-reference'); }
@@ -364,6 +402,9 @@
   document.addEventListener('keydown',event=>{
     const action=scope.StepShortcuts.action(event,getSelection()?.toString()||'');if(!action)return;event.preventDefault();
     if(action.kind==='help')scope.StepShortcuts.help(document,true);
+    else if(action.kind==='quiz'){learningChapter=courseInfo?.chapterId||'';navigate('recall');}
+    else if(action.kind==='session')navigate('session');
+    else if(action.kind==='visual')navigate('visual');
     else if(action.kind==='back')$('definition-back').click();
     else if(action.kind==='search'){showReference();$('definition-query').value=action.text||'';$('definition-query').focus();if(action.text)openDefinition(action.text);}
     else if(action.kind==='library')$('open-reference').click();

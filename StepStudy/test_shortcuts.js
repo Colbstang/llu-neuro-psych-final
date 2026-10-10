@@ -15,3 +15,5 @@ test('study shortcuts preserve typing, repeated keys, dialogs, and existing acti
   assert.equal(action(event('h'),'a'),null);
   assert.equal(action(event('d'),'a'),null);
 });
+
+for(const [key,kind]of[['q','quiz'],['n','session'],['v','visual']])test('learning shortcut '+key+' preserves typed text',()=>{assert.equal(action({key,target:{closest:()=>null}},'').kind,kind);assert.equal(action({key,target:{closest:()=>({})}},''),null);});

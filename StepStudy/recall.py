@@ -71,8 +71,9 @@ def build_recall(topic_id: str, records: Iterable[dict[str, Any]],
                  topic_label: str | None = None) -> dict[str, Any] | None:
     """Build one original open-ended prompt using only supplied source records.
 
-    Past responses are used only to rotate among source records; their contents
-    never become grading context. No prompt is fabricated when sources are absent.
+    Past responses are used only to rotate among stable source/item identities;
+    their prompt wording never becomes evidence. No prompt is fabricated when
+    sources are absent.
     """
     usable: list[tuple[dict[str, Any], dict[str, str], str]] = []
     for record in records:
@@ -93,13 +94,11 @@ def build_recall(topic_id: str, records: Iterable[dict[str, Any]],
         if not isinstance(item, dict):
             continue
         source_id = str(item.get("source_id", ""))
-        old_prompt = str(item.get("prompt", "")).casefold()
+        stable_item_id = str(item.get("item_id", ""))
         if source_id:
             last_used[source_id] = index
-        for _, citation, _ in usable:
-            title = citation["title"].casefold()
-            if title and title in old_prompt:
-                last_used[citation["id"]] = index
+        if stable_item_id.startswith(f"mdwiki:{topic_id}:"):
+            last_used[stable_item_id.rsplit(":", 1)[-1]] = index
     record, citation, reference = min(
         usable, key=lambda row: last_used.get(row[1]["id"], -1))
     title = _clean(record.get("title"), 160)
@@ -107,9 +106,11 @@ def build_recall(topic_id: str, records: Iterable[dict[str, Any]],
     prompt = _prompt_for(topic_id, label, title, reference)
     sentences = re.split(r"(?<=[.!?])\s+", reference)
     expected_points = [sentence.strip() for sentence in sentences if sentence.strip()][:4]
-    identity = hashlib.sha256((topic_id + "\0" + citation["id"] + "\0" + prompt).encode()).hexdigest()[:16]
+    item_id = f"mdwiki:{topic_id}:{citation['id']}"
+    identity = hashlib.sha256(item_id.encode()).hexdigest()[:16]
     return {
         "id": f"recall:{topic_id}:{identity}", "topic_id": topic_id,
+        "item_id": item_id, "source_id": citation["id"],
         "topic": label, "prompt": prompt,
         "expected_points": expected_points,
         "sources": [citation],

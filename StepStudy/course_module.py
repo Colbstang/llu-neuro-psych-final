@@ -758,6 +758,12 @@ class CourseModule:
             return (self._private_source_aliases.get(alias) or self._safe_source_aliases.get(alias)
                     or self._safe_source_aliases.get(alias.split("#", 1)[0]))
 
+    def source_document_url(self, alias: str) -> str | None:
+        """Return a currently registered opaque route for an exact source alias."""
+        with self._lock:
+            identity = self.source_document_id(alias)
+            return self._document_route_by_id.get(identity) if identity else None
+
     def document_pdf(self, token: str) -> dict[str, Any] | None:
         """Resolve only an opaque token registered from a known source PDF.
 
@@ -824,6 +830,19 @@ class CourseModule:
         with self._lock:
             self._load()
             return json.loads(json.dumps(self._data, ensure_ascii=False))
+
+    def asset_mime(self, identity: str) -> str | None:
+        """Read a MIME hint without loading the private image body."""
+        with self._lock:
+            self._load()
+            extra = self._extra_assets.get(identity)
+            if extra is not None: return extra[1]
+            asset_id = self._token_assets.get(identity)
+            value = self._assets.get(asset_id) if asset_id else None
+            if isinstance(value, dict): value = value.get("data_url", value.get("data", value.get("path", "")))
+            if not isinstance(value, str): return None
+            if value.startswith("data:image/"): return value[5:].split(";", 1)[0]
+            return _image_mime_for_path(Path(value))
 
     def asset(self, identity: str) -> dict[str, Any] | None:
         """Resolve an opaque asset token to bounded bytes and MIME, without a path."""

@@ -34,3 +34,4 @@ body .shell{margin-left:0!important;padding:0!important}
 .selection-define{position:fixed;z-index:260;color:white;background:#286348;border:0;border-radius:5px;padding:7px 11px;font-size:12px}
 .reference-only .shell,.reference-only>header{display:none!important}
 @media(max-width:800px){.word-budget{display:none}#guide{padding:20px 20px 60px}.edge-toc{padding:7px 16px}.edge-toc #nav{gap:8px}.course-chapter-label select{max-width:200px}.toolbar{gap:4px}body>header{padding:6px 14px}}
+.course-recall-action,.course-image-recall{display:inline-block;margin:8px 0 14px;padding:7px 11px;border:1px solid #cbd8d0;border-radius:6px;background:#fff;color:#1f6754;font:13px/1.5 system-ui,sans-serif;cursor:pointer}.course-recall-action:hover,.course-image-recall:hover{background:#f2f7f3}.course-recall-action:focus-visible,.course-image-recall:focus-visible{outline:2px solid #1f6754;outline-offset:3px}

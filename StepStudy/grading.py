@@ -22,6 +22,14 @@ _GRADE_LOCK = threading.BoundedSemaphore(1)
 _PROCESS_LOCK = threading.Lock()
 _ACTIVE_PROCESSES: set[subprocess.Popen[bytes]] = set()
 _SHUTTING_DOWN = False
+# The desktop bundle carries the CLI version that supports the selected model.
+# A separate Homebrew CLI can remain older even while the desktop app is current.
+_BUNDLED_CLI_RELATIVE = Path("Contents/Resources/codex-cli/bin/codex")
+_DISABLED_FEATURES = ("shell_tool", "unified_exec", "view_image", "apps", "plugins",
+                      "multi_agent", "browser_use", "browser_use_external", "in_app_browser",
+                      "computer_use", "image_generation", "memories", "chronicle", "hooks",
+                      "shell_snapshot", "tool_suggest", "code_mode", "code_mode_only",
+                      "workspace_dependencies", "goals", "sleep_tool")
 
 _SCHEMA: dict[str, Any] = {
     "type": "object", "additionalProperties": False,
@@ -38,6 +46,11 @@ _SCHEMA: dict[str, Any] = {
 
 
 def _codex_path() -> str | None:
+    for applications in (Path("/Applications"), Path.home() / "Applications"):
+        for name in ("ChatGPT.app", "Codex.app"):
+            bundled = applications / name / _BUNDLED_CLI_RELATIVE
+            if bundled.is_file() and os.access(bundled, os.X_OK):
+                return str(bundled)
     return shutil.which("codex") or ("/opt/homebrew/bin/codex" if Path("/opt/homebrew/bin/codex").is_file() else None)
 
 
@@ -119,7 +132,12 @@ def _cli_transport(prompt_text: str, timeout: float) -> Any:
         command = [executable, "--model", MODEL, "exec", "--ignore-user-config",
                    "--ignore-rules", "--ephemeral", "--sandbox", "read-only",
                    "--skip-git-repo-check", "--output-schema", str(schema_path),
-                   "--output-last-message", str(answer_path)]
+                   "--output-last-message", str(answer_path),
+                   "--config", 'model_reasoning_effort="low"',
+                   "--config", 'web_search="disabled"',
+                   "--config", "project_doc_max_bytes=0"]
+        for feature in _DISABLED_FEATURES:
+            command.extend(("--disable", feature))
         with _PROCESS_LOCK:
             if _SHUTTING_DOWN:
                 raise RuntimeError("Grading provider is shutting down")

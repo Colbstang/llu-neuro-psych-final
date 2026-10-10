@@ -44,9 +44,11 @@ class RecallTests(unittest.TestCase):
     def test_rotation_reaches_concepts_past_the_first_four(self):
         records = [record(f"concept-{i}", f"Concept {i}", f"Concept {i} is a stated process.")
                    for i in range(7)]
-        attempts = [{"prompt": f"Explain the concept Concept {i}."} for i in range(5)]
+        attempts = [{"item_id": f"mdwiki:renal:concept-{i}"} for i in range(5)]
         result = build_recall("renal", records, attempts)
         self.assertEqual(result["sources"][0]["id"], "concept-5")
+        self.assertEqual(result["source_id"], "concept-5")
+        self.assertEqual(result["item_id"], "mdwiki:renal:concept-5")
 
     def test_full_cycle_returns_least_recent_and_uses_last_hundred_attempts(self):
         records = [record(f"concept-{i}", f"Concept {i}", f"Concept {i} is a stated process.")
