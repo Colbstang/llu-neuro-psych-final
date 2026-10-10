@@ -16,19 +16,25 @@
       <button data-view="today">Today <span id="queue-badge"></span></button>
       <button data-view="topics">Topics</button>
       <button data-view="read">Read &amp; understand</button>
+      <button data-view="objectives">Learning objectives</button>
+      <button data-view="course-questions">Course questions</button>
+      <button data-view="pathology">Pathology</button>
+      <button data-view="drugs">Drugs</button>
+      <button data-view="bugs">Bugs</button>
       <button data-view="recall">Recall</button>
       <button data-view="cards">Anki cards</button>
       <button data-view="questions">Question inbox <span id="question-badge"></span></button>
     </nav>
     <div class="sidebar-label">IN YOUR STUDY POOL</div>
     <div id="active-topics" class="active-topics"></div>
-    <div class="module-link"><span class="sidebar-label">COURSE MODULE</span><a href="http://localhost:8770/" target="_blank" rel="noopener">Neuro / Psych ↗</a><small>Read · LOs · cards · books</small></div>
+    <div class="module-link"><span class="sidebar-label">POPULATED MODULE</span><button id="course-module-start">Neuro / Psych</button><small>Guide · LOs · images · references</small></div>
     <div class="sidebar-bottom"><button id="settings-button">Settings &amp; backup</button><span id="save-status" role="status">Connecting…</span></div>
   </aside>
   <div class="app-body">
     <header class="topbar"><div><span id="view-label">Today</span><small id="scope-label">Your active subjects</small></div><div class="top-actions"><label><input id="automatic-terms" type="checkbox" checked> Define terms</label><button id="open-reference">Reference ↗</button><button id="sync-anki">Sync Anki</button></div></header>
     <div id="workspace" class="workspace">
       <main id="main-content" tabindex="-1"><p>Loading your study workspace…</p></main>
+      <section id="course-host" class="course-host" aria-label="Neuro and Psychiatry study module" hidden></section>
       <div id="splitter" class="splitter" role="separator" aria-label="Resize reading and reference panes" aria-orientation="vertical" tabindex="0"></div>
       <aside id="reference-pane" class="reference-pane" aria-label="Medical reference" hidden>
         <div class="reference-top"><div><button id="definition-back" aria-label="Previous definition">←</button><button id="definition-forward" aria-label="Next definition">→</button></div><button id="close-reference" aria-label="Close reference pane">×</button></div>

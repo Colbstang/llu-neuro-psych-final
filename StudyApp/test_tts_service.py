@@ -58,6 +58,10 @@ class WorkerFailureTests(unittest.TestCase):
         python.symlink_to(sys.executable)
         self.pid_file = root / "worker.pid"
         self.root = root
+        self.model_dir = root / "synthetic-model"
+        self.model_dir.mkdir()
+        for name in ("config.json", "kitten_tts_micro_v0_8.onnx", "voices.npz"):
+            (self.model_dir / name).write_bytes(b"synthetic test fixture")
 
     def tearDown(self) -> None:
         if hasattr(self, "service"):
@@ -68,6 +72,7 @@ class WorkerFailureTests(unittest.TestCase):
         worker = self.root / "fake_worker.py"
         worker.write_text(worker_code, encoding="utf-8")
         self.service = LocalTTSService(
+            model_dir=self.model_dir,
             env_dir=self.root,
             startup_timeout=0.2,
             synthesis_timeout=0.2,

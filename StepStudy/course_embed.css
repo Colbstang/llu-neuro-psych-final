@@ -1,0 +1,36 @@
+/* One app sidebar. Course content and references own the remaining surface. */
+:root{--paper:#fff;--study-header-height:43px;--reference-width:50vw}
+body{background:#fff}
+body>header{position:sticky;top:0;min-height:43px!important;height:auto!important;padding:6px 20px;background:white;color:#263b35;border-bottom:1px solid #e1e8e3;gap:8px}
+body>header>.brand{display:none}
+.toolbar{width:100%;justify-content:flex-start;gap:6px;flex-wrap:wrap}
+.toolbar button,.toolbar .import-label{font-size:11px;padding:5px 8px;color:#344d43;background:white;border-color:#d6e1da}
+.toolbar .save{font-size:10px;margin-right:auto;color:#63746b}
+#questions-button,#objectives-button,#study-app-button,#references-button{display:none}
+.shell{display:block!important;margin:0;padding:0;max-width:none;gap:0;min-width:0}
+body .shell{margin-left:0!important;padding:0!important}
+.shell>.study-app-import-notice,.shell>.course-public-notice{position:static;height:auto;max-height:none;width:auto;margin:0;overflow:visible;box-sizing:border-box}
+.edge-toc{position:sticky!important;top:var(--study-header-height)!important;left:auto!important;width:auto!important;height:auto!important;max-height:none!important;padding:7px 22px;background:#fff;z-index:7;border-bottom:1px solid #e1e8e3;display:flex!important;gap:14px;align-items:center;overflow:visible}
+.edge-toc>.eyebrow,.edge-toc>.progress,.edge-toc>.budget-note,.edge-toc>.scope-note{display:none}
+.edge-toc #nav{display:flex;align-items:center;gap:16px;margin:0;flex-wrap:wrap;width:auto!important;flex:1;min-width:0}
+.study-scope-label,.course-chapter-label{display:flex!important;align-items:center;gap:7px;font-size:11px;color:#66766c;margin:0!important}
+.study-scope-label select,.course-chapter-label select{margin:0!important;padding:4px 6px;min-width:0;font-size:12px;width:auto!important;max-width:270px;border:1px solid #d6e1da;background:white}
+.word-budget{font-size:10px;line-height:1.4;white-space:nowrap;padding:0;margin:0 0 0 auto;flex:0 0 auto;text-align:right;width:auto!important}
+#guide{padding:24px 32px 80px;max-width:1200px;margin:auto;min-width:0;background:white}
+.guide-chapter,.week8-overview,.objective-card,.objective-page,.questions-page{background:#fff}
+.week8-overview{padding:0 0 24px}.week8-overview h1{font-size:34px}.guide-chapter h1{font-size:30px}
+.editable{font-size:16px;line-height:1.66}.guide-section{margin-bottom:24px}.chapter-intro{margin-bottom:22px}
+.course-citation{display:inline;border:0;border-bottom:1px solid #849b89;background:none;border-radius:0;color:#357253;font:inherit;font-size:11px;padding:0;cursor:pointer}
+.course-public-notice{font:12px/1.5 system-ui,sans-serif;color:#596b60;padding:10px 22px;border-bottom:1px solid #dce6de;background:white}
+.with-panel .shell{margin-right:var(--reference-width)}
+.with-panel #guide{padding:22px 25px 70px}
+.with-panel .edge-toc{padding:7px 20px;align-items:flex-start;flex-wrap:wrap;gap:4px}
+.with-panel .word-budget{margin-left:0;width:100%;text-align:left}
+.with-panel .side-panel{background:white;top:var(--study-header-height);width:var(--reference-width);box-shadow:none;border-left:1px solid #dce6de}
+.side-panel-head,#reference-search-host,.side-content,.reference-family-selector{background:white}
+.med-term{display:inline;border:0;border-bottom:1px dotted #739482;border-radius:0;padding:0;background:none;color:inherit;font:inherit;line-height:inherit;cursor:pointer}.med-term:hover{background:#edf6f0}
+.course-definition{font-size:15px;line-height:1.65}.course-definition>p{font-size:16px}.course-attribution{font-size:11px!important;color:#63746b;border-top:1px solid #dce6de;padding-top:12px}.course-definition .source-badge{font-size:11px;color:#356c51}
+.course-term-hover{position:fixed;z-index:250;width:310px;box-sizing:border-box;padding:16px;border:1px solid #dce6de;border-radius:9px;background:white;box-shadow:0 8px 30px #0002;font-size:13px;line-height:1.5}.course-term-hover p{margin:8px 0 12px}.course-term-hover small{display:block;font-size:10px;color:#66766c}.course-term-hover button{margin-top:12px;font-size:11px}
+.selection-define{position:fixed;z-index:260;color:white;background:#286348;border:0;border-radius:5px;padding:7px 11px;font-size:12px}
+.reference-only .shell,.reference-only>header{display:none!important}
+@media(max-width:800px){.word-budget{display:none}#guide{padding:20px 20px 60px}.edge-toc{padding:7px 16px}.edge-toc #nav{gap:8px}.course-chapter-label select{max-width:200px}.toolbar{gap:4px}body>header{padding:6px 14px}}
