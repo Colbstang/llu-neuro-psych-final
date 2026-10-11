@@ -5,6 +5,35 @@ function semanticRequestHeaders(){return {'Content-Type':'application/json',...(
 const referenceFamilyOptions=[['first_aid','First Aid'],['pathoma','Pathoma'],['mehlman','Mehlman'],['in_house','In-house notes / slides']];
 const referenceFamilyDefaults=referenceFamilyOptions.map(([key])=>key);
 function selectedReferenceFamilies(context){const selected=context?.referenceSearchFamilies??state.referenceSearchFamilies;return Array.isArray(selected)?referenceFamilyDefaults.filter(key=>selected.includes(key)):referenceFamilyDefaults.slice()}
+// A note can contain several resources. Filter each image/table by its field,
+// before deduplication, so a selected book never inherits a lecture image.
+function referenceNamedFamily(value){
+ const name=String(value||'').replace(/[_:]+/g,' ');
+ if(/first\s*aid|\bFA\b/i.test(name))return 'first_aid';
+ if(/pathoma/i.test(name))return 'pathoma';
+ if(/mehlman/i.test(name))return 'mehlman';
+ if(/lecture|in.house|school|\bTy\b|\bNPS\b/i.test(name))return 'in_house';
+ return '';
+}
+function referenceNoteFamilies(note){
+ if(referenceNamedFamily(note?.kind)==='in_house')return ['in_house'];
+ return [...new Set((note?.resourceTags||[]).map(referenceNamedFamily).filter(Boolean))];
+}
+function referenceNoteAllowed(note,context){
+ const selected=selectedReferenceFamilies(context);if(!selected.length)return false;
+ const families=referenceNoteFamilies(note);
+ return families.length?families.some(f=>selected.includes(f)):selected.length===referenceFamilyDefaults.length;
+}
+window.referenceMediaAllowed=function(item,context){
+ const selected=selectedReferenceFamilies(context);if(!selected.length)return false;
+ // In-house libraries remain in-house when their fields mention a book.
+ if(referenceNamedFamily(item.note?.kind)==='in_house')return selected.includes('in_house');
+ const field=referenceNamedFamily(item.field);
+ if(field)return selected.includes(field);
+ // Unattributed or third-party fields are shown only with every family enabled.
+ if(!/^(?:Text|Extra|Front|Back|Image)?$/i.test(item.field||''))return selected.length===referenceFamilyDefaults.length;
+ return referenceNoteAllowed(item.note,context);
+};
 state.referenceSearchFamilies=selectedReferenceFamilies();
 window.referenceSearchFamiliesMarkup=function(context){const selected=new Set(selectedReferenceFamilies(context));return `<fieldset class="reference-family-selector" data-reference-family-selector><legend>Reference families</legend>${referenceFamilyOptions.map(([key,label])=>`<label><input type="checkbox" data-reference-family value="${key}" ${selected.has(key)?'checked':''}><span>${label}</span></label>`).join('')}</fieldset>`};
 const referenceFamilyContainers=new WeakSet();
@@ -20,10 +49,10 @@ ankiCardsMarkup=function(){
 };
 ankiCardResults=function(context=ankiContext){
  if(context?.searchScope&&context.searchScope!=='all'&&context.searchScope!=='cards')return [];
- if(!context||!Array.isArray(context.semanticCardIds))return lexicalCardResults(context);
+ if(!context||!Array.isArray(context.semanticCardIds))return lexicalCardResults(context).filter(item=>referenceNoteAllowed(item.note,context));
  const query=ankiNormalize(context.filterText||''),hits=new Map(context.matches.map(h=>[Number(h.id),h]));
  return context.semanticCardIds.map(id=>{
-  const card=ankiCards.get(Number(id)),note=card&&ankiNotes.get(Number(card.note));if(!note)return null;
+  const card=ankiCards.get(Number(id)),note=card&&ankiNotes.get(Number(card.note));if(!note||!referenceNoteAllowed(note,context))return null;
   if(context.filter!=='all'&&note.kind!==context.filter)return null;
   if(query&&!ankiNormalize(note.plain+' '+ankiPlain(note.extraHtml)).includes(query))return null;
   const hit=hits.get(Number(note.id));return {card,note,reasons:hit?.reasons||[],score:hit?.score||0};
@@ -74,7 +103,7 @@ function backgroundResultButton(hit,index){
  return `<button class="reference-source-result reference-background-result" type="button" data-open-background-result="${index}" data-index="${index}"><b>${esc(title)}${attribution?` · ${esc(attribution)}`:''}</b>${excerpt?`<span>${esc(excerpt)}</span>`:''}</button>`;
 }
 function sourceSearchResultsMarkup(context){
- const books=context.bookMatches||{},sources=context.sourceMatches||context.sources||[],background=context.backgroundMatches||context.background||[],mehlman=context.mehlmanMatches||books.Mehlman||[];
+ const selected=selectedReferenceFamilies(context),allBooks=context.bookMatches||{},books=Object.fromEntries(['First Aid','Pathoma'].map(name=>[name,selected.includes(referenceNamedFamily(name))?allBooks[name]||[]:[]])),sources=selected.includes('in_house')?context.sourceMatches||context.sources||[]:[],background=selected.length?context.backgroundMatches||context.background||[]:[],mehlman=selected.includes('mehlman')?context.mehlmanMatches||allBooks.Mehlman||[]:[];
  const scope=context.searchScope||'all',showAll=scope==='all';
  const query=context.searchQuery||context.text||'';
  const sourceRows=(Array.isArray(sources)?sources:[]).slice(0,5).map(hit=>sourceResultButton(hit,query,'In-house notes / slides')).join('');
@@ -118,7 +147,7 @@ async function fetchSemanticCards(context){
 }
 window.fetchSemanticCards=fetchSemanticCards;
 openAnkiContext=function(options){
- if(options.fromNote||options.kind==='topic'||options.kind==='connections')return legacyOpenAnkiContext(options);
+ if(options.fromNote||options.kind==='topic'||options.kind==='connections'){const result=legacyOpenAnkiContext(options);if(ankiContext){ankiContext.referenceSearchFamilies=selectedReferenceFamilies(options);renderAnkiReference();}return result;}
  ankiContext=ankiMakeContext(options);ankiContext.searchScope=options.searchScope||'all';ankiContext.referenceSearchFamilies=selectedReferenceFamilies(options);if(options.searchQuery!==undefined)ankiContext.searchQuery=options.searchQuery;activeRef=ankiContext.topic||ankiContext.topics.find(t=>ankiBookAvailable(t,'First Aid')||ankiBookAvailable(t,'Pathoma'))||'';
  if(!ankiContext.topic&&activeRef)ankiContext.topic=activeRef;if(options.node&&activeRef)setReferenceContext(activeRef,options.node);
  ankiCardRevealed=false;ankiCurrentCard=options.cardId||Number(state.ankiCardPosition[ankiContext.key])||0;ankiReferenceMode=options.view||'cards';

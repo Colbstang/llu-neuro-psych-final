@@ -5,7 +5,7 @@ import threading
 import unittest
 from pathlib import Path
 
-from StepStudy.server import Services, make_server
+from StepStudy.server import Services, make_server, private_course_store_path
 from StepStudy.store import StepStudyStore
 from StepStudy.live_cards import LiveCards
 from StepStudy.test_live_cards import FakeAnki as FakeCardsAnki
@@ -24,6 +24,19 @@ class FakeAnki:
 
 
 class ServerTests(unittest.TestCase):
+    def test_private_course_store_paths_preserve_workspace_without_traversal(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);fallback=root/'fallback.sqlite3'
+            self.assertEqual(private_course_store_path(root,'progress_file',fallback),fallback)
+            config=root/'course-config.json'
+            config.write_text(json.dumps({'progress_file':'module-progress.sqlite3','anki_ledger_file':'anki-bridge.sqlite3'}))
+            self.assertEqual(private_course_store_path(root,'progress_file',fallback),root/'module-progress.sqlite3')
+            for value in ['../elsewhere.sqlite3','/private/progress.sqlite3',[],'.sqlite3','bad\\file.sqlite3']:
+                config.write_text(json.dumps({'progress_file':value}))
+                with self.assertRaises(ValueError):private_course_store_path(root,'progress_file',fallback)
+            config.write_text('invalid')
+            with self.assertRaises(ValueError):private_course_store_path(root,'progress_file',fallback)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.services = Services(Path(self.temp.name), anki=FakeAnki(), tts=FakeSpeech(), ai_status={"available": True, "model": "fake"},
@@ -180,5 +193,35 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(len(fake.answer_calls), 1)
         self.assertEqual(self.services.store.snapshot()["attempts"], [])
 
+
+    def test_anki_session_requires_reveal_and_confirmed_review_for_study_completion(self):
+        from StepStudy.study_session import make_plan
+        fake = FakeCardsAnki()
+        self.services.cards.close()
+        self.services.cards = LiveCards(Path(self.temp.name) / 'fake-session-cards', transport=fake)
+        plan = make_plan([], [], [], {'due_count': 2}, topic_id='neuro')
+        self.services.study_sessions.start(plan)
+        task = plan['tasks'][0]
+        completion = {'session_id': plan['id'], 'task_id': task['id'], 'action': 'complete', 'request_id': 'synthetic-http-review'}
+        self.assertEqual(self.request('POST', '/api/study-session', completion)[0], 400)
+        body = {'topic_id': 'neuro', 'action': 'start', 'limit': 5}
+        self.assertEqual(self.request('POST', '/api/anki-session', body, token=False)[0], 403)
+        started = self.request('POST', '/api/anki-session', body)[1]
+        sid = started['session']['id']
+        action = {'topic_id': 'neuro', 'session_id': sid, 'action': 'open'}
+        opened = self.request('POST', '/api/anki-session', action)[1]
+        self.assertIsNone(opened['card'].get('back'))
+        action.update(action='rate', ease=3, request_id='synthetic-http-review')
+        self.assertFalse(self.request('POST', '/api/anki-session', action)[1]['ok'])
+        self.assertEqual(fake.answer_calls, [])
+        action['action'] = 'reveal';revealed = self.request('POST', '/api/anki-session', action)[1]
+        self.assertIn('back', revealed['card'])
+        action['action'] = 'rate';rated = self.request('POST', '/api/anki-session', action)[1]
+        self.assertTrue(rated['review']['confirmed'])
+        self.request('POST', '/api/anki-session', action)
+        self.assertEqual(len(fake.answer_calls), 1)
+        status, finished = self.request('POST', '/api/study-session', completion)
+        self.assertEqual(status, 200);self.assertEqual(finished['session']['tasks'][0]['status'], 'complete')
+        self.assertEqual(self.request('GET', '/api/anki-session?topic_id=neuro')[1]['session']['confirmed_count'], 1)
 
 if __name__ == "__main__": unittest.main()

@@ -87,6 +87,11 @@ class StepStudyStore:
                 revealed INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL
               );
               CREATE INDEX IF NOT EXISTS concept_attempt_item ON concept_attempts(item_id, created_at);
+              CREATE TABLE IF NOT EXISTS concept_drafts (
+                item_id TEXT PRIMARY KEY, answer TEXT NOT NULL,
+                context_hash TEXT NOT NULL, revealed INTEGER NOT NULL DEFAULT 0,
+                updated_at TEXT NOT NULL
+              );
             """)
             # Additive identity fields let legacy topic recall remember stable
             # source items without changing how old attempts are scheduled.
@@ -128,6 +133,9 @@ class StepStudyStore:
             concept_schedule = ([dict(row) for row in db.execute(
                 "SELECT * FROM concept_schedule ORDER BY item_id")]
                 if include_concepts else None)
+            concept_drafts = ([dict(row) for row in db.execute(
+                "SELECT * FROM concept_drafts ORDER BY item_id")]
+                if include_concepts else None)
             revision = int(db.execute("SELECT value FROM meta WHERE key='revision'").fetchone()[0])
         topics = {}
         for topic in self.catalog:
@@ -147,7 +155,50 @@ class StepStudyStore:
                 attempt["revealed"] = bool(attempt["revealed"])
             result["concept_attempts"] = concept_attempts or []
             result["concept_schedule"] = concept_schedule or []
+            for draft in concept_drafts or []:
+                draft["revealed"] = bool(draft["revealed"])
+            result["concept_drafts"] = concept_drafts or []
         return result
+
+    def concept_draft(self, item_id: str, context_hash: str) -> dict[str, Any] | None:
+        """Resolve one unfinished answer only when its supplied lesson still matches."""
+        with self._connect() as db:
+            row = db.execute("SELECT * FROM concept_drafts WHERE item_id=? AND context_hash=?",
+                             (item_id, context_hash)).fetchone()
+        if row is None:
+            return None
+        draft = dict(row)
+        draft["revealed"] = bool(draft["revealed"])
+        return draft
+
+    def save_concept_draft(self, item_id: str, answer: str, context_hash: str,
+                           revealed: bool = False) -> dict[str, Any]:
+        """Save private draft text; this creates no attempt, score, or review date."""
+        if not isinstance(item_id, str) or not item_id or len(item_id) > 200:
+            raise ValueError("A stable concept item ID is required")
+        if not isinstance(answer, str) or len(answer) > 2000:
+            raise ValueError("A bounded text answer is required")
+        if (not isinstance(context_hash, str) or len(context_hash) != 64 or
+                any(char not in "0123456789abcdef" for char in context_hash)):
+            raise ValueError("A lesson context hash is required")
+        if not isinstance(revealed, bool):
+            raise ValueError("revealed must be a boolean")
+        with self._connect() as db:
+            previous = db.execute("SELECT * FROM concept_drafts WHERE item_id=?",
+                                  (item_id,)).fetchone()
+            # Two open views of one item cannot turn a revealed answer into an
+            # independent answer again, or replace its frozen original text.
+            if previous and previous["context_hash"] == context_hash and previous["revealed"]:
+                answer, revealed = previous["answer"], True
+            db.execute("INSERT INTO concept_drafts(item_id,answer,context_hash,revealed,updated_at) "
+                       "VALUES(?,?,?,?,?) ON CONFLICT(item_id) DO UPDATE SET "
+                       "answer=excluded.answer,context_hash=excluded.context_hash,"
+                       "revealed=excluded.revealed,updated_at=excluded.updated_at",
+                       (item_id, answer, context_hash, int(revealed), _stamp(self.clock())))
+            self._bump(db)
+            row = dict(db.execute("SELECT * FROM concept_drafts WHERE item_id=?", (item_id,)).fetchone())
+        row["revealed"] = bool(row["revealed"])
+        return row
 
     def activate(self, topic_id: str, active: bool = True) -> dict[str, Any]:
         self._validate(topic_id)
@@ -385,6 +436,7 @@ class StepStudyStore:
             db.execute("INSERT INTO concept_attempts(attempt_id,session_id,item_id,topic_id,action,prompt,answer,grade_json,score,self_rating,revealed,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                        (attempt_id, session_id, item_id, topic_id, action, prompt, answer, grade_json,
                         score, self_rating, int(bool(revealed)), now_s))
+            db.execute("DELETE FROM concept_drafts WHERE item_id=?", (item_id,))
             if days is not None:
                 db.execute("INSERT INTO concept_schedule(item_id,topic_id,chapter_id,due_at,interval_days,repetitions,last_outcome,last_score,updated_at) "
                             "VALUES(?,?,?,?,?,1,?,?,?) ON CONFLICT(item_id) DO UPDATE SET "

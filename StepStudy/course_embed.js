@@ -28,6 +28,7 @@ const stepCourseOldNav = renderNav;
 const stepCourseOldOverview = scopeOverviewMarkup;
 scopeOverviewMarkup = function () {return stepCourseOldOverview().replace('Choose Week 8 in the sidebar','Choose Week 8 above');};
 renderNav = function () {
+  document.body.dataset.studyView=currentView;
   stepCourseOldNav();
   const groups = scopeTopicGroups();
   const choose = `<label class="course-chapter-label">Topic / chapter<select id="course-chapter" aria-label="Course topic or chapter"><option value="">Jump to topic…</option>${groups.map(g=>`<optgroup label="${esc(g.title)}">${g.entries.map(({p,i})=>`<option value="${i}">${esc(p.short_title||p.title)}</option>`).join('')}</optgroup>`).join('')}</select></label>`;

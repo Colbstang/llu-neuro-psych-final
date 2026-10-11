@@ -100,9 +100,13 @@ class AnkiSignalTests(unittest.TestCase):
         fake = TaxonomyFake()
         data = AnkiSignals(fake).sync()
         self.assertEqual(data["scope"]["query_count"], 1)
-        self.assertEqual(data["scope"]["decks"], ["AnKing Step 1"])
+        self.assertEqual(data["scope"]["step_named_decks"], ["AnKing Step 1"])
+        self.assertFalse(data["scope"]["deck_filter"])
+        self.assertNotIn('deck:"', fake.queries[0])
         self.assertLess(len(fake.queries[0]), 400)
-        self.assertIn('tag:"#AK_Step1_v12::#FirstAid::#02_Neurology::*"', fake.queries[0])
+        self.assertIn('tag:"#AK_Step1_v12::#FirstAid::#02_Neurology"', fake.queries[0])
+        self.assertNotIn('::*', fake.queries[0])
+        self.assertEqual(fake.queries[0].count('tag:'), 1)
 
     def test_query_prefix_count_and_query_length_have_hard_bounds(self):
         class PrefixFake(FakeAnki):
@@ -119,6 +123,8 @@ class AnkiSignalTests(unittest.TestCase):
         self.assertTrue(data["partial"])
         self.assertEqual(data["scope"]["query_count"], 1)
         self.assertLessEqual(len(fake.queries[0]), 12000)
+        self.assertEqual(fake.queries[0].count('tag:'), 12)
+        self.assertNotIn('::*', fake.queries[0])
 
     def test_missing_cards_info_and_suspended_cards_are_not_counted(self):
         class MissingInfoFake(FakeAnki):
@@ -202,7 +208,22 @@ class AnkiSignalTests(unittest.TestCase):
         self.assertTrue(data["available"])
         self.assertFalse(data["subjects"]["neuro"]["scope_known"])
         self.assertIsNone(data["subjects"]["neuro"]["due_count"])
-        self.assertIn("No clearly Step", data["reason"])
+        self.assertIn("No matching Step category tags", data["reason"])
+
+    def test_step_scope_follows_verified_tags_in_a_personally_named_deck(self):
+        class MedFake(FakeAnki):
+            def __call__(self, action, params):
+                if action == "deckNames": return ["Med", "Personal Deck"]
+                if action == "cardsInfo":
+                    return [{"cardId": cid, "queue": 2, "type": 2, "deckName": "Med"} for cid in params["cards"]]
+                return super().__call__(action, params)
+        fake = MedFake()
+        data = AnkiSignals(fake, clock=lambda: datetime(2026, 10, 9, tzinfo=timezone.utc)).sync(["neuro"])
+        self.assertTrue(data["subjects"]["neuro"]["scope_known"])
+        self.assertEqual(data["subjects"]["neuro"]["card_count"], 2)
+        self.assertEqual(data["subjects"]["neuro"]["due_count"], 1)
+        self.assertFalse(data["scope"]["deck_filter"])
+        self.assertTrue(all('deck:"' not in query and "Personal" not in query for query in fake.queries))
 
     def test_timeout_after_one_topic_retains_known_counts_and_marks_rest_unknown(self):
         class InterruptedFake(FakeAnki):

@@ -183,13 +183,6 @@ class AnkiSignals:
             scoped_decks_all = sorted({deck for deck in decks if isinstance(deck, str) and _scoped_deck(deck)})
             scoped_decks = [deck for deck in scoped_decks_all
                             if not any(deck.startswith(parent + "::") for parent in scoped_decks_all if parent != deck)]
-            if not scoped_decks:
-                partial = True
-                reason = "No clearly Step or AnKing deck is available to map."
-                return {"available": True, "synced_at": synced_at, "subjects": subjects,
-                        "partial": partial, "scope": {"query_count": 0, "completed_subject_count": 0,
-                        "partial": partial}, "reason": reason}
-
             topic_prefixes: dict[str, set[str]] = {}
             prefix_frequency: dict[tuple[str, str], int] = {}
             for tag in tags:
@@ -205,6 +198,11 @@ class AnkiSignals:
             partial = False
             prefix_truncated: set[str] = set()
             topic_prefixes = {topic: topic_prefixes[topic] for topic in requested if topic in topic_prefixes}
+            if not topic_prefixes:
+                return {"available": True, "synced_at": synced_at, "subjects": subjects,
+                        "partial": True, "scope": {"query_count": 0, "completed_subject_count": 0,
+                        "partial": True, "scope_basis": "reported-step-category-tags", "deck_filter": False},
+                        "reason": "No matching Step category tags are available to map."}
             if len(topic_prefixes) > MAX_SUBJECTS:
                 partial = True
             topic_prefixes = dict(list(topic_prefixes.items())[:MAX_SUBJECTS])
@@ -215,16 +213,13 @@ class AnkiSignals:
                     prefix_truncated.add(topic_id)
                     ranked = sorted(prefixes, key=lambda prefix: (-prefix_frequency.get((topic_id, prefix), 0), prefix))
                     topic_prefixes[topic_id] = set(ranked[:prefix_limit])
-            deck_query = "(" + " OR ".join(f"deck:{_quote_search(deck)}" for deck in scoped_decks) + ")"
             for topic_id, prefixes in topic_prefixes.items():
-                # A category prefix query includes its own tag and descendants without
-                # enumerating every child tag returned by getTags.
-                alternatives = []
-                for prefix in sorted(prefixes):
-                    quoted = _quote_search(prefix)
-                    alternatives.extend((f"tag:{quoted}", f"tag:{_quote_search(prefix + '::*')}"))
+                # Anki tag:parent already includes parent::child. A second wildcard
+                # term repeats the same scope and doubles expensive tag matching.
+                # https://docs.ankiweb.net/manual/searching#tags-decks-cards-and-notes
+                alternatives = [f"tag:{_quote_search(prefix)}" for prefix in sorted(prefixes)]
                 tag_query = "(" + " OR ".join(alternatives) + ")"
-                base_query = f"{deck_query} {tag_query} -is:suspended"
+                base_query = f"{tag_query} -is:suspended -deck:filtered"
                 if len(base_query) > MAX_SEARCH_QUERY_CHARS:
                     raise ValueError("bounded Anki search query exceeded configured size")
                 try:
@@ -246,8 +241,8 @@ class AnkiSignals:
                     break
 
             if completed_topics:
-                due_query = f"{deck_query} (" + " OR ".join(
-                    f"{topic_queries[topic]}" for topic in topic_queries) + ") -is:suspended is:due"
+                due_query = "(" + " OR ".join(
+                    f"{topic_queries[topic]}" for topic in topic_queries) + ") -is:suspended -deck:filtered is:due"
                 if len(due_query) <= 48000:
                     try:
                         due_raw = self._call("findCards", query=due_query) or []
@@ -394,7 +389,7 @@ class AnkiSignals:
                 partial = True
             return {"available": True, "synced_at": synced_at, "subjects": subjects,
                     "partial": partial,
-                    "scope": {"decks": scoped_decks, "query_count": len(topic_prefixes),
+                    "scope": {"step_named_decks": scoped_decks, "scope_basis": "reported-step-category-tags", "deck_filter": False, "query_count": len(topic_prefixes),
                               "completed_subject_count": len(completed_topics),
                               "partial": partial, "history_sample_limit": MAX_HISTORY_SAMPLE},
                     "reason": reason or ("Results are partial because a topic, category-prefix, card, or history-sample bound was reached." if partial else None)}
@@ -403,7 +398,7 @@ class AnkiSignals:
                 partial = True
                 reason = reason or f"Anki sync stopped after connecting: {type(exc).__name__}"
                 return {"available": True, "synced_at": synced_at, "subjects": subjects,
-                        "partial": True, "scope": {"decks": scoped_decks,
+                        "partial": True, "scope": {"step_named_decks": scoped_decks, "scope_basis": "reported-step-category-tags", "deck_filter": False,
                         "query_count": len(topic_card_ids), "completed_subject_count": len(completed_topics),
                         "partial": True, "history_sample_limit": MAX_HISTORY_SAMPLE}, "reason": reason}
             return {"available": False, "synced_at": synced_at, "subjects": {},

@@ -35,3 +35,25 @@
 .course-game-finished{padding:13px;background:#edf6ef;color:#2c603c;font-size:13px}
 .comparison-sheet:has(.course-game-prompt)>.table-scroll,.comparison-sheet:has(.course-game-prompt)>.sheet-search{display:none}
 @media(max-width:680px){.course-game-setup{padding:14px}.course-game-settings{align-items:stretch;flex-direction:column}.course-game-settings label,.course-game-settings select{width:100%;max-width:none;box-sizing:border-box}.course-game-focus{align-items:flex-start;flex-direction:column}.course-game-prompt{padding:14px}.course-game-prompt>header{flex-wrap:wrap}.course-game-category>div{display:grid}.course-game-choice{text-align:left}.course-game-answer dl>div{grid-template-columns:1fr;gap:3px}}
+/* Stable subject colors and quiet progress cues keep long rounds readable. */
+.course-game-setup{--game-accent:#255e91;--game-tint:#edf4fa;border-color:color-mix(in srgb,var(--game-accent) 24%,white);background:linear-gradient(180deg,var(--game-tint),#fff 130px);border-radius:8px}
+.course-game-bugs{--game-accent:#8b5a16;--game-tint:#fff5df}.course-game-pathology{--game-accent:#704763;--game-tint:#f7eff5}
+.course-game-intro .eyebrow{color:var(--game-accent)}
+.course-game-progress{display:flex;flex-wrap:wrap;gap:7px 16px;margin:8px 0 18px;font-size:12px;color:#455961}
+.course-game-progress span{padding:5px 8px;border-radius:4px;background:#fff;border:1px solid #dde5e8}
+.course-game-focus-options{margin:14px 0;font-size:12px;color:#52656d}.course-game-focus-options>summary{cursor:pointer}
+.course-game-setup-actions{display:flex;gap:8px;flex-wrap:wrap}.course-game-setup-actions>button{padding:9px 13px;border:1px solid var(--game-accent);border-radius:5px;background:white;color:var(--game-accent);font:inherit;font-size:12px;cursor:pointer}
+.course-game-setup-actions>[data-course-game-start]{background:var(--game-accent);color:#fff}
+.course-game-save-state{min-height:1.5em;font-size:11px;line-height:1.5;color:#5a6d73}
+.course-game-prompt{border-top-color:var(--game-accent);border-radius:5px}
+.course-game-category-nav,.course-game-choice-pages{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:16px 0 8px;font-size:11px;color:#5a6d73}
+.course-game-category-nav button,.course-game-choice-pages button{padding:7px 9px;border:1px solid #d2dde1;border-radius:4px;background:#fff;font:inherit;color:#364f5b;cursor:pointer}
+.course-game-category-help{margin:0 0 12px;font-size:11px;line-height:1.5;color:#5e7079}
+.course-game-category{background:var(--game-tint);border-radius:5px;border-color:color-mix(in srgb,var(--game-accent) 22%,white)}
+.course-game-category legend{color:var(--game-accent)}
+.course-game-choice{border-radius:5px;min-height:38px}.course-game-choice.is-selected{background:var(--game-tint);border-color:var(--game-accent);color:#243e4b}
+.course-game-omissions{margin:12px 0;color:#6c6d69;font-size:11px;line-height:1.6}.course-game-omissions summary{cursor:pointer}
+.course-game-prompt .practice-actions button{min-height:36px}.course-game-result p:last-child{margin-bottom:0}
+@media(max-width:680px){.course-game-progress{gap:6px}.course-game-progress span{flex:1 1 140px}.course-game-category-nav>span{order:-1;flex-basis:100%}.course-game-category-nav>button{flex:1}.course-game-setup-actions>button{flex:1}.course-game-category{padding:12px}}
+
+.course-game-source-modes{margin:16px 0;padding:10px 12px;border:1px solid #e4d9e1;border-radius:5px;background:#f7eff5;font-size:12px;color:#704763}.course-game-source-modes>summary{cursor:pointer}.course-game-source-modes>p{color:#62606a;font-size:11px;line-height:1.5}

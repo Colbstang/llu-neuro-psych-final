@@ -9,6 +9,9 @@
   <script src="/terms/term_cards.js" defer></script>
   <script src="/terms/selection_lookup.js" defer></script>
   <script src="/shortcuts.js" defer></script>
+  <script src="/navigation.js" defer></script>
+  <link rel="stylesheet" href="/anki_review.css">
+  <script src="/anki_review.js" defer></script>
   <script src="/workspace_tools.js" defer></script>
   <link rel="stylesheet" href="/learning_flow.css">
   <link rel="stylesheet" href="/repair_practice.css">
@@ -23,19 +26,25 @@
     <a class="brand" href="#today"><span>S</span> Step Study</a>
     <nav aria-label="Study workspace">
       <button data-view="today">Today <span id="queue-badge"></span></button>
-      <button data-view="topics">Topics</button>
-      <button data-view="read">Read &amp; understand</button>
-      <button data-view="objectives">Learning objectives</button>
-      <button data-view="course-questions">Course questions</button>
-      <button data-view="pathology">Pathology</button>
-      <button data-view="drugs">Drugs</button>
-      <button data-view="bugs">Bugs</button>
-      <button data-view="recall">Recall</button>
       <button data-view="session">Study session</button>
-      <button data-view="visual">Visual recall</button>
-      <button data-view="cards">Anki cards</button>
-      <button data-view="questions">Question inbox <span id="question-badge"></span></button>
-      <button data-view="labs">Interactive labs</button>
+      <div class="nav-group" data-group="learn"><div class="nav-group-label">Learn</div>
+        <button data-view="read">Read &amp; understand</button>
+        <button data-view="objectives">Learning objectives</button>
+        <button data-view="labs">Interactive labs</button>
+      </div>
+      <div class="nav-group" data-group="practice"><div class="nav-group-label">Practice</div>
+        <button data-view="cards">Anki sessions</button>
+        <button data-view="recall">Concept recall</button>
+        <button data-view="visual">Visual recall</button>
+        <button data-view="course-questions">Course questions</button>
+        <button data-view="pathology">Pathology</button>
+        <button data-view="drugs">Drugs</button>
+        <button data-view="bugs">Microbiology</button>
+      </div>
+      <div class="nav-group" data-group="organize"><div class="nav-group-label">Organize</div>
+        <button data-view="topics">Subjects</button>
+        <button data-view="questions">Question inbox <span id="question-badge"></span></button>
+      </div>
     </nav>
     <div class="sidebar-label">IN YOUR STUDY POOL</div>
     <div id="active-topics" class="active-topics"></div>
@@ -43,7 +52,7 @@
     <div class="sidebar-bottom"><button id="settings-button">Settings &amp; backup</button><span id="save-status" role="status">Connecting…</span></div>
   </aside>
   <div class="app-body">
-    <header class="topbar"><div><span id="view-label">Today</span><small id="scope-label">Your active subjects</small></div><div class="top-actions"><label><input id="automatic-terms" type="checkbox" checked> Define terms</label><button id="open-reference">Reference ↗</button><button id="study-shortcuts" title="Study shortcuts · ?">Shortcuts</button><button id="capture-question" title="Capture a selected screenshot region · ⌘⇧2">Capture question</button><button id="sync-anki">Sync Anki</button></div></header>
+    <header class="topbar"><div class="location-bar"><div class="history-controls" aria-label="Page history"><button id="page-back" aria-label="Back" title="Back · ⌘[">←</button><button id="page-forward" aria-label="Forward" title="Forward · ⌘]">→</button></div><div><span id="view-label">Today</span><small id="scope-label">Your active subjects</small></div></div><div class="top-actions"><label><input id="automatic-terms" type="checkbox" checked> Define terms</label><button id="open-reference">Reference ↗</button><button id="study-shortcuts" title="Study shortcuts · ?">Shortcuts</button><button id="capture-question" title="Capture a selected screenshot region · ⌘⇧2">Capture question</button><button id="sync-anki">Sync Anki</button></div></header>
     <div id="workspace" class="workspace">
       <main id="main-content" tabindex="-1"><p>Loading your study workspace…</p></main>
       <section id="course-host" class="course-host" aria-label="Neuro and Psychiatry study module" hidden></section>

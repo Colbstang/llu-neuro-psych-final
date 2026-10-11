@@ -49,9 +49,23 @@
   let topicId = 'neuro', readRecords = [], recall = null, answerDraft = '', questionFilter = '', questionTopic = '', questionChapter = '';
   let renderSerial = 0, definitionSerial = 0, hoverSerial = 0, hoverTimer, toastTimer, notesTimer;
   let history = [], historyAt = -1, detachedAliveAt = 0, detachedWanted = false, lastDefinitionRequest;
-  let cardSession = null, cardHost = null;
+  let ankiController = null, labId = '', gazeItem = '';
   let courseFrame = null, courseReady = false, courseInfo = null, courseRefreshTimer, coursePending = null;
   let learningItem='',learningChapter='',repairQuestion=null,visualSource=null,visualExercise='',learningFlush=null;
+  let courseNavigation=null,courseRestore=null;
+  const navigation=scope.StepNavigation.create(scope.history,location,async saved=>{
+    learningItem=saved.learningItem||'';learningChapter=saved.learningChapter||'';labId=saved.labId||'';gazeItem=saved.gazeItem||'';
+    if(saved.repairId){const result=await api('/api/question-repair?'+new URLSearchParams({id:saved.repairId}));repairQuestion={...result.question,startRetry:saved.repairRetry===true};}
+    courseNavigation=saved.course||null;
+    await navigate(saved.view,saved.topicId);
+    if(saved.course&&courseReady){
+      await new Promise(resolve=>{courseRestore={id:saved.course.id,resolve};coursePost('restore-navigation',{id:saved.course.id});setTimeout(()=>{if(courseRestore?.resolve===resolve){courseRestore=null;resolve();}},5000);});
+    }
+    if(saved.definition){historyAt=Number.isInteger(saved.definitionAt)&&history[saved.definitionAt]===saved.definition?saved.definitionAt:history.indexOf(saved.definition);await openDefinition(saved.definition,true,true,true);}
+    else{$('reference-pane').hidden=true;$('workspace').classList.remove('with-reference');}
+    window.scrollTo({top:saved.scrollY||0,behavior:'instant'});
+  });
+  function navigationState(){return {view,topicId,scrollY:window.scrollY,learningItem,learningChapter,labId,gazeItem,repairId:repairQuestion?.id,repairRetry:repairQuestion?.startRetry===true,course:courseViews[view]?courseNavigation:null,definition:!$('reference-pane').hidden?history[historyAt]||'':'',definitionAt:historyAt};}
   let channel;
   try { channel = new BroadcastChannel('step-study-reference-v1'); } catch (_) {}
   function el(tag, text, cls) { const node = document.createElement(tag); if (text !== undefined && text !== null) node.textContent = text; if (cls) node.className = cls; return node; }
@@ -71,9 +85,10 @@
   function topic() { return catalog.find(row => row.id === topicId) || catalog[0]; }
   function activeTopics() { return catalog.filter(row => data.state.topics[row.id]?.active); }
   async function refresh() { data = await api('/api/workspace', undefined, 12000); catalog = data.catalog; renderSidebar(); saved(); }
-  function pageIntro(eyebrow, title, description) { const node = el('div', undefined, 'page-intro'); node.append(el('p', eyebrow, 'eyebrow'), el('h1', title), el('p', description)); return node; }
+  function pageIntro(_label, title, description) { const node = el('div', undefined, 'page-intro'); node.append(el('h1', title), el('p', description)); return node; }
   function sectionHeading(title, action) { const node = el('div', undefined, 'section-heading'); node.append(el('h2', title)); if (action) node.append(action); return node; }
   function renderSidebar() {
+    document.body.dataset.view=view;
     document.querySelectorAll('[data-view]').forEach(node => node.classList.toggle('active', node.dataset.view === view));
     $('queue-badge').textContent = data.queue.length || '';
     $('question-badge').textContent = data.intake.counts.needs_confirmation || '';
@@ -83,11 +98,14 @@
   }
   async function navigate(next, id, courseOptions) {
     if(!workspaceViews.includes(next))return;
+    if(data&&!navigation.restoring)navigation.write(navigationState(),true);
     if(learningFlush){const flush=learningFlush;await flush();if(learningFlush===flush)learningFlush=null;}
     if(courseViews[next] && next!=='read' && !catalog.find(row=>row.id===(id||topicId))?.existingModule)id='neuro';
     if(courseOptions)coursePending=courseOptions;
-    if (id && id !== topicId) { topicId = id; recall = null; answerDraft = ''; cardSession = null; if(data)await pref({lastTopic:id}); }
-    view = next; location.hash = next;
+    if (id && id !== topicId) { topicId = id; recall = null; answerDraft = ''; if(data)await pref({lastTopic:id}); }
+    if(courseViews[next]&&(next!==view||courseOptions)&&!navigation.restoring)courseNavigation=null;
+    view = next;
+    navigation.write({...navigationState(),scrollY:0});
     updateViewLabels();
     renderSidebar(); main.scrollTop = 0; window.scrollTo({top:0});
     await render();
@@ -113,6 +131,18 @@
     }
     if (!data.queue.length) queue.append(el('div', 'No scheduled work is due. Open an active subject to read or practice recall.', 'empty-box'));
     main.append(queue, sectionHeading('Where to focus'), evidenceTable(active));
+    if(data.quizzes){
+      main.append(sectionHeading('Comparison practice'));
+      const summaries=el('div',undefined,'quiz-summary');
+      for(const [kind,label] of [['drugs','Drugs'],['pathology','Pathology'],['bugs','Microbiology']]){
+        const summary=data.quizzes[kind];if(!summary)continue;
+        const card=el('article',undefined,`quiz-summary-${kind}`);
+        card.append(el('h3',label),el('p',`${summary.complete||0} complete · ${summary.due||0} due · ${summary.unseen||0} with unseen characteristics`),button('Practice',()=>navigate(kind,'neuro'),'small'));
+        summaries.append(card);
+      }
+      main.append(summaries);
+    }
+    if(data.anki.reason) main.append(el('p',data.anki.reason,'progress-note'));
     if(data.anki.synced_at) main.append(el('p','Anki '+(data.anki.cached?'cached snapshot':'synced')+' · '+new Date(data.anki.synced_at).toLocaleString()+(data.anki.partial?' · bounded scopes; history sampled from up to '+(data.anki.scope?.history_sample_limit || 200)+' cards':''),'progress-note'));
     if(data.module?.available) main.append(el('p','Neuro/Psych reading, objectives, and question review share the module’s saved progress. Mixed topics may appear in both subjects.','progress-note'));
     else main.append(el('p','Course progress: '+(data.module?.reason || 'The Neuro/Psych content is loading.'),'progress-note'));
@@ -183,66 +213,11 @@
     const noteTopic=topicId, notes=el('div',undefined,'topic-notes'), label=el('label','My notes');label.htmlFor='topic-notes';const text=el('textarea');text.id='topic-notes';text.rows=4;text.value=data.state.topics[noteTopic].notes || '';text.placeholder='Your notes for this subject…';const save=button('Save notes',async()=>{await api('/api/notes',{topic_id:noteTopic,notes:text.value});data.state.topics[noteTopic].notes=text.value;saved();toast('Notes saved');},'small');notes.append(label,text,save);main.append(notes);
   }
   async function cardsPage(serial){
-    main.append(pageIntro('ANKI REMAINS YOUR SCHEDULER',topic().label,'Review live cards from this subject’s reported AnKing / Step tags. Revealing or skipping an answer does not record a review.'));
-    const tools=el('div',undefined,'read-toolbar');tools.append(topicSelector(id=>navigate('cards',id),true),button('Refresh card queue',async()=>{cardSession=null;await render();},'small'));main.append(tools);
+    main.append(pageIntro('',topic().label+' · Anki','Review a saved batch of this subject’s live Step / AnKing cards. Each explicit rating goes to Anki; revealing and skipping remain separate.'));
+    const tools=el('div',undefined,'read-toolbar');tools.append(topicSelector(id=>navigate('cards',id),true));main.append(tools);
     if(!data.state.topics[topicId]?.active){main.append(el('p','Activate this subject before reviewing cards.','muted'));return;}
-    cardHost=el('div',undefined,'live-card');main.append(cardHost);
-    if(!cardSession || cardSession.topicId!==topicId){
-      cardHost.append(el('p','Reading the subject’s live Anki queue…','muted'));
-      const queue=await api('/api/card-queue?'+new URLSearchParams({topic_id:topicId}),undefined,40000);if(serial!==renderSerial)return;
-      cardSession={topicId,ids:queue.card_ids,index:0,card:null,revealed:false,busy:false,confirmed:0,partial:queue.partial,reason:queue.reason,request:null,error:null};
-      await nextLiveCard(false);return;
-    }
-    renderLiveCard();
-  }
-  async function nextLiveCard(advance=true){
-    const session=cardSession;if(!session || session.busy)return;
-    if(advance)session.index++;
-    session.card=null;session.revealed=false;session.error=null;session.request=null;
-    if(session.index>=session.ids.length){renderLiveCard();return;}
-    session.busy=true;renderLiveCard();
-    try{const result=await api('/api/card-start',{topic_id:session.topicId,card_id:session.ids[session.index]},120000);if(session===cardSession)session.card=result;}
-    catch(error){if(session===cardSession)session.error=error.message;}
-    finally{session.busy=false;if(session===cardSession && view==='cards')renderLiveCard();}
-  }
-  function liveCardSide(side){
-    const node=el('div',undefined,'live-card-side');node.append(el('p',side?.text || 'This card has no readable text; check its images below.'));
-    for(const image of side?.images || []){
-      if(typeof image.src!=='string' || !/^data:image\/(?:png|jpeg|gif|webp|bmp|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(image.src))continue;
-      const img=el('img');img.src=image.src;img.alt=image.alt || 'Image from your local Anki card';img.loading='lazy';node.append(img);
-    }
-    return node;
-  }
-  function renderLiveCard(){
-    if(!cardHost?.isConnected || view!=='cards' || !cardSession)return;
-    const s=cardSession;scanner?.destroy();scanner=null;cardHost.replaceChildren();
-    const progress=el('p',`${Math.min(s.index+1,s.ids.length)} / ${s.ids.length} cards · ${s.confirmed} ratings confirmed in Anki`,'progress-note');cardHost.append(progress);
-    if(s.partial)cardHost.append(el('p',s.reason || 'This is a partial queue within a bounded subject scope. Refresh to recheck eligible cards.','progress-note'));
-    if(s.busy && !s.card){cardHost.append(el('p','Opening the live card…','muted'));return;}
-    if(s.index>=s.ids.length){cardHost.append(el('h2',s.ids.length?'This batch is finished.':'No eligible cards in this subject.'),el('p',s.reason || 'Open Anki to check due cards and unsuspended new cards.','muted'),button('Refresh queue',async()=>{cardSession=null;await render();},'primary'));return;}
-    if(s.error)cardHost.append(el('p',s.error,'alert-text'));
-    if(!s.card){cardHost.append(button('Retry this card',()=>nextLiveCard(false),'small'),button('Skip without rating',()=>nextLiveCard(),'small'));return;}
-    const body=liveCardSide(s.revealed?s.card.back:s.card.front);cardHost.append(body);
-    const actions=el('div',undefined,'card-ratings');
-    if(!s.revealed)actions.append(button('Show answer · Space',()=>{s.revealed=true;renderLiveCard();},'primary'));
-    else if(!s.request){for(const [ease,label] of [[1,'Again'],[2,'Hard'],[3,'Good'],[4,'Easy']]){const b=button(`${label} · ${ease}`,()=>rateLiveCard(ease));b.disabled=s.busy;actions.append(b);}}
-    else actions.append(button(s.busy?'Checking Anki…':'Check this rating again',()=>rateLiveCard(s.request.ease),'small'));
-    const skip=button('Skip without rating',()=>nextLiveCard(),'small');skip.disabled=s.busy || !!s.request;actions.append(skip);cardHost.append(actions);
-    if(s.request)cardHost.append(el('p','Keep this request until Anki confirms it. Checking again reuses the same request; it does not submit a duplicate rating.','progress-note'));
-    else cardHost.append(el('p','Again / Hard / Good / Easy writes your chosen rating to Anki. Card content stays local.','progress-note'));
-    attachScanner(body);
-  }
-  async function rateLiveCard(ease){
-    const s=cardSession;if(!s || !s.card || !s.revealed || s.busy)return;
-    if(!s.request)s.request={id:crypto.randomUUID(),ease};
-    if(s.request.ease!==ease)return;
-    s.busy=true;s.error=null;renderLiveCard();
-    try{
-      const result=await api('/api/card-rate',{topic_id:s.topicId,token:s.card.token,ease:s.request.ease,request_id:s.request.id},120000);
-      if(result.confirmed){s.confirmed++;s.request=null;data.anki.cached=true;s.busy=false;toast('Rating confirmed in Anki. Sync updates dashboard counts.');if(s===cardSession)await nextLiveCard();}
-      else s.error='Anki has not confirmed this rating ('+(result.status || 'unknown')+'). Check again before moving on.';
-    }catch(error){s.error=error.message;}
-    finally{s.busy=false;if(s===cardSession && view==='cards')renderLiveCard();}
+    const controller=await scope.StepAnkiReview.mount(main,{api,topicId,onError:toast,onConfirmed:()=>refresh(),onCard:attachScanner});
+    if(serial!==renderSerial)controller.destroy();else ankiController=controller;
   }
   async function recallPage(serial){
     if(topic().existingModule){await scope.StepLearning.mountCatalog(main,{api,topicId,chapterId:learningChapter,topics:activeTopics(),onChoose:item=>{learningItem=item.item_id;learningChapter='';navigate('concept');}});return;}
@@ -300,7 +275,7 @@
     const connections=el('div',undefined,'settings-block');connections.append(el('h2','Study connections'),el('p',data.anki.available?'Anki connected'+(data.anki.partial?' · bounded scopes and sampled history':''):'Anki: '+(data.anki.reason || 'Not connected')),el('p',data.ai.available?'AI grading connected · '+data.ai.model:'AI grading: '+data.ai.reason),el('p',data.speech.available?'Kitten Micro voice installed · local, on demand':'Local Kitten voice is not installed.'),el('p',data.glossary_count+' definitions cached locally. New terms are requested from MDWiki only when you choose a lookup.'),button('Sync Anki',()=>syncAnki(),'small'));main.append(connections);
     const modules=el('div',undefined,'settings-block');modules.append(el('h2','Neuro/Psych module'),el('p','Your populated guide is integrated into Read, Learning objectives, Course questions, Pathology, Drugs, and Bugs. It uses the existing progress database and reference library.'),button('Read Neuro/Psych',()=>navigate('read','neuro')));main.append(modules);
   }
-  async function render(){const serial=++renderSerial;scanner?.destroy();scanner=null;main.replaceChildren();const course=!!courseViews[view]&&!!topic()?.existingModule;main.hidden=course;$('course-host').hidden=!course;$('workspace').classList.toggle('course-active',course);$('open-reference').textContent=course?'References':'Reference ↗';try{if(course)showCourse();else if(view==='today')dashboard();else if(view==='topics')topicsPage();else if(view==='read')await readingPage(serial);else if(view==='recall')await recallPage(serial);else if(view==='cards')await cardsPage(serial);else if(view==='questions')await questionsPage(serial);else if(view==='labs'){main.append(button('Guided gaze practice',()=>navigate('gaze'),'primary'));await scope.StepWorkspaceTools.mountLabs(main);}else if(view==='concept')await conceptPage();else if(view==='repair')await repairPage();else if(view==='visual')await visualPage();else if(view==='session')await sessionPage();else if(view==='gaze')await gazePage();else settingsPage();}catch(error){if(serial===renderSerial){main.hidden=false;$('course-host').hidden=true;main.append(el('p',error.message,'alert-text'));}} }
+  async function render(){const serial=++renderSerial;ankiController?.destroy();ankiController=null;scanner?.destroy();scanner=null;main.replaceChildren();const course=!!courseViews[view]&&!!topic()?.existingModule;main.hidden=course;$('course-host').hidden=!course;$('workspace').classList.toggle('course-active',course);$('open-reference').textContent=course?'References':'Reference ↗';try{if(course)showCourse();else if(view==='today')dashboard();else if(view==='topics')topicsPage();else if(view==='read')await readingPage(serial);else if(view==='recall')await recallPage(serial);else if(view==='cards')await cardsPage(serial);else if(view==='questions')await questionsPage(serial);else if(view==='labs'){main.append(button('Guided gaze practice',()=>navigate('gaze'),'primary'));await scope.StepWorkspaceTools.mountLabs(main,{labId,onOpen:id=>{labId=id;navigation.write(navigationState(),true);}});}else if(view==='concept')await conceptPage();else if(view==='repair')await repairPage();else if(view==='visual')await visualPage();else if(view==='session')await sessionPage(serial);else if(view==='gaze')await gazePage();else settingsPage();}catch(error){if(serial===renderSerial){main.hidden=false;$('course-host').hidden=true;main.append(el('p',error.message,'alert-text'));}} }
   function visualApi(chapterId=''){return {
     listSources:()=>api('/api/visual/sources?'+new URLSearchParams({chapter_id:chapterId})),
     listExercises:filters=>api('/api/visual/exercises?'+new URLSearchParams(filters||{})),
@@ -310,12 +285,12 @@
     recordReview:(id,rating,request_id)=>api('/api/visual/review',{id,rating,request_id}),
     uploadImage:body=>api('/api/visual/upload',body)
   };}
-  function conceptOptions(extra={}){return {api,topicId,onController:controller=>learningFlush=controller.flushDraft,aiAvailable:data.ai.available,onRead:chapterId=>navigate('read',topicId,{chapterId}),...extra};}
+  function conceptOptions(extra={}){return {api,topicId,onController:controller=>learningFlush=controller.flushDraft,aiAvailable:data.ai.available,onRead:chapterId=>navigate('read',topicId,{chapterId}),onLab:id=>{labId=id;return navigate('labs');},...extra};}
   async function conceptPage(){if(!learningItem){await recallPage(renderSerial);return;}await scope.StepLearning.mountConcept(main,conceptOptions({itemId:learningItem,onReturn:()=>navigate('recall')}));}
   async function visualPage(){const source=visualSource,exerciseId=visualExercise;visualSource=null;visualExercise='';await scope.StepVisualRecall.mount(main,{api:visualApi(source?.chapter_id||''),initialSource:source,exerciseId,topics:catalog,onError:toast});}
   async function repairPage(){if(!repairQuestion){main.append(el('h1','Repair a saved question'),el('p','Choose a wrong or uncertain question in your inbox.'),button('Open question inbox',()=>navigate('questions'),'primary'));return;}const controller=scope.StepRepair.mount(main,{question:repairQuestion,api,onSaved:()=>refresh(),onError:toast});await controller.open(repairQuestion.startRetry?'retry':'repair');main.append(button('Return to question inbox',()=>navigate('questions'),'small'));}
-  async function gazePage(){const result=await api('/api/gaze');if(!result.items.length){main.append(el('h1','Guided gaze practice'),el('p','Add course explanations for eye movements before starting this lesson.'));return;}const choose=el('select');choose.setAttribute('aria-label','Gaze practice objective');for(const item of result.items){const o=el('option',item.title);o.value=item.item_id;choose.append(o);}main.append(choose);const host=el('div');main.append(host);const load=async()=>{host.replaceChildren();await scope.StepLearning.mountConcept(host,conceptOptions({itemId:choose.value,lab:true,onReturn:()=>navigate('gaze')}));};choose.onchange=()=>load().catch(e=>toast(e.message));await load();}
-  async function sessionPage(){
+  async function gazePage(){await scope.StepLearning.mountGaze(main,conceptOptions({selectedItem:gazeItem,onChoose:id=>{gazeItem=id;navigation.write(navigationState(),true);},onError:toast,onReturn:()=>navigate('gaze')}));}
+  async function sessionPage(serial){
     const result=await api('/api/study-session'),session=result.session;
     if(!session||session.status!=='active'){
       main.append(el('h1','Study a small set'),el('p','Pick a short session of due or new concepts, saved misses, and your visual exercises. You can leave and resume your place.'));
@@ -323,17 +298,24 @@
       const controls=el('div',undefined,'learning-actions'),subjects=topicSelector(()=>{},true),duration=el('select');duration.setAttribute('aria-label','Session length');[15,30,45].forEach(n=>{const o=el('option',n+' minutes');o.value=n;duration.append(o);});controls.append(subjects,duration,button('Start session',async()=>{await api('/api/study-session',{action:'start',minutes:Number(duration.value),topic_id:subjects.value});await refresh();await navigate('session');},'primary'));main.append(controls,el('p','The time is a target, not a countdown. Completing a step records session progress; your recall ratings and Anki reviews are saved separately.','muted'));return;
     }
     const task=session.tasks[session.position],c=scope.StepLearning.countSession(session);main.append(el('p',`${session.minutes} minute session · Step ${session.position+1} of ${c.total} · ${c.complete} completed`,'session-progress'));
-    const host=el('div');main.append(host);const complete=async()=>{learningFlush=null;await api('/api/study-session',{session_id:session.id,task_id:task.id,action:'complete'});await refresh();await navigate('session');};
+    const host=el('div');main.append(host);const complete=async(requestId)=>{learningFlush=null;await api('/api/study-session',{session_id:session.id,task_id:task.id,action:'complete',...(typeof requestId==='string'?{request_id:requestId}:{})});await refresh();await navigate('session');};
     if(task.kind==='concept'||task.kind==='lab')await scope.StepLearning.mountConcept(host,conceptOptions({itemId:task.ref,topicId:session.topic_id,lab:task.kind==='lab',draft:task.draft,onDraft:draft=>api('/api/study-session',{session_id:session.id,task_id:task.id,action:'draft',draft}),onDone:complete}));
     else if(task.kind==='repair'){const r=await api('/api/question-repair?'+new URLSearchParams({id:task.ref}));const controller=scope.StepRepair.mount(host,{question:r.question,api,onError:toast,onSaved:result=>{if((result.repair?.retry_count||0)>(r.repair?.retry_count||0)&&!host.querySelector('.session-next'))host.append(button('Continue session',complete,'primary session-next'));}});await controller.open('retry');}
     else if(task.kind==='visual')await scope.StepVisualRecall.mount(host,{api:visualApi(),exerciseId:task.ref,topics:catalog,onError:toast,onReviewed:()=>{if(!host.querySelector('.session-next'))host.append(button('Continue session',complete,'primary session-next'));}});
-    else if(task.kind==='anki'){host.append(el('h1','Review due cards'),el('p','Anki controls its queue and records each explicit rating. Return here when you finish this part of the session.'),button('Open Anki cards',()=>navigate('cards',task.ref),'primary'),button('I finished this step',complete,'small'));}
+    else if(task.kind==='anki'){
+      host.append(el('h1','Review cards here'),el('p','Ratings count only after Anki confirms them. You can continue this study session after a confirmed review.'));
+      const offerContinue=requestId=>{if(!requestId)return;host.querySelector('.session-next')?.remove();host.append(button('Continue study session',()=>complete(requestId),'primary session-next'));};
+      const controller=await scope.StepAnkiReview.mount(host,{api,topicId:task.ref,onError:toast,onConfirmed:result=>{offerContinue(result.request_id);return refresh();},onCard:attachScanner});
+      if(serial!==renderSerial){controller.destroy();return;}ankiController=controller;
+      if(controller.session?.last_confirmed_request_id&&controller.session.last_confirmed_submitted_at>=Date.parse(session.created_at)/1000)offerContinue(controller.session.last_confirmed_request_id);
+    }
+
     const controls=el('div',undefined,'session-controls');controls.append(button('Skip this step',async()=>{if(learningFlush)await learningFlush();learningFlush=null;await api('/api/study-session',{session_id:session.id,task_id:task.id,action:'skip'});await navigate('session');},'small'),button('Finish session for now',async()=>{if(learningFlush)await learningFlush();learningFlush=null;await api('/api/study-session',{session_id:session.id,action:'finish'});await refresh();await navigate('session');},'small'),button('Pause and return to reading',()=>navigate('read',session.topic_id),'small'));main.append(controls);
     const outline=el('details');outline.append(el('summary','Session steps'));const list=el('ol',undefined,'session-outline');session.tasks.forEach(t=>list.append(el('li',t.title+' · '+t.status,t.status)));outline.append(list);main.append(outline);
   }
   function attachScanner(root){scanner?.destroy();scanner=scope.MedicalTermCards.attach(root,lexicon,{onOpen:id=>openDefinition(id,true),onHover:hoverDefinition});scanner.setEnabled(data.state.preferences.automaticTerms!==false);}
   function updateViewLabels(){
-    $('view-label').textContent=({today:'Today',topics:'Topics',read:'Read & understand',objectives:'Learning objectives','course-questions':'Course questions',pathology:'Pathology',drugs:'Drugs',bugs:'Bugs',recall:'Concept recall',session:'Study session',visual:'Visual recall',concept:'Recall objective',repair:'Repair a question',gaze:'Guided gaze practice',cards:'Live Anki cards',questions:'Question inbox',labs:'Interactive labs',settings:'Settings & backup'})[view];
+    $('view-label').textContent=({today:'Today',topics:'Subjects',read:'Read & understand',objectives:'Learning objectives','course-questions':'Course questions',pathology:'Pathology',drugs:'Drugs',bugs:'Microbiology',recall:'Concept recall',session:'Study session',visual:'Visual recall',concept:'Recall objective',repair:'Repair a question',gaze:'Guided gaze practice',cards:'Anki sessions',questions:'Question inbox',labs:'Interactive labs',settings:'Settings & backup'})[view];
     const course=!!courseViews[view]&&!!topic()?.existingModule;
     $('scope-label').textContent=course?'Neuro / Psych'+(courseInfo?` · ${courseInfo.scope==='week8'?'Week 8 / Quiz 7':'Full course by topic'} · ${courseInfo.currentPages.toFixed(1)} page eq. now`:''):['read','recall','cards'].includes(view)?topic()?.label||'':'Your active subjects';
   }
@@ -356,11 +338,17 @@
     }
     if(['ready','view','length','saved'].includes(message.type) && Number.isFinite(message.currentPages) && ['all','week8'].includes(message.scope)){
       courseInfo=message;
-      if(message.type==='view'&&courseReady&&!$('course-host').hidden){const next=Object.keys(courseViews).find(key=>courseViews[key]===message.view);if(next){view=next;window.history.replaceState(null,'','#'+next);renderSidebar();}}
+      if(message.type==='view'&&courseReady&&!$('course-host').hidden){const next=Object.keys(courseViews).find(key=>courseViews[key]===message.view);if(next){view=next;renderSidebar();}}
       updateViewLabels();
     }
     if(message.type==='saved'){clearTimeout(courseRefreshTimer);courseRefreshTimer=setTimeout(()=>refresh().catch(()=>{}),400);}
     if(message.type==='context'&&typeof message.chapterId==='string'&&courseInfo)courseInfo.chapterId=message.chapterId;
+    if(message.type==='navigation'&&message.navigation&&!navigation.restoring&&!$('course-host').hidden){
+      const initialCourse=!navigation.current?.course;
+      courseNavigation=message.navigation;const next=Object.keys(courseViews).find(key=>courseViews[key]===courseNavigation.view);
+      if(next)view=next;navigation.write(navigationState(),message.replace===true||initialCourse);renderSidebar();updateViewLabels();
+    }
+    if(message.type==='navigation-restored'&&courseRestore?.id===message.id){const pending=courseRestore;courseRestore=null;pending.resolve();}
     if(message.type==='inbox'){questionChapter=typeof message.chapterId==='string'?message.chapterId:'';questionFilter='';questionTopic='';refresh().then(()=>navigate('questions'));}
     if(message.type==='question-links-changed'){scope.StepWorkspaceTools.invalidateQuestionLinks();coursePost('question-links-changed');}
     if(message.type==='study-session')navigate('session');
@@ -384,6 +372,7 @@
       const details=el('details');details.append(el('summary','More background'));const rest=(result.summary || '').startsWith(result.definition || '')?(result.summary || '').slice((result.definition || '').length).trim():result.summary; if(rest){details.append(el('p',rest));panel.append(details);}panel.append(sourceAttribution(result),safeLink('Full source article ↗',result.source?.url));
       if(!fromHistory && history[historyAt]!==result.id){history=history.slice(0,historyAt+1);history.push(result.id);historyAt=history.length-1;}
       $('definition-back').disabled=historyAt<=0;$('definition-forward').disabled=historyAt>=history.length-1;
+      navigation.write(navigationState());
       $('reference-pane').scrollTop=0;
     }catch(error){if(serial===definitionSerial)panel.replaceChildren(el('p',error.message,'alert-text'));}
   }
@@ -391,10 +380,11 @@
   async function pronounce(text){try{const response=await fetch('/api/speech',{method:'POST',headers:{'Content-Type':'application/json','X-Step-Token':token},body:JSON.stringify({text,voice:'Bella'}),signal:AbortSignal.timeout(85000)});if(!response.ok)throw new Error('Local pronunciation is unavailable');const url=URL.createObjectURL(await response.blob()),audio=new Audio(url);audio.onended=()=>URL.revokeObjectURL(url);await audio.play();}catch(error){toast(error.message);}}
   function detachReference(){detachedWanted=true;window.open('/?reference=1','step-study-reference');toast('Reference window opened. Select a term to send it there.');}
   if(channel){channel.onmessage=event=>{const message=event.data;if(!message || typeof message!=='object')return;if(message.type==='ready' || message.type==='alive'){detachedAliveAt=Date.now();if(message.type==='ready' && lastDefinitionRequest)channel.postMessage({type:'lookup',...lastDefinitionRequest});}if(message.type==='closed'){detachedAliveAt=0;detachedWanted=false;}if(referenceOnly && message.type==='lookup' && typeof message.query==='string' && message.query.length<=160)openDefinition(message.query,message.isId===true,false,true);};}
-  async function syncAnki(){const node=$('sync-anki');node.disabled=true;node.textContent='Syncing…';try{const result=await api('/api/anki-sync',{},120000);await refresh();await render();toast(result.anki.available?'Anki signals refreshed'+(result.anki.partial?' · bounded sample':''):'Anki unavailable; open Anki with AnkiConnect.');}catch(error){toast(error.message);}finally{node.disabled=false;node.textContent='Sync Anki';}}
+  async function syncAnki(){const node=$('sync-anki');node.disabled=true;node.textContent='Syncing…';try{const result=await api('/api/anki-sync',{},120000);await refresh();await render();toast(result.anki.reason?result.anki.reason:result.anki.available?'Anki signals refreshed'+(result.anki.partial?' · bounded sample':''):'Anki unavailable; open Anki with AnkiConnect.');}catch(error){toast(error.message);}finally{node.disabled=false;node.textContent='Sync Anki';}}
   $('definition-search').onsubmit=event=>{event.preventDefault();const query=$('definition-query').value.trim();if(query)openDefinition(query,false,false,true);};
   $('definition-back').onclick=()=>{if(historyAt>0)openDefinition(history[--historyAt],true,true,true);};$('definition-forward').onclick=()=>{if(historyAt<history.length-1)openDefinition(history[++historyAt],true,true,true);};
-  $('close-reference').onclick=()=>{$('reference-pane').hidden=true;$('workspace').classList.remove('with-reference');};
+  $('close-reference').onclick=()=>{$('reference-pane').hidden=true;$('workspace').classList.remove('with-reference');navigation.write(navigationState());};
+  $('page-back').onclick=()=>scope.history.back();$('page-forward').onclick=()=>scope.history.forward();
   $('open-reference').onclick=()=>!$('course-host').hidden?coursePost('reference'):detachReference();$('sync-anki').onclick=syncAnki;$('settings-button').onclick=()=>navigate('settings');
   $('study-shortcuts').onclick=()=>scope.StepShortcuts.help(document,true);
   $('capture-question').onclick=async()=>{const b=$('capture-question');b.disabled=true;b.textContent='Capturing…';try{await scope.StepWorkspaceTools.captureRegion();}finally{b.disabled=false;b.textContent='Capture question';}};
@@ -412,8 +402,10 @@
   });
   $('automatic-terms').onchange=async event=>{await pref({automaticTerms:event.target.checked});scanner?.setEnabled(event.target.checked);coursePost('definitions',{enabled:event.target.checked});closeHover();};
   document.querySelectorAll('[data-view]').forEach(node=>node.onclick=()=>navigate(node.dataset.view));
-  addEventListener('hashchange',()=>{const next=location.hash.slice(1);if(workspaceViews.includes(next) && next!==view)navigate(next);});
-  document.addEventListener('keydown',event=>{if(event.key==='Escape')closeHover();if(view==='cards' && !event.ctrlKey && !event.metaKey && !event.altKey && !event.target.closest('input,textarea,select,button,a,[contenteditable]')){if(event.code==='Space' && cardSession?.card && !cardSession.busy){event.preventDefault();cardSession.revealed=true;renderLiveCard();}else if(/^[1-4]$/.test(event.key) && cardSession?.revealed && !cardSession.request){event.preventDefault();rateLiveCard(Number(event.key));}}});addEventListener('scroll',closeHover,true);
+  addEventListener('popstate',event=>{navigation.restore(event).catch(error=>toast(error.message));});
+  addEventListener('hashchange',()=>{const next=location.hash.slice(1);if(!navigation.restoring&&workspaceViews.includes(next)&&next!==view)navigate(next);});
+  let navigationScroll;addEventListener('scroll',()=>{if(!data||navigationScroll||navigation.restoring)return;navigationScroll=requestAnimationFrame(()=>{navigationScroll=null;navigation.write(navigationState(),true);});},{passive:true});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')closeHover();});addEventListener('scroll',closeHover,true);
   main.addEventListener('mouseout',event=>{if(event.target.closest?.('.med-term') && !event.relatedTarget?.closest?.('#quick-definition')){clearTimeout(hoverTimer);setTimeout(()=>{if(!$('quick-definition').matches(':hover'))closeHover();},250);}});$('quick-definition').onmouseleave=closeHover;
   const splitter=$('splitter');let drag=false;
   splitter.onpointerdown=event=>{drag=true;splitter.setPointerCapture(event.pointerId);event.preventDefault();};

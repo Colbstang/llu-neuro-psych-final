@@ -61,6 +61,8 @@ def copy_allowlisted_files(project: Path, runtime: Path) -> list[str]:
             "concept_learning.py", "study_session.py", "learning_sources.py",
             "learning_flow.js", "learning_flow.css", "repair_practice.js", "repair_practice.css",
             "visual_recall.py", "visual_practice.js", "visual_practice.css",
+            "navigation.js", "course_navigation.js", "anki_review.js", "anki_review.css", "quiz_store.py",
+            "gaze_lab.html", "gaze_lab.js", "gaze_lab.css",
         ],
         "TermCards": [
             "__init__.py", "provider.py", "term_cards.js",
@@ -100,10 +102,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--python", type=Path, default=Path(sys.executable))
     parser.add_argument("--output", type=Path, default=Path.home() / "Applications" / "Step Study.app")
+    parser.add_argument("--data-dir", type=Path, help="Private app state directory; only its path is saved in this local bundle")
     args = parser.parse_args()
     output = args.output.expanduser().resolve()
     if output.name != "Step Study.app":
         parser.error("Use the separate Step Study.app bundle name")
+    data_directory = args.data_dir.expanduser().resolve() if args.data_dir is not None else None
+    if data_directory is not None and (data_directory == project or project in data_directory.parents or data_directory == output or output in data_directory.parents):
+        parser.error("Choose a private app-data directory outside the repository and app bundle")
     contents = output / "Contents"
     if output.exists():
         shutil.rmtree(output)
@@ -117,7 +123,17 @@ def main():
     source = base.read_text().replace("LLU Study", "Step Study").replace("llu-study-app", "step-study").replace("8770", "8773")
     source = source.replace("NSApp.mainMenu = mainMenu", "installWorkspaceMenu(mainMenu)\n        NSApp.mainMenu = mainMenu")
     source += "\n" + (project / "StepStudy" / "native" / "WorkspaceMenu.swift").read_text()
-    source = source.replace("process.arguments = [serverPath]", 'process.arguments = [serverPath]\n        var environment = ProcessInfo.processInfo.environment\n        environment["PATH"] = "/opt/homebrew/bin:/usr/local/bin:" + (environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin")\n        process.environment = environment')
+    startup_arguments = """var serverArguments = [serverPath]
+        if let dataDirectory = configuration["StudyAppDataDirectory"] as? String, !dataDirectory.isEmpty {
+            serverArguments += ["--data-dir", dataDirectory]
+        }
+        process.arguments = serverArguments
+        var environment = ProcessInfo.processInfo.environment
+        environment["PATH"] = "/opt/homebrew/bin:/usr/local/bin:" + (environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin")
+        process.environment = environment"""
+    if source.count("process.arguments = [serverPath]") != 1:
+        raise ValueError("The shared native launcher must have one explicit server argument assignment")
+    source = source.replace("process.arguments = [serverPath]", startup_arguments)
     with tempfile.TemporaryDirectory(prefix="step-study-launcher-") as folder:
         swift = Path(folder) / "Launcher.swift"
         swift.write_text(source)
@@ -132,6 +148,8 @@ def main():
             "StudyAppServerPath": str(runtime / "StepStudy" / "server.py"),
             "StudyAppPythonPath": os.path.abspath(str(args.python.expanduser())),
             "StudyAppWorkingDirectory": str(runtime), "StudyAppURL": "http://127.0.0.1:8773/"}
+    if data_directory is not None:
+        info["StudyAppDataDirectory"] = str(data_directory)
     with (contents / "Info.plist").open("wb") as file:
         plistlib.dump(info, file)
     print(f"Built {output}")

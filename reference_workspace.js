@@ -172,7 +172,7 @@ function referenceSearchResource(family,text=''){
 function openReferenceWorkspace(){
  if(referenceRoute('empty',{}))return;
  sourceViewerSerial++;semanticRequestSerial++;semanticAbort?.abort();sourceViewerActive=null;
- showSidePanel('References',`<section class="reference-empty"><h3>Look up a term or sentence</h3><p>Search your cards, books, lecture slides and notes. Choose a match to open its exact page.</p><div class="reference-library">${(DATA.source_catalog?.documents||[]).filter(doc=>['First Aid','Pathoma'].includes(doc.id)||doc.kind==='supplement').map(doc=>`<button data-reference-library="${esc(doc.id)}">${esc(doc.title)} · ${doc.page_count} pages</button>`).join('')}</div></section>`);
+ showSidePanel('References',`<section class="reference-empty"><h3>Look up a term or sentence</h3><p>Search your selected sources. Choose a match to open its exact page.</p><div class="reference-library">${(DATA.source_catalog?.documents||[]).filter(doc=>(['First Aid','Pathoma'].includes(doc.id)||doc.kind==='supplement')&&selectedReferenceFamilies().includes(referenceNamedFamily(doc.id+' '+doc.title)||'in_house')).map(doc=>`<button data-reference-library="${esc(doc.id)}">${esc(doc.title)} · ${doc.page_count} pages</button>`).join('')}</div></section>`);
 }
 function detachReferenceWorkspace(){
  if(referenceOnly)return;

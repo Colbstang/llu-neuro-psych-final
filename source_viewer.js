@@ -101,10 +101,10 @@ ankiContextMarkup=function(){return baseSemanticMarkup()+(typeof sourceSearchRes
 const baseReferenceTabs=referenceTabsMarkup;
 referenceTabsMarkup=function(mode='books'){
  let html=baseReferenceTabs(mode);if(ankiContext?.bookMatches)for(const book of ['First Aid','Pathoma','Both']){
-  const available=book==='Both'?Object.values(ankiContext.bookMatches).some(h=>h.length):ankiContext.bookMatches[book]?.length;
+  const selected=selectedReferenceFamilies(ankiContext),available=book==='Both'?['First Aid','Pathoma'].some(name=>selected.includes(referenceNamedFamily(name))&&ankiContext.bookMatches[name]?.length):selected.includes(referenceNamedFamily(book))&&ankiContext.bookMatches[book]?.length;
   if(available)html=html.replace(`data-panel-book="${book}"`, `data-search-book="${book}"`).replace(new RegExp(`(<button data-search-book="${book}"[^>]*?) disabled`),'$1');
  }
- const found=(ankiContext?.mehlmanMatches||ankiContext?.bookMatches?.Mehlman||[]).length>0;
+ const found=selectedReferenceFamilies(ankiContext).includes('mehlman')&&(ankiContext?.mehlmanMatches||ankiContext?.bookMatches?.Mehlman||[]).length>0;
  const reason=ankiContext?.retrieval==='loading'?'Searching Mehlman…':'No Mehlman passage matched this search. Search another term or open it from the reference library.';
  return html.replace(/<\/div>$/,`<button data-search-mehlman ${found?'':'disabled'} title="${found?'Open the matching Mehlman passage':reason}">Mehlman</button></div>`);
 };

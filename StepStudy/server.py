@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import hmac
 import json
 import mimetypes
@@ -35,6 +36,7 @@ from StepStudy.module_signals import collect_module_signals
 from StepStudy.live_cards import LiveCards
 from StepStudy.planning import build_review_queue
 from StepStudy.recall import build_recall
+from StepStudy.quiz_store import QuizStore, quiz_catalog
 from StepStudy.store import StepStudyStore
 from StepStudy.concept_learning import build_catalog, build_item_context
 from StepStudy.study_session import StudySessions, make_plan
@@ -49,7 +51,7 @@ from TermCards.provider import TermProvider
 
 ROOT = Path(__file__).resolve().parent
 STATIC = {"/step.js": ROOT / "step.js", "/step.css": ROOT / "step.css",
-          **{f"/{name}": ROOT / name for name in ("learning_flow.js", "learning_flow.css", "repair_practice.js", "repair_practice.css", "visual_practice.js", "visual_practice.css")},
+          **{f"/{name}": ROOT / name for name in ("learning_flow.js", "learning_flow.css", "repair_practice.js", "repair_practice.css", "visual_practice.js", "visual_practice.css", "navigation.js", "anki_review.js", "anki_review.css")},
           "/shortcuts.js": ROOT / "shortcuts.js",
           "/workspace_tools.js": ROOT / "workspace_tools.js", "/workspace_tools.css": ROOT / "workspace_tools.css",
           "/course_embed.js": ROOT / "course_embed.js", "/course_embed.css": ROOT / "course_embed.css",
@@ -63,6 +65,25 @@ COURSE_ASSET_MAX_RESPONSE = 20 * 1024 * 1024
 COURSE_REFERENCE_TIMEOUT = 40.0
 COURSE_SIGNAL_KEYS = ("pages", "topic_groups", "objectives", "questions",
                       "question_auto_links", "question_link_corrections", "question_annotations")
+
+
+def private_course_store_path(data_dir: Path, key: str, fallback: Path) -> Path:
+    """Allow an installed workspace to retain its own course state files."""
+    config = data_dir / "course-config.json"
+    try:
+        raw = json.loads(config.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return fallback
+    except (OSError, ValueError):
+        raise ValueError("Private course configuration is invalid") from None
+    if not isinstance(raw, dict):
+        raise ValueError("Private course configuration is invalid")
+    value = raw.get(key)
+    if value is None:
+        return fallback
+    if not isinstance(value, str) or len(value)>128 or not value.endswith(".sqlite3") or not value[0].isalnum() or any(char not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-" for char in value):
+        raise ValueError(f"{key} must be a private SQLite filename")
+    return data_dir / value
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -132,6 +153,7 @@ class Services:
         self.labs = labs or LocalLabs(self.data_dir / "labs.json")
         self.visual = VisualRecallStore(self.data_dir / "visual-recall.sqlite3")
         self.study_sessions = StudySessions(self.data_dir / "study-session.json")
+        self.quizzes = QuizStore(self.data_dir / "comparison-quizzes.sqlite3")
         self._learning_catalog = None
         self.reference_service = ReferenceService(self.data_dir)
         self.anki = anki or AnkiSignals()
@@ -150,7 +172,8 @@ class Services:
             self.course = None
             self.course_progress = course_progress
         else:
-            self.course_progress = course_progress or ProgressStore()
+            self.course_progress = course_progress or ProgressStore(private_course_store_path(
+                self.data_dir, "progress_file", llu_study_data_dir() / "progress.sqlite3"))
             self.course = CourseModule(
                 config_path=self.data_dir / "course-config.json",
                 progress_store=self.course_progress,
@@ -314,10 +337,37 @@ class Services:
         if not topics: raise ValueError("Activate this subject before practicing recall")
         context.update(item_id=item_id, topic_id=topics[0], chapter_id=item["chapter_id"],
                        session_id=secrets.token_urlsafe(18), revealed=False)
+        context["context_hash"] = hashlib.sha256(json.dumps(
+            [context["prompt"], context["reference_context"], item["source_ids"]],
+            ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
         with self.lock:
+            draft = self.store.concept_draft(item_id, context["context_hash"])
+            if draft and draft["revealed"]:
+                context.update(revealed=True, independent_answer=draft["answer"])
             self.pending[context["session_id"]] = context
             while len(self.pending) > 100: self.pending.popitem(last=False)
-        return {"ok": True, "recall": {key: context[key] for key in ("session_id", "item_id", "topic_id", "chapter_id", "prompt", "sources")} | {"chapter_title": item.get("chapter_title", "")}}
+        recall = {key: context[key] for key in ("session_id", "item_id", "topic_id", "chapter_id", "prompt", "sources", "revealed")}
+        recall.update(chapter_title=item.get("chapter_title", ""), draft=draft["answer"] if draft else "")
+        if context["revealed"]:
+            recall["reference_context"] = context["reference_context"]
+        return {"ok": True, "recall": recall}
+
+    def save_concept_draft(self, session_id, answer):
+        if not isinstance(answer, str) or len(answer) > 2000:
+            raise ValueError("Enter a draft of at most 2,000 characters")
+        if not isinstance(session_id, str):
+            raise ValueError("Reopen this objective")
+        with self.lock:
+            context = self.pending.get(session_id)
+            if not context or "item" not in context: raise ValueError("Reopen this objective")
+            if context.get("submitting"): raise ValueError("This answer is being saved")
+            if context["revealed"]:
+                answer = context["independent_answer"]
+            draft = self.store.save_concept_draft(context["item_id"], answer,
+                                                 context["context_hash"], context["revealed"])
+            if draft["revealed"]:
+                context.update(revealed=True, independent_answer=draft["answer"])
+            return {"ok": True}
 
     def reveal_concept(self, session_id, answer):
         if not isinstance(answer, str) or not answer.strip() or len(answer) > 2000:
@@ -328,7 +378,10 @@ class Services:
             if context.get("submitting"): raise ValueError("This answer is being saved")
             context["revealed"] = True
             context.setdefault("independent_answer", answer)
-            return {"ok": True, "reference_context": context["reference_context"]}
+            draft = self.store.save_concept_draft(context["item_id"], context["independent_answer"],
+                                                  context["context_hash"], True)
+            context["independent_answer"] = draft["answer"]
+            return {"ok": True, "reference_context": context["reference_context"], "answer": draft["answer"]}
 
     def answer_concept(self, body):
         session_id, answer, action = body.get("session_id"), body.get("answer"), body.get("action")
@@ -343,6 +396,9 @@ class Services:
             prompt = self.pending.get(session_id)
             if not prompt or "item" not in prompt: raise ValueError("This objective session expired. Reopen it.")
             if prompt.get("submitting"): raise ValueError("This answer is already being saved")
+            draft = self.store.concept_draft(prompt["item_id"], prompt["context_hash"])
+            if draft and draft["revealed"]:
+                prompt.update(revealed=True, independent_answer=draft["answer"])
             if action == "grade" and prompt["revealed"]: raise ValueError("The explanation is revealed. Use your own recall rating.")
             if action == "self_rating" and (not prompt["revealed"] or answer != prompt.get("independent_answer")):
                 raise ValueError("Check the source against your independent answer first")
@@ -438,11 +494,17 @@ class Services:
                                   "kind": "course", "count": bad + wrong, "priority": 85,
                                   "reason": f"Course module: {bad} objectives marked bad · {wrong} unresolved wrong questions."})
             queue.sort(key=lambda row: (-row["priority"], row.get("due_at") or "", row["id"]))
+        quiz_summaries = {}
+        if self.course is not None and module.get("available"):
+            course_data = self.course.data()
+            for kind in ("drugs", "bugs", "pathology"):
+                quiz_summaries[kind] = self.quizzes.snapshot(quiz_catalog(course_data, kind))["summary"]
         return {"ok": True, "catalog": self.catalog, "state": state,
                 "queue": queue, "module": module,
                 "anki": anki, "questions": questions, "intake": self.intake.status(),
                 "ai": self.ai_status, "speech": {k: v for k, v in self.tts.status().items() if not k.startswith("missing_")},
                 "learning": {"due_count": concept_summary["due_count"], "unseen_count": concept_summary["unseen_count"], "session": self.study_sessions.snapshot()},
+                "quizzes": quiz_summaries,
                 "glossary_count": len(self.terms.lexicon()), "module_url": "/#read"}
 
     def read_module_signals(self):
@@ -477,7 +539,7 @@ class Services:
             if self._course_anki_instance is None:
                 # The course bundle contains the card/note identity allowlist.
                 # Reuse LLU Study's review ledger, with no ratings during load.
-                ledger = llu_study_data_dir() / "anki-bridge.sqlite3"
+                ledger = private_course_store_path(self.data_dir, "anki_ledger_file", llu_study_data_dir() / "anki-bridge.sqlite3")
                 self._course_anki_instance = AnkiBridge(self.course.anki_data(), sqlite_path=ledger)
             return self._course_anki_instance
         finally:
@@ -773,6 +835,9 @@ class Handler(BaseHTTPRequestHandler):
                 if service.course is None:
                     self.json(503, {"ok": False, "error": "The course module is unavailable"}); return
                 self.json(200, service.course.load_progress())
+            elif parsed.path == "/api/course/quizzes":
+                if service.course is None: raise CourseProxyError("The course module is unavailable", 503)
+                self.json(200, service.quizzes.snapshot(quiz_catalog(service.course.data(), param("kind"))))
             elif parsed.path == "/api/course/health":
                 status, mime, body = service.course_reference_request("health")
                 if status >= 400:
@@ -835,6 +900,10 @@ class Handler(BaseHTTPRequestHandler):
                 if not result: self.json(404, {"ok": False, "error": "Image unavailable"}); return
                 self.send(200, result["body"], result["mime_type"])
             elif parsed.path == "/api/card-queue": self.json(200, service.card_queue(param("topic_id")))
+            elif parsed.path == "/api/anki-session":
+                tid = param("topic_id")
+                if tid not in service.store.topic_ids: raise ValueError("Unknown subject")
+                self.json(200, service.cards.session_snapshot(tid))
             elif parsed.path == "/api/questions":
                 chapter = param("chapter_id")
                 rows = (service.intake.search_questions(param("q"), limit=100) if param("q")
@@ -854,7 +923,7 @@ class Handler(BaseHTTPRequestHandler):
                 path = service.intake.image_path(int(param("id")))
                 self.send(200, path.read_bytes(), mimetypes.guess_type(path.name)[0] or "image/png")
             elif parsed.path == "/api/export":
-                payload = {**service.store.export_state(), "question_repairs": service.intake.export_repairs(), "study_session": service.study_sessions.snapshot()}
+                payload = {**service.store.export_state(), "question_repairs": service.intake.export_repairs(), "study_session": service.study_sessions.snapshot(), "comparison_quizzes": service.quizzes.export_state()}
                 self.send(200, json.dumps(payload, indent=2).encode(), "application/json", {"Content-Disposition": 'attachment; filename="step-study-progress.json"'})
             elif parsed.path == "/api/visual/export":
                 self.send(200, json.dumps(service.visual.export_state()).encode(), "application/json", {"Content-Disposition": 'attachment; filename="step-study-visual-recall.json"'})
@@ -906,6 +975,9 @@ class Handler(BaseHTTPRequestHandler):
                 name = "search" if path.endswith("/search") else "source-page"
                 status, mime, raw = service.course_reference_request(name, body)
                 self.send(status, raw, mime); return
+            elif path == "/api/course/quizzes":
+                if service.course is None: raise CourseProxyError("The course module is unavailable", 503)
+                result = service.quizzes.action(quiz_catalog(service.course.data(), body.get("kind")), body)
             elif path == "/api/course/tts":
                 text, voice = body.get("text"), body.get("voice", "Bella")
                 if not isinstance(text, str) or not text.strip() or len(text) > 180 or len(text.split()) > 24:
@@ -948,10 +1020,19 @@ class Handler(BaseHTTPRequestHandler):
                 service.store.set_preferences(values); result = {"ok": True}
             elif path == "/api/answer": result = service.answer(body.get("session_id"), body.get("answer"), body.get("grade") is True)
             elif path == "/api/concept-reveal": result = service.reveal_concept(body.get("session_id"), body.get("answer"))
+            elif path == "/api/concept-draft": result = service.save_concept_draft(body.get("session_id"), body.get("answer"))
             elif path == "/api/concept-answer": result = service.answer_concept(body)
             elif path == "/api/study-session":
                 if body.get("action") == "start": result = service.start_study_session(body.get("minutes", 15), body.get("topic_id"))
-                else: result = {"ok": True, "session": service.study_sessions.update(body.get("session_id"), body.get("task_id"), action=body.get("action"), draft=body.get("draft"))}
+                else:
+                    current = service.study_sessions.snapshot()
+                    task = next((row for row in (current or {}).get("tasks", []) if row["id"] == body.get("task_id")), None)
+                    if body.get("action") == "complete" and task and task["kind"] == "anki":
+                        accepted = service.cards.confirmed_review(task["ref"], body.get("request_id"))
+                        session = service.study_sessions.complete_anki(body.get("session_id"), body.get("task_id"), accepted)
+                    else:
+                        session = service.study_sessions.update(body.get("session_id"), body.get("task_id"), action=body.get("action"), draft=body.get("draft"))
+                    result = {"ok": True, "session": session}
             elif path == "/api/question-repair":
                 if body.get("action") == "save": result = service.intake.save_repair(int(body.get("id")), body.get("repair"))
                 elif body.get("action") == "retry": result = service.intake.record_retry(int(body.get("id")), body.get("answer"), body.get("self_result"), body.get("request_id"))
@@ -967,6 +1048,20 @@ class Handler(BaseHTTPRequestHandler):
                 source = service.visual.store_upload(image, body.get("mime_type"))
                 result = {"ok": True, "source": source, "image_url": "/api/visual/image/upload/" + source["id"]}
             elif path == "/api/anki-sync": result = service.sync_anki()
+            elif path == "/api/anki-session":
+                tid, sid, action = body.get("topic_id"), body.get("session_id"), body.get("action")
+                if not isinstance(tid, str) or tid not in service.store.topic_ids or not service.store.snapshot()["topics"][tid]["active"]:
+                    raise ValueError("Activate a known subject before reviewing its cards")
+                if action == "start": result = service.cards.start_session(tid, body.get("limit", 10))
+                elif action == "open": result = service.cards.open_session(tid, sid)
+                elif action == "reveal": result = service.cards.reveal_session(tid, sid)
+                elif action == "rate":
+                    result = service.cards.rate_session(tid, sid, body.get("ease"), body.get("request_id"))
+                    if result.get("review", {}).get("confirmed"):
+                        with service.lock: service.anki_signals = {**service.anki_signals, "cached": True}
+                elif action == "skip": result = service.cards.skip_session(tid, sid)
+                elif action == "dismiss": result = service.cards.dismiss_session(tid, sid, body.get("request_id"))
+                else: raise ValueError("Unknown Anki session action")
             elif path == "/api/card-start":
                 tid = body.get("topic_id")
                 if not isinstance(tid, str) or tid not in service.store.topic_ids or not service.store.snapshot()["topics"][tid]["active"]:

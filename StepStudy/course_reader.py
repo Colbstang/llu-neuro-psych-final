@@ -47,6 +47,7 @@ def reader_html(data: dict, anki: dict, token: str, *, view="guide", subject="ne
     javascript = "\n".join((SOURCE_ROOT / name).read_text(encoding="utf-8") for name in JS_FILES)
     javascript += "\n" + (Path(__file__).with_name("course_embed.js")).read_text(encoding="utf-8")
     javascript += "\n" + (Path(__file__).with_name("course_practice.js")).read_text(encoding="utf-8")
+    javascript += "\n" + (Path(__file__).with_name("course_navigation.js")).read_text(encoding="utf-8")
     javascript += "\ninitReadingTools();startStudyApp().then(()=>window.StepCourseReady());"
     configuration = {"apiBase": "/api/course", "token": token, "ready": True}
     module = {"view": view, "subject": subject, "target": target, "scope": scope, "publicOnly": source == "public"}

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import plistlib
 import sys
 import tempfile
 import unittest
@@ -24,6 +25,8 @@ PROJECT_FILES = {
             "concept_learning.py", "study_session.py", "learning_sources.py",
             "learning_flow.js", "learning_flow.css", "repair_practice.js", "repair_practice.css",
             "visual_recall.py", "visual_practice.js", "visual_practice.css",
+            "navigation.js", "course_navigation.js", "anki_review.js", "anki_review.css", "quiz_store.py",
+            "gaze_lab.html", "gaze_lab.js", "gaze_lab.css",
     ],
     "TermCards": [
         "__init__.py", "provider.py", "term_cards.js",
@@ -49,7 +52,7 @@ def make_project(root: Path) -> None:
         path.write_text(body, encoding="utf-8")
     launcher = root / "StudyApp" / "native" / "Launcher.swift"
     launcher.parent.mkdir(parents=True, exist_ok=True)
-    launcher.write_text("// fixture launcher\nNSApp.mainMenu = mainMenu\n", encoding="utf-8")
+    launcher.write_text("// fixture launcher\nNSApp.mainMenu = mainMenu\nprocess.arguments = [serverPath]\n", encoding="utf-8")
     menu = root / "StepStudy" / "native" / "WorkspaceMenu.swift"
     menu.parent.mkdir(parents=True, exist_ok=True)
     menu.write_text("// Step-only capture menu fixture\n", encoding="utf-8")
@@ -118,6 +121,7 @@ class NativeBundleTests(unittest.TestCase):
                 source_paths.append(source_path)
                 self.assertIn("installWorkspaceMenu(mainMenu)", source_path.read_text())
                 self.assertIn("Step-only capture menu fixture", source_path.read_text())
+                self.assertIn('serverArguments += ["--data-dir", dataDirectory]', source_path.read_text())
                 Path(command[-1]).write_bytes(b"fake executable")
 
             with patch.object(build_app, "__file__", str(app_script)), \
@@ -127,8 +131,59 @@ class NativeBundleTests(unittest.TestCase):
 
             self.assertTrue((output / "Contents/Resources/Runtime/CourseModule/guide_template.html").is_file())
             self.assertTrue((output / "Contents/MacOS/Step Study").is_file())
+            with (output / "Contents/Info.plist").open("rb") as file:
+                info = plistlib.load(file)
+            self.assertNotIn("StudyAppDataDirectory", info)
+            self.assertEqual(info["StudyAppServerPath"], str((output / "Contents/Resources/Runtime/StepStudy/server.py").resolve()))
             self.assertTrue(source_paths)
             self.assertTrue(all(not path.exists() for path in source_paths))
+
+
+    def test_private_data_directory_is_only_stored_in_generated_plist(self):
+        with tempfile.TemporaryDirectory(prefix="step-native-private-config-test-") as folder:
+            root = Path(folder) / "project"
+            output = Path(folder) / "Step Study.app"
+            private_data = Path(folder) / "Private study state"
+            private_data.mkdir()
+            (private_data / "personal-progress.sqlite3").write_bytes(b"private data sentinel")
+            make_project(root)
+            app_script = root / "StepStudy/native/build_app.py"
+            app_script.write_text("# synthetic path marker\n")
+            def fake_compiler(command, check):
+                source = Path(command[-3]).read_text()
+                self.assertNotIn(str(private_data), source)
+                self.assertIn('configuration["StudyAppDataDirectory"]', source)
+                Path(command[-1]).write_bytes(b"fake executable")
+            with patch.object(build_app, "__file__", str(app_script)), \
+                    patch.object(sys, "argv", ["build_app.py", "--output", str(output), "--data-dir", str(private_data)]), \
+                    patch.object(build_app.subprocess, "run", side_effect=fake_compiler):
+                self.assertEqual(build_app.main(), 0)
+            with (output / "Contents/Info.plist").open("rb") as file:
+                info = plistlib.load(file)
+            self.assertEqual(info["StudyAppDataDirectory"], str(private_data.resolve()))
+            self.assertEqual(info["StudyAppServerPath"], str((output / "Contents/Resources/Runtime/StepStudy/server.py").resolve()))
+            for path in (output / "Contents/Resources/Runtime").rglob("*"):
+                if path.is_file():
+                    self.assertNotIn(str(private_data).encode(), path.read_bytes())
+                    self.assertNotIn(b"private data sentinel", path.read_bytes())
+            self.assertEqual((private_data / "personal-progress.sqlite3").read_bytes(), b"private data sentinel")
+
+    def test_data_directory_inside_checkout_or_bundle_is_rejected_before_build(self):
+        with tempfile.TemporaryDirectory(prefix="step-native-data-boundary-test-") as folder:
+            root = Path(folder) / "project"
+            output = Path(folder) / "Step Study.app"
+            app_script = root / "StepStudy/native/build_app.py"
+            app_script.parent.mkdir(parents=True)
+            app_script.write_text("# synthetic path marker\n")
+            for data_directory in (root / "private-state", output / "Contents/Resources/state"):
+                with self.subTest(path=data_directory), \
+                        patch.object(build_app, "__file__", str(app_script)), \
+                        patch.object(sys, "argv", ["build_app.py", "--output", str(output), "--data-dir", str(data_directory)]), \
+                        patch.object(build_app.subprocess, "run") as compiler, \
+                        self.assertRaises(SystemExit):
+                    build_app.main()
+                compiler.assert_not_called()
+                self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

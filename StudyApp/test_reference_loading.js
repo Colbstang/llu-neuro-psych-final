@@ -15,7 +15,7 @@ test('same PDF request is shared, successful pages cache, failures can retry',as
 });
 test('Mehlman is disabled when the current context has no passage',()=>{
  const start=source.indexOf('referenceTabsMarkup=function('),end=source.indexOf('\nasync function openSearchedBook',start);
- const context=vm.createContext({baseReferenceTabs:()=>'<div></div>',ankiContext:{bookMatches:{'First Aid':[],'Pathoma':[]},mehlmanMatches:[],retrieval:'empty'}});
+ const context=vm.createContext({baseReferenceTabs:()=>'<div></div>',selectedReferenceFamilies:()=>['first_aid','pathoma','mehlman'],referenceNamedFamily:name=>name==='First Aid'?'first_aid':'pathoma',ankiContext:{bookMatches:{'First Aid':[],'Pathoma':[]},mehlmanMatches:[],retrieval:'empty'}});
  vm.runInContext(source.slice(start,end),context);
  assert.match(context.referenceTabsMarkup(),/data-search-mehlman disabled/);
  context.ankiContext.mehlmanMatches=[{page:1}];assert.doesNotMatch(context.referenceTabsMarkup(),/data-search-mehlman disabled/);

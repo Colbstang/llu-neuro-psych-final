@@ -156,6 +156,22 @@ class StoreTests(unittest.TestCase):
             self.assertEqual(len({item["item_id"] for item in result["items"]}), 3)
             self.assertEqual(result["unseen_count"], 5)
 
+    def test_concept_drafts_survive_restart_and_clear_only_the_completed_item(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "state.sqlite3"
+            store = StepStudyStore(path)
+            source_hash = "a" * 64
+            store.save_concept_draft("lo:a", "Answer A", source_hash, revealed=True)
+            store.save_concept_draft("lo:b", "Answer B", source_hash)
+            restarted = StepStudyStore(path)
+            self.assertEqual(restarted.concept_draft("lo:a", source_hash)["answer"], "Answer A")
+            self.assertTrue(restarted.concept_draft("lo:a", source_hash)["revealed"])
+            self.assertIsNone(restarted.concept_draft("lo:a", "b" * 64))
+            restarted.record_concept_attempt("lo:a", "neuro", "Prompt", "Answer A", action="save")
+            self.assertIsNone(restarted.concept_draft("lo:a", source_hash))
+            self.assertEqual(restarted.concept_draft("lo:b", source_hash)["answer"], "Answer B")
+            self.assertEqual(len(restarted.export_state()["concept_drafts"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

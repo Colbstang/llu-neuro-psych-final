@@ -27,6 +27,18 @@ class CourseReaderTests(unittest.TestCase):
         self.assertTrue(all('src=' in attributes or f'nonce="{nonce}"' in attributes for attributes in inline_scripts))
         self.assertNotIn("unsafe-eval", csp)
 
+    def test_visual_body_marker_cannot_trigger_legacy_click_navigation(self):
+        page, _ = reader_html({}, {}, "test-token", view="bugs")
+        text = page.decode()
+        # The trusted composed reader still contains the legacy delegated route
+        # listener. A body marker named data-view makes every quiz click match
+        # that listener through closest(), re-rendering before Start can save.
+        self.assertIn("e.target.closest('[data-view]')", text)
+        self.assertRegex(text, r"document\.body\.dataset\.studyView\s*=")
+        self.assertNotRegex(text, r"document\.body\.dataset\.view\s*=")
+        body = re.search(r"<body[^>]*>", text).group(0)
+        self.assertNotRegex(body, r"\bdata-view\s*=")
+
     def test_navigation_parameters_are_allowlisted(self):
         for options in ({"view": "../private"}, {"subject": "renal"}, {"scope": "injected"}, {"target": "unknown"}):
             with self.subTest(options=options), self.assertRaises(ValueError):

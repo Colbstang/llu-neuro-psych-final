@@ -9,12 +9,18 @@
 .chapter-saved-questions{border-top:1px solid #d4dfd8;margin-top:20px;padding:12px 0}
 .chapter-saved-questions article{padding:12px 0;border-bottom:1px solid #d4dfd8}
 .local-labs>p{max-width:760px}
-.local-lab-list{display:grid;gap:14px;margin:24px 0}
-.local-lab-card{border:1px solid #d4dfd8;border-radius:6px;padding:18px}
+.local-lab-list{display:grid;gap:14px;margin:24px 0;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.local-lab-card{border:1px solid #c8dedc;border-radius:8px;padding:18px;background:#f4f9f8}
+.local-lab-card[data-kind=gaze]{background:#eef5fb;border-color:#c9dce9}
+.local-lab-card[data-kind=native]{background:#f8f7f2;border-color:#dfdccd}
 .local-lab-card h2{font-size:18px;margin:0 0 8px}
 .local-lab-card button+button{margin-left:8px}
+.local-lab-list[hidden]{display:none}
+.lab-compatibility{font-size:13px;line-height:1.6;max-width:600px;color:#6b695b}
+.lab-viewer-toolbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.lab-viewer-toolbar h2{font-size:19px;margin:0}
 .local-lab-viewer:empty{display:none}
-.local-lab-viewer iframe{display:block;width:100%;min-height:620px;height:70vh;border:1px solid #d4dfd8;margin:12px 0 24px;background:#fff}
+.local-lab-viewer iframe{display:block;width:100%;min-height:680px;height:76vh;border:1px solid #c8dedc;border-radius:8px;margin:12px 0 24px;background:#fff}
 .lab-add-form{display:grid;gap:12px;max-width:760px;padding:14px 0}
 .lab-add-form>button{justify-self:start}
 @media(max-width:700px){.local-lab-viewer iframe{min-height:400px}.local-lab-card button+button{margin-left:0;margin-top:8px}.local-lab-card button{display:block}}

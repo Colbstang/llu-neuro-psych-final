@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Horizontal gaze practice</title><link rel="stylesheet" href="gaze_lab.css"><script defer src="gaze_lab.js"></script></head>
+<body>
+  <main id="gaze-lab">
+    <p class="eyebrow">INTERACTIVE CIRCUIT</p><h1>Horizontal gaze</h1>
+    <p class="intro">Predict eye movement, test the command, then trace the source lesson's circuit.</p>
+    <p id="load-status" role="status">Loading the selected local lesson…</p>
+    <div id="lab-controls" hidden>
+      <div class="mode-controls"><button id="explore-mode" aria-pressed="true">Explore a lesion</button><button id="challenge-mode" aria-pressed="false">Localize a hidden lesion</button></div>
+      <div id="explore-controls"><label>Lesion <select id="lesion-choice"></select></label><fieldset id="predictions"><legend>Before testing, predict which eyes will move</legend><label><input id="predict-left" type="checkbox"> Patient's left eye</label><label><input id="predict-right" type="checkbox"> Patient's right eye</label></fieldset></div>
+      <div class="gaze-controls"><button id="gaze-left">Test leftward gaze</button><button id="gaze-right">Test rightward gaze</button><button id="gaze-center">Center eyes</button></div>
+      <figure class="eye-view"><svg viewBox="0 0 840 230" role="img" aria-labelledby="eye-title eye-description"><title id="eye-title">Eye movement, viewed from the front</title><desc id="eye-description">Both eyes are centered.</desc><g transform="translate(225 110)"><ellipse rx="95" ry="54" class="eye-white"/><circle id="right-pupil" r="29" class="pupil"/><circle r="5" class="pupil-mark"/></g><g transform="translate(615 110)"><ellipse rx="95" ry="54" class="eye-white"/><circle id="left-pupil" r="29" class="pupil"/><circle r="5" class="pupil-mark"/></g><text x="225" y="195" text-anchor="middle">Patient's RIGHT</text><text x="615" y="195" text-anchor="middle">Patient's LEFT</text></svg><figcaption>Front view: the patient's right appears on your left. Angles are a schematic illustration.</figcaption></figure>
+      <p id="observation" class="observation" role="status">Select a command to test your prediction.</p>
+      <div id="challenge-controls" hidden><label>Where is the modeled lesion? <select id="localization-choice"></select></label><div class="gaze-controls"><button id="check-localization">Check localization</button><button id="next-challenge">Another lesion</button></div></div>
+      <p id="feedback" class="feedback" role="status"></p>
+      <details id="source-details"><summary>Trace the lesson's pathway and reasoning</summary><p id="lesion-reasoning"></p><div id="circuit"></div></details>
+      <p class="scope">This viewer reads your selected local gaze lesson. It is a circuit schematic, with its authored saccadic observations; it does not include the native lab's 3D atlas, VOR, pursuit, convergence, or nystagmus. Local exploration checks do not record a mastery score or an Anki review. Use Guided gaze practice to save your explanation and recall rating.</p>
+    </div>
+  </main>
+</body>
+</html>

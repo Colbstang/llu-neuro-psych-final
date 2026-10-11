@@ -7,11 +7,14 @@ ratings through StudyApp's private, idempotent review ledger.
 from __future__ import annotations
 
 import html
+import json
 import re
+import secrets
 import sys
 import threading
 import time
 from html.parser import HTMLParser
+from contextlib import closing
 from pathlib import Path
 from typing import Any, Callable
 
@@ -20,7 +23,7 @@ if str(PROJECT) not in sys.path:
     sys.path.insert(0, str(PROJECT))
 
 from StudyApp.anki_bridge import AnkiBridge, BridgeUnavailable, ScopeError, StaleReview, _media_filename
-from StepStudy.anki_signals import CATALOG_PATH, _category_prefix, _quote_search, _scoped_deck, _subject_for_tag, anki_connect
+from StepStudy.anki_signals import CATALOG_PATH, _category_prefix, _quote_search, _subject_for_tag, anki_connect
 
 MAX_QUEUE_CARDS = 200
 CARD_INFO_BATCH_SIZE = 25
@@ -161,6 +164,16 @@ def _identity_integer(value: Any) -> int | None:
     return None
 
 
+def _requires_native_rendering(card: dict[str, Any]) -> bool:
+    """Do not flatten image occlusion overlays into an unmasked answer image."""
+    model = str(card.get("modelName", "")).lower().replace("_", " ").replace("-", " ")
+    question = str(card.get("question", ""))[:MAX_MARKUP_CHARS]
+    return ("image occlusion" in model or "imageocclusion" in model
+            or re.search(r"<\s*canvas\b", question, re.I) is not None
+            or (re.search(r"<\s*svg\b", question, re.I) is not None
+                and re.search(r"<\s*img\b", question, re.I) is not None))
+
+
 class LiveCards:
     """Read and explicitly rate subject-specific live Anki cards."""
 
@@ -185,6 +198,7 @@ class LiveCards:
         self._lock = threading.RLock()
         self._timing = threading.local()
         self._closed = False
+        self._session_path = self.data_dir / "anki-sessions.json"
 
     def _call(self, action: str, **params: Any) -> Any:
         if self._closed:
@@ -240,10 +254,6 @@ class LiveCards:
         try:
             self._call("version")
             tags = self._call("getTags") or []
-            decks = self._call("deckNames") or []
-            scoped_decks_all = sorted({name for name in decks if isinstance(name, str) and _scoped_deck(name)})
-            scoped_decks = [name for name in scoped_decks_all
-                            if not any(name.startswith(parent + "::") for parent in scoped_decks_all if parent != name)]
             known = set(self.catalog)
             for tag in tags:
                 if isinstance(tag, str) and _subject_for_tag(tag, known) == topic_id:
@@ -253,26 +263,31 @@ class LiveCards:
             if len(prefixes) > MAX_CATEGORY_PREFIXES:
                 prefixes = set(sorted(prefixes)[:MAX_CATEGORY_PREFIXES])
                 partial = True
-            if not scoped_decks or not prefixes:
+            if not prefixes:
                 self._timing.deadline = None
                 with self._lock:
                     self._queued[topic_id] = set()
-                reason = "No scoped Step deck was reported." if not scoped_decks else "No matching Step category tag was reported."
+                reason = "No matching Step category tag was reported."
                 return {"ok": True, "topic_id": topic_id, "card_ids": [], "count": 0,
                         "partial": partial, "reason": reason}
-            deck_query = "(" + " OR ".join(f"deck:{_quote_search(name)}" for name in scoped_decks) + ")"
-            tag_parts: list[str] = []
-            for prefix in sorted(prefixes):
-                quoted = _quote_search(prefix)
-                tag_parts.extend((f"tag:{quoted}", f"tag:{_quote_search(prefix + '::*')}"))
-            query = f"{deck_query} ({' OR '.join(tag_parts)}) -is:suspended (is:due OR is:new)"
-            if len(query) > 12000:
+            # A parent tag search includes all descendants in Anki. Avoid a
+            # redundant wildcard term for each of the verified category prefixes.
+            tag_parts = [f"tag:{_quote_search(prefix)}" for prefix in sorted(prefixes)]
+            # Verified category tags define Step scope even when a user moves
+            # AnKing cards into a personally named deck. Never select a personal
+            # note merely because its deck or unqualified disease tag matches.
+            scope_query = f"({' OR '.join(tag_parts)}) -is:suspended -deck:filtered"
+            if len(scope_query) > 11950:
                 self._timing.deadline = None
                 return {"ok": False, "topic_id": topic_id, "card_ids": [], "count": 0,
                         "partial": False, "reason": "The reported Anki scope exceeded the query limit."}
-            found = self._call("findCards", query=query) or []
-            if not isinstance(found, list):
+            # A large new-card population must not crowd reported due learning
+            # and review cards out of this bounded batch.
+            due_found = self._call("findCards", query=scope_query + " is:due") or []
+            new_found = self._call("findCards", query=scope_query + " is:new") or []
+            if not isinstance(due_found, list) or not isinstance(new_found, list):
                 raise ValueError("invalid card list")
+            found = due_found + new_found
             parsed: list[int] = []
             for value in found:
                 card_id = _positive_id(value)
@@ -363,6 +378,9 @@ class LiveCards:
         try:
             result = bridge.begin_review(cid)
             card = result.get("card", {}) if isinstance(result, dict) else {}
+            if _requires_native_rendering(card):
+                return {"ok": False, "topic_id": topic_id,
+                        "reason": "This card uses image occlusion or interactive rendering. Review it in Anki to preserve its question."}
             media = card.get("media", {}) if isinstance(card, dict) else {}
             return {"ok": True, "topic_id": topic_id, "token": result["token"], "card_id": cid,
                     "front": _card_side(card.get("question"), media, front=True, css=card.get("css", "")),
@@ -386,13 +404,284 @@ class LiveCards:
         if bridge is None:
             return {"ok": False, "topic_id": topic_id, "reason": "Review session is stale."}
         try:
-            result = bridge.submit_review(token, ease, request_id)
+            # One card can have category tags for multiple subjects. Serialize
+            # every live write across subject bridges so the second token sees
+            # the first review's changed baseline rather than answering twice.
+            with self._lock:
+                result = bridge.submit_review(token, ease, request_id)
             return {"ok": True, "topic_id": topic_id, "card_id": result.get("cardId"),
                     "ease": result.get("ease"), "request_id": result.get("request_id"),
                     "confirmed": result.get("confirmed", False), "status": result.get("status", "unknown"),
                     "review_id": result.get("reviewId"), "detail": result.get("detail")}
         except Exception as exc:
             return {"ok": False, "topic_id": topic_id, "reason": _safe_bridge_reason(exc)}
+
+    def _read_sessions(self) -> dict[str, Any]:
+        try:
+            value = json.loads(self._session_path.read_text(encoding="utf-8"))
+            return value if isinstance(value, dict) else {}
+        except (OSError, ValueError):
+            return {}
+
+    def _save_session(self, topic_id: str, session: dict[str, Any]) -> None:
+        sessions = self._read_sessions()
+        sessions[topic_id] = session
+        pending = self._session_path.with_suffix(".tmp")
+        pending.write_text(json.dumps(sessions, ensure_ascii=False), encoding="utf-8")
+        pending.chmod(0o600)
+        pending.replace(self._session_path)
+
+    @staticmethod
+    def _public_session(session: dict[str, Any] | None) -> dict[str, Any] | None:
+        if session is None:
+            return None
+        results = session.get("results", [])
+        current = session.get("current")
+        last_confirmed = next((row for row in reversed(results) if row.get("status") == "confirmed"), {})
+        return {key: session.get(key) for key in
+                ("id", "topic_id", "status", "created_at", "position", "partial", "reason")} | {
+            "total": len(session.get("card_ids", [])),
+            "confirmed_count": sum(row.get("status") == "confirmed" for row in results),
+            "skipped_count": sum(row.get("status") == "skipped" for row in results),
+            "unknown_count": sum(row.get("status") == "unknown" for row in results),
+            "last_confirmed_request_id": last_confirmed.get("request_id"),
+            "last_confirmed_submitted_at": last_confirmed.get("submitted_at"),
+            "current": ({key: current.get(key) for key in
+                         ("card_id", "revealed", "request_id", "ease", "status")} if current else None),
+        }
+
+    def _session(self, topic_id: Any, session_id: Any = None) -> dict[str, Any]:
+        if self._topic(topic_id) is None:
+            raise ValueError("Unknown subject")
+        session = self._read_sessions().get(topic_id)
+        if not isinstance(session, dict) or (session_id is not None and session.get("id") != session_id):
+            raise ValueError("This Anki session changed. Reopen its subject")
+        return session
+
+    def confirmed_review(self, topic_id: Any, request_id: Any) -> dict[str, Any] | None:
+        """Read trusted local confirmation; never send a rating or infer success."""
+        if self._topic(topic_id) is None or not isinstance(request_id, str) or not request_id:
+            return None
+        with self._lock:
+            bridge = self._bridge(topic_id)
+            result = bridge._request_result(request_id)
+            review = result.get("review") if result else None
+            if (not result or not result.get("confirmed") or not isinstance(review, dict)
+                    or _positive_id(result.get("reviewId")) is None
+                    or isinstance(review.get("type"), bool) or review.get("type") not in (0, 1, 2)
+                    or not isinstance(review.get("id"), int) or isinstance(review.get("id"), bool)
+                    or not isinstance(review.get("ease"), int) or isinstance(review.get("ease"), bool)
+                    or review["ease"] != result["ease"]):
+                return None
+            with closing(bridge._connect()) as conn:
+                request = conn.execute("SELECT created_at FROM review_requests WHERE request_id=?", (request_id,)).fetchone()
+            return {"confirmed": True, "topic_id": topic_id, "request_id": request_id,
+                    "card_id": result["cardId"], "review_id": result["reviewId"], "ease": result["ease"],
+                    "submitted_at": request["created_at"]}
+
+    def _advance_session(self, topic_id: str, session: dict[str, Any], result: dict[str, Any]) -> None:
+        session["results"].append(result)
+        session["position"] += 1
+        session["current"] = None
+        if session["position"] >= len(session["card_ids"]):
+            session["status"] = "finished"
+        self._save_session(topic_id, session)
+
+    def session_snapshot(self, topic_id: Any) -> dict[str, Any]:
+        if self._topic(topic_id) is None:
+            return {"ok": False, "reason": "Unknown subject"}
+        with self._lock:
+            session = self._read_sessions().get(topic_id)
+            if not isinstance(session, dict):
+                return {"ok": True, "session": None}
+            current = session.get("current")
+            # If Anki committed before the service stopped, the bridge's ledger
+            # survives. Repair only local session progress, without another write.
+            if current and current.get("request_id"):
+                accepted = self.confirmed_review(topic_id, current["request_id"])
+                if accepted:
+                    self._advance_session(topic_id, session, {**accepted, "status": "confirmed"})
+            return {"ok": True, "session": self._public_session(session)}
+
+    def start_session(self, topic_id: Any, limit: Any = 20) -> dict[str, Any]:
+        if self._topic(topic_id) is None:
+            return {"ok": False, "reason": "Unknown subject"}
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit not in (5, 10, 20, 50):
+            return {"ok": False, "reason": "Choose a batch of 5, 10, 20, or 50 cards"}
+        with self._lock:
+            previous = self.session_snapshot(topic_id)["session"]
+            if previous and previous["status"] == "active":
+                return {"ok": True, "session": previous}
+            queued = self.queue(topic_id)
+            if not queued.get("ok"):
+                return queued
+            ids = queued["card_ids"][:limit]
+            session = {"id": secrets.token_urlsafe(18), "topic_id": topic_id,
+                       "created_at": time.time(), "status": "active" if ids else "finished",
+                       "card_ids": ids, "position": 0, "results": [], "current": None,
+                       "partial": queued["partial"], "reason": queued["reason"]}
+            self._save_session(topic_id, session)
+            return {"ok": True, "session": self._public_session(session)}
+
+    def _restore_session_bridge(self, topic_id: str, current: dict[str, Any]) -> AnkiBridge:
+        bridge = self._bridge(topic_id)
+        with closing(bridge._connect()) as conn:
+            row = conn.execute("SELECT card_id,expected_note,expected_ord FROM review_tokens WHERE token=?",
+                               (current["token"],)).fetchone()
+        if row is None or row["card_id"] != current["card_id"]:
+            raise StaleReview("Stored review token is invalid")
+        return self._bridge(topic_id, {row["card_id"]: {"note": row["expected_note"], "ord": row["expected_ord"]}})
+
+    def open_session(self, topic_id: Any, session_id: Any) -> dict[str, Any]:
+        with self._lock:
+            try:
+                self.session_snapshot(topic_id)
+                session = self._session(topic_id, session_id)
+                if session["status"] != "active":
+                    return {"ok": True, "session": self._public_session(session), "card": None}
+                self._timing.deadline = time.monotonic() + MAX_TRANSPORT_SECONDS
+                current = session.get("current")
+                if current:
+                    bridge = self._restore_session_bridge(topic_id, current)
+                    card = bridge.card_info(current["card_id"])
+                    if _requires_native_rendering(card):
+                        return {"ok": False, "session": self._public_session(session),
+                                "reason": "This card uses image occlusion or interactive rendering. Review it in Anki to preserve its question."}
+                    media = card.get("media", {})
+                    front = _card_side(card.get("question"), media, front=True, css=card.get("css", ""))
+                    back = _card_side(card.get("answer"), media, front=False, css=card.get("css", ""))
+                else:
+                    # A restart may have dropped the in-memory allowlist. The
+                    # queue is revalidated before any new card token is opened.
+                    cid = session["card_ids"][session["position"]]
+                    if cid not in self._queued.get(topic_id, set()):
+                        queued = self.queue(topic_id)
+                        if not queued.get("ok"):
+                            return queued
+                    self._timing.deadline = time.monotonic() + MAX_TRANSPORT_SECONDS
+                    opened = self.begin(topic_id, cid)
+                    if not opened.get("ok"):
+                        return {**opened, "session": self._public_session(session)}
+                    current = {"card_id": cid, "token": opened["token"], "revealed": False,
+                               "request_id": None, "ease": None, "status": "ready"}
+                    front, back = opened["front"], opened["back"]
+                    session["current"] = current
+                    self._save_session(topic_id, session)
+                return {"ok": True, "session": self._public_session(session),
+                        "card": {"card_id": current["card_id"], "front": front,
+                                 "back": back if current["revealed"] else None}}
+            except Exception as exc:
+                return {"ok": False, "reason": _safe_bridge_reason(exc)}
+            finally:
+                self._timing.deadline = None
+
+    def reveal_session(self, topic_id: Any, session_id: Any) -> dict[str, Any]:
+        with self._lock:
+            try:
+                session = self._session(topic_id, session_id)
+                if session["status"] != "active" or not session.get("current"):
+                    raise ValueError("Open a card before revealing it")
+                session["current"]["revealed"] = True
+                self._save_session(topic_id, session)
+                return self.open_session(topic_id, session_id)
+            except Exception as exc:
+                return {"ok": False, "reason": _safe_bridge_reason(exc)}
+
+    def rate_session(self, topic_id: Any, session_id: Any, ease: Any, request_id: Any) -> dict[str, Any]:
+        with self._lock:
+            try:
+                session = self._session(topic_id, session_id)
+                if isinstance(ease, bool) or ease not in (1, 2, 3, 4) or not isinstance(ease, int):
+                    raise ValueError("Choose an explicit Anki rating")
+                if not isinstance(request_id, str) or not request_id.strip() or len(request_id) > 200:
+                    raise ValueError("Invalid rating request")
+                request_id = request_id.strip()
+                previous = next((row for row in session["results"] if row.get("request_id") == request_id), None)
+                if previous:
+                    if previous["ease"] != ease:
+                        raise ValueError("This request already has a different rating")
+                    return {"ok": True, "session": self._public_session(session), "review": previous}
+                current = session.get("current")
+                if session["status"] != "active" or not current or not current["revealed"]:
+                    raise ValueError("Reveal the answer before choosing a rating")
+                if current.get("request_id") and (current["request_id"] != request_id or current["ease"] != ease):
+                    raise ValueError("Check the existing rating before continuing")
+                # Persist intent before invoking the bridge. An HTTP response
+                # lost after a write is retried with this same identity only.
+                current.update(request_id=request_id, ease=ease, status="pending")
+                self._save_session(topic_id, session)
+                bridge = self._restore_session_bridge(topic_id, current)
+                self._timing.deadline = time.monotonic() + MAX_TRANSPORT_SECONDS
+                result = self.rate(topic_id, current["token"], ease, request_id)
+                if result.get("ok") and result.get("status") == "unknown":
+                    # Recheck only history. Never repeat an uncertain answerCards.
+                    with closing(bridge._connect()) as conn:
+                        row = conn.execute("SELECT baseline_review_id FROM review_requests WHERE request_id=?",
+                                           (request_id,)).fetchone()
+                    if row:
+                        try:
+                            matched = bridge._reconcile(current["card_id"], ease, row["baseline_review_id"])
+                            if matched and not isinstance(matched.get("type"), bool) and matched.get("type") in (0, 1, 2):
+                                bridge._finish_request(request_id, "confirmed", card_id=current["card_id"],
+                                                       ease=ease, review=matched, detail="Confirmed by a read-only history recheck")
+                        except Exception:
+                            pass
+                accepted = self.confirmed_review(topic_id, request_id)
+                if accepted:
+                    self._advance_session(topic_id, session, {**accepted, "status": "confirmed"})
+                    return {"ok": True, "session": self._public_session(session), "review": accepted}
+                current["status"] = "unknown" if result.get("status") == "confirmed" else result.get("status", "unknown")
+                self._save_session(topic_id, session)
+                return {"ok": True, "session": self._public_session(session),
+                        "review": {"confirmed": False, "status": current["status"], "request_id": request_id},
+                        "reason": ("Anki did not return a valid normal learning or review record. This outcome remains unconfirmed."
+                                   if result.get("status") == "confirmed" else
+                                   result.get("reason") or result.get("detail") or "Anki has not confirmed this rating")}
+            except Exception as exc:
+                return {"ok": False, "reason": _safe_bridge_reason(exc)}
+            finally:
+                self._timing.deadline = None
+
+    def skip_session(self, topic_id: Any, session_id: Any) -> dict[str, Any]:
+        with self._lock:
+            try:
+                session = self._session(topic_id, session_id)
+                if session["status"] != "active":
+                    raise ValueError("This Anki session has finished")
+                current = session.get("current")
+                if current and current.get("request_id"):
+                    raise ValueError("Check the existing rating before continuing")
+                cid = session["card_ids"][session["position"]]
+                self._advance_session(topic_id, session, {"card_id": cid, "status": "skipped"})
+                return {"ok": True, "session": self._public_session(session)}
+            except Exception as exc:
+                return {"ok": False, "reason": _safe_bridge_reason(exc)}
+
+    def dismiss_session(self, topic_id: Any, session_id: Any, request_id: Any) -> dict[str, Any]:
+        """Leave an uncertain outcome recorded as unknown, without another write."""
+        with self._lock:
+            try:
+                session = self._session(topic_id, session_id)
+                if not isinstance(request_id, str) or not request_id or len(request_id) > 200:
+                    raise ValueError("Choose the existing unconfirmed request")
+                prior = next((row for row in session["results"] if row.get("request_id") == request_id), None)
+                if prior:
+                    return {"ok": True, "session": self._public_session(session), "review": prior}
+                current = session.get("current")
+                if session["status"] != "active" or not current or current.get("request_id") != request_id:
+                    raise ValueError("Choose the existing unconfirmed request")
+                accepted = self.confirmed_review(topic_id, request_id)
+                if accepted:
+                    self._advance_session(topic_id, session, {**accepted, "status": "confirmed"})
+                    return {"ok": True, "session": self._public_session(session), "review": accepted}
+                outcome = {"card_id": current["card_id"], "ease": current["ease"],
+                           "request_id": request_id, "confirmed": False, "status": "unknown"}
+                # Preserve the bridge's write-ahead record, even if it is still
+                # pending. This action never invokes submit_review/answerCards.
+                self._advance_session(topic_id, session, outcome)
+                return {"ok": True, "session": self._public_session(session), "review": outcome}
+            except Exception as exc:
+                return {"ok": False, "reason": _safe_bridge_reason(exc)}
 
     def close(self) -> None:
         # AnkiBridge opens short-lived SQLite connections per operation; there

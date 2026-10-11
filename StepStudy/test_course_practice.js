@@ -25,10 +25,10 @@ test('choice lists stay bounded and include every supported answer alternative',
   assert.ok(choices.slice(0, 2).filter(value => ['Answer A', 'Answer B'].includes(value)).length < 2);
 });
 
-test('grading accepts any supported overlapping alternative without requiring all', () => {
+test('grading requires all supported characteristics while accepting shared answers', () => {
   const grade = practice.gradeSelections('bugs', cases[0], ['Organism type', 'Neuro presentation'], {
     'Organism type': ['Bacterium'],
-    'Neuro presentation': ['Meningitis'],
+    'Neuro presentation': ['Meningitis', 'Brain abscess'],
   });
   assert.equal(grade.correct, 2);
   assert.equal(grade.total, 2);
@@ -79,4 +79,30 @@ test('organism image lookup requires a canonical organism match and never resolv
   const ambiguous = await practice.lookupOrganismFigure({...api, lookup: async () => ({ok: false, error: 'ambiguous_term', candidates: [{title: 'First'}, {title: 'Second'}]}), createImageFigure: () => { throw new Error('must not create'); }}, 'Neisseria meningitidis', {});
   assert.equal(ambiguous.status, 'ambiguous');
   assert.equal(ambiguous.candidates.length, 2);
+});
+
+
+test('one overlapping alternative does not conceal a missed characteristic', () => {
+  const grade = practice.gradeSelections('bugs', cases[0], ['Neuro presentation'], {'Neuro presentation': ['Meningitis']});
+  assert.equal(grade.correct, 0);
+  assert.equal(grade.perfect, false);
+  assert.deepEqual(grade.details[0].missing, ['Brain abscess']);
+});
+
+test('large sourced answer sets remain accessible in bounded choice pages', () => {
+  const target = {traits: {finding: Array.from({length: 17}, (_, index) => `Answer ${index}`)}};
+  const options = practice.boundedChoices('bugs', 'finding', target, [target], 8, () => 0);
+  const pages = practice.choicePages(options);
+  assert.equal(pages.length, 3);
+  assert.ok(pages.every(page => page.length <= 8));
+  assert.equal(new Set(pages.flat()).size, 17);
+  assert.equal(practice.gradeSelections('bugs', target, ['finding'], {finding: pages.flat()}).perfect, true);
+});
+
+test('resumed sessions recreate stable choices from their persisted identity', () => {
+  const target = {traits: {finding: ['Answer']}};
+  const pool = [target, ...Array.from({length: 20}, (_, index) => ({traits: {finding: [`Other ${index}`]}}))];
+  const initial = practice.boundedChoices('bugs', 'finding', target, pool, 8, practice.seededRandom('saved-session:record:finding'));
+  const resumed = practice.boundedChoices('bugs', 'finding', target, pool, 8, practice.seededRandom('saved-session:record:finding'));
+  assert.deepEqual(resumed, initial);
 });

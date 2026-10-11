@@ -122,33 +122,44 @@
       const observer=new IntersectionObserver(entries=>{if(entries.some(item=>item.isIntersecting)){entry.visible=true;observer.disconnect();load();}}, {rootMargin:'150px'});entry.observer=observer;observer.observe(host);
     }else{entry.visible=true;load();}
   }
-  async function mountLabs(host) {
+  async function mountLabs(host, options={}) {
     const root=el('section',undefined,'local-labs');host.append(root);
-    root.append(el('p','INTERACTIVE STUDY','eyebrow'),el('h1','Local labs'),el('p','Keep an interactive HTML lab beside your studies, or open a native anatomy app. HTML labs run separately from your guide and saved progress.'));
+    root.append(el('h1','Interactive labs'),el('p','Explore circuits and models inside Step Study. Make your prediction first, test it in the viewer, then return to Guided gaze practice to save your explanation.'));
     const list=el('div',undefined,'local-lab-list'),viewer=el('div',undefined,'local-lab-viewer');root.append(list,viewer);
     const add=el('details');add.append(el('summary','Add a local lab'));
     const form=el('form',undefined,'lab-add-form'),path=el('input'),name=el('input');
-    path.placeholder='Path to a trusted HTML file or native .app';path.required=true;path.maxLength=2000;path.setAttribute('aria-label','Local lab file path');
+    path.placeholder='Path to a trusted HTML lab or gaze lesson JSON';path.required=true;path.maxLength=2000;path.setAttribute('aria-label','Local lab file path');
     name.placeholder='Lab name (optional)';name.maxLength=120;name.setAttribute('aria-label','Local lab name');
-    const status=el('p','HTML labs can use local HTML, JavaScript, images and model files in the same folder. Network access is blocked. A GLB needs a local HTML viewer.','muted');status.setAttribute('role','status');
+    const status=el('p','Choose a dedicated lab folder. HTML labs can load their local scripts, images, GLB/GLTF models and WebAssembly; network access is blocked. A gaze lesson JSON uses the built-in circuit viewer. A native app needs a browser export to run here.','muted');status.setAttribute('role','status');
     const submit=button('Add lab',async()=>{
       if(!path.value.trim()){status.textContent='Choose a local lab file first.';return;}
       submit.disabled=true;
       try{await request('/api/labs/register',{path:path.value.trim(),title:name.value.trim()});path.value='';name.value='';add.open=false;await renderList();}
       finally{submit.disabled=false;}
     });form.onsubmit=event=>{event.preventDefault();submit.click();};form.append(path,name,submit,status);add.append(form);root.append(add);
+    let autoOpen=options.labId || '';
+    function closeViewer(){viewer.replaceChildren();list.hidden=false;add.hidden=false;options.onOpen?.('');}
+    function openViewer(lab){
+      if(!lab.available || !lab.url || lab.embedded===false)return;
+      viewer.replaceChildren();list.hidden=true;add.hidden=true;
+      options.onOpen?.(lab.id);
+      const toolbar=el('div',undefined,'lab-viewer-toolbar'),title=el('h2',lab.title),close=button('← Back to labs',closeViewer);
+      toolbar.append(close,title);viewer.append(toolbar);
+      const frame=el('iframe');frame.title=lab.title;frame.setAttribute('sandbox','allow-scripts');frame.setAttribute('referrerpolicy','no-referrer');frame.src=lab.url;
+      viewer.append(frame);frame.addEventListener('load',()=>frame.focus({preventScroll:true}),{once:true});
+      const header=document.querySelector('.topbar'),sticky=header&&getComputedStyle(header).position==='sticky';
+      viewer.style.scrollMarginTop=(sticky?header.getBoundingClientRect().height+16:16)+'px';
+      viewer.scrollIntoView({block:'start',behavior:'auto'});
+    }
     async function renderList(){
       const result=await request('/api/labs');list.replaceChildren();
-      if(!result.labs.length)list.append(el('p','No local labs connected yet. Add an existing HTML lab or the Horizontal Gaze Lab native app.','empty-box'));
+      if(!result.labs.length)list.append(el('p','No labs connected yet. Add a trusted HTML lab or your Horizontal Gaze Lab lesson JSON to use its observations in the built-in viewer.','empty-box'));
       for(const lab of result.labs){
-        const row=el('article',undefined,'local-lab-card');row.append(el('h2',lab.title),el('p',lab.available?(lab.kind==='native'?'Native app · opens in its own window':'HTML / JavaScript · isolated viewer'):'Unavailable · reconnect its drive or select the file again','muted'));
-        const open=button(lab.kind==='native'?'Open lab app':'Open lab',async()=>{
-          if(lab.kind==='native'){await request('/api/labs/open',{id:lab.id});return;}
-          viewer.replaceChildren();const close=button('Close lab',()=>viewer.replaceChildren());
-          const frame=el('iframe');frame.title=lab.title;frame.setAttribute('sandbox','allow-scripts');frame.setAttribute('referrerpolicy','no-referrer');frame.src=lab.url;
-          viewer.append(close,frame);frame.addEventListener('load',()=>frame.focus(),{once:true});
-        });open.disabled=!lab.available;
-        row.append(open,button('Remove connection',async()=>{await request('/api/labs/remove',{id:lab.id});viewer.replaceChildren();await renderList();}));list.append(row);
+        const row=el('article',undefined,'local-lab-card');row.dataset.kind=lab.kind;row.append(el('h2',lab.title),el('p',lab.available?(lab.kind==='native'?'Native build connected · browser export needed':lab.kind==='gaze'?'Built-in circuit viewer · authored local lesion observations':'Embedded HTML / JavaScript · local models supported'):'Unavailable · reconnect its drive or select the file again','muted'));
+        const open=button(lab.kind==='native'?'Browser export needed':'Explore inside Step Study',()=>openViewer(lab));open.disabled=!lab.available || lab.kind==='native';
+        if(lab.kind==='native')row.append(el('p','This Unity/native build cannot run in a browser frame. Connect its lesson JSON for the circuit viewer, or a local HTML/WebGL export for the full lab.','lab-compatibility'));
+        row.append(open,button('Remove connection',async()=>{await request('/api/labs/remove',{id:lab.id});closeViewer();await renderList();}));list.append(row);
+        if(autoOpen===lab.id){autoOpen='';openViewer(lab);}
       }
     }
     try{await renderList();}catch(error){list.replaceChildren(el('p',error.message,'alert-text'));}
